@@ -12,6 +12,8 @@ struct aplha_token_t{
 
 #define YY_DECL int a_yylex(void* yylval)
 
+int nested_comments = 0;
+
 }
 
 %option noyywrap
@@ -74,19 +76,48 @@ REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 
 ID                      [a-zA-Z][a-zA-Z_0-9]*
 
-INLINECOMMENT           \/\/.*
-
+INLINECOMMENT           "//".*
+COMMENT_START           "/*"
+COMMENT_END             "*/"
 WHITESPACE              [\t\r' ']
+
+/*Rule(condition) for nested comments support*/
+%x COMMENT
 
 %%
 
-{ID}            {std::cout<<"Found ID: " << yytext << std::endl;}
-{KEYWORD}       {std::cout<<"Found Keyword: " << yytext << std::endl;}
-{PUNCTUATION}   {std::cout<<"Found Punctuation: " << yytext << std::endl;}
-{OPERATOR}      {std::cout<<"Found Operator: " << yytext << std::endl;}
-{INTEGER_CONST} {std::cout<<"Found Integer: " << yytext << std::endl;}
-{REAL_CONST}    {std::cout<<"Found Real: " << yytext << std::endl;}
-{INLINECOMMENT} {std::cout<<"Found InLineComment: " << yytext << std::endl;}
+{KEYWORD}                   {std::cout<<"Found Keyword: " << yytext << std::endl;}
+{ID}                        {std::cout<<"Found ID: " << yytext << std::endl;}
+{PUNCTUATION}               {std::cout<<"Found Punctuation: " << yytext << std::endl;}
+{OPERATOR}                  {std::cout<<"Found Operator: " << yytext << std::endl;}
+{INTEGER_CONST}             {std::cout<<"Found Integer: " << yytext << std::endl;}
+{REAL_CONST}                {std::cout<<"Found Real: " << yytext << std::endl;}
+{INLINECOMMENT}             {std::cout<<"Found InLineComment: " << yytext << std::endl;}
+{COMMENT_START}             {
+                                std::cout<<"Found Comment start: " << yytext << std::endl;
+                                BEGIN(COMMENT);
+                            }
+<COMMENT>{COMMENT_START}    {
+                                ++nested_comments;
+                                std::cout << "Nested comments: " << nested_comments << std::endl;
+                            }
+<COMMENT>"*"+               {}
+<COMMENT>[^/*\n]+           {} 
+<COMMENT>[/]                {} 
+<COMMENT>\n                 {} 
+<COMMENT><<EOF>>            {   
+                                BEGIN(INITIAL);        
+                                std::cout << "Comment doesn't end" << std::endl;
+                            }  
+<COMMENT>{COMMENT_END}      {
+                                std::cout << "Found comment end"<< std::endl;
+                                if(nested_comments) --nested_comments;
+                                else BEGIN(INITIAL);
+                            }
+
+{COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
+
+
 "\n"            {}
 {WHITESPACE}    {}
 .               {std::cout<<"Can't recorgnise char :C " << yytext << std::endl;}
