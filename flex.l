@@ -17,11 +17,51 @@ struct aplha_token_t{
 %option noyywrap
 %option yylineno
 
-ID             [0-9]+
+
+IF                      "if"
+ELSE                    "else"
+WHILE                   "while"
+FOR                     "for"
+FUNCTION                "function"
+RETURN                  "return"
+BREAK                   "break"
+CONTINUE                "continue"
+AND                     "and"
+NOT                     "not"
+OR                      "or"
+LOCAL                   "local"
+TRUE                    "true"
+FALSE                   "false"
+NIL                     "nil"
+KEYWORD                 {IF}|{ELSE}|{WHILE}|{FOR}|{FUNCTION}|{RETURN}|{BREAK}|{CONTINUE}|{AND}|{NOT}|{OR}|{LOCAL}|{TRUE}|{FALSE}|{NIL}
+
+LEFT_CURLY_BRACKET      "{"
+RIGHT_CURLY_BRACKET     "}"
+CURLY_BRACKET           {LEFT_CURLY_BRACKET}|{RIGHT_CURLY_BRACKET}
+LEFT_BRACKET            "["
+RIGHT_BRACKET           "]"
+BRACKET                 {LEFT_BRACKET}|{RIGHT_BRACKET}
+LEFT_PARENTHESIS        "("
+RIGHT_PARENTHESIS       ")"
+PARENTHESIS             {LEFT_PARENTHESIS}|{RIGHT_PARENTHESIS}
+SEMICOLON               ";"
+COMMA                   ","
+COLON                   ":"
+DOUBLE_COLON            "::"
+DOT                     "."
+DOUBLE_DOT              ".."
+PUNCTUATION             {CURLY_BRACKET}|{BRACKET}|{PARENTHESIS}|{SEMICOLON}|{COMMA}|{COLON}|{DOUBLE_COLON}|{DOT}|{DOUBLE_DOT}
+
+ID              [0-9]+
 
 %%
 
-{ID}           {std::cout<<"Found Integer: " << yytext;}
+{ID}            {std::cout<<"Found Integer: " << yytext << std::endl;}
+{KEYWORD}       {std::cout<<"Found Keyword: " << yytext << std::endl;}
+{PUNCTUATION}   {std::cout<<"Found Punctuation: " << yytext << std::endl;}
+
+"\n"            {}
+.               {std::cout<<"Can't recorgnise char :C " << yytext << std::endl;}
 
 %%
 
