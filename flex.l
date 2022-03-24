@@ -72,7 +72,9 @@ DIGIT                   [0-9]
 INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 
-ID                      [A-Z]
+ID                      [a-zA-Z][a-zA-Z_0-9]*
+
+INLINECOMMENT           \/\/.*
 
 WHITESPACE              [\t\r' ']
 
@@ -84,7 +86,7 @@ WHITESPACE              [\t\r' ']
 {OPERATOR}      {std::cout<<"Found Operator: " << yytext << std::endl;}
 {INTEGER_CONST} {std::cout<<"Found Integer: " << yytext << std::endl;}
 {REAL_CONST}    {std::cout<<"Found Real: " << yytext << std::endl;}
-
+{INLINECOMMENT} {std::cout<<"Found InLineComment: " << yytext << std::endl;}
 "\n"            {}
 {WHITESPACE}    {}
 .               {std::cout<<"Can't recorgnise char :C " << yytext << std::endl;}
