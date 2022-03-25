@@ -14,6 +14,22 @@ struct aplha_token_t{
 
 int nested_comments = 0;
 
+// Replaces words in a string
+// Source: https://www.quora.com/How-do-I-replace-all-occurrences-of-a-string-in-C
+void findAndReplaceAll( std::string& data, const std::string& match, const std::string& replace){ 
+    // Get the first occurrence 
+    size_t pos = data.find(match); 
+ 
+    // Repeat till end is reached 
+    while( pos != std::string::npos) 
+    { 
+        data.replace(pos, match.size(), replace); 
+      
+        //Get the next occurrence from the current position 
+        pos = data.find(match, pos+replace.size()); 
+    } 
+} 
+
 }
 
 %option noyywrap
@@ -76,6 +92,8 @@ REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 
 ID                      [a-zA-Z][a-zA-Z_0-9]*
 
+STRING          \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
+
 INLINECOMMENT           "//".*
 COMMENT_START           "/*"
 COMMENT_END             "*/"
@@ -93,6 +111,14 @@ WHITESPACE              [\t\r' ']
 {INTEGER_CONST}             {std::cout<<"Found Integer: " << yytext << std::endl;}
 {REAL_CONST}                {std::cout<<"Found Real: " << yytext << std::endl;}
 {INLINECOMMENT}             {std::cout<<"Found InLineComment: " << yytext << std::endl;}
+{STRING}                    {
+                                std::string s = yytext;
+                                findAndReplaceAll(s,"\\n","\n");
+                                findAndReplaceAll(s,"\\t","\t");
+                                findAndReplaceAll(s,"\\\"","\"");
+                                findAndReplaceAll(s,"\\\\","\\");
+                                std::cout<<"Fround String: " << s << std::endl;
+                            }
 {COMMENT_START}             {
                                 std::cout<<"Found Comment start: " << yytext << std::endl;
                                 BEGIN(COMMENT);
@@ -110,7 +136,7 @@ WHITESPACE              [\t\r' ']
                                 std::cout << "Comment doesn't end" << std::endl;
                             }  
 <COMMENT>{COMMENT_END}      {
-                                std::cout << "Found comment end"<< std::endl;
+                                std::cout << "Found comment end: "<< yytext << std::endl;
                                 if(nested_comments) --nested_comments;
                                 else BEGIN(INITIAL);
                             }
