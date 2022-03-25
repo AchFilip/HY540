@@ -28,7 +28,12 @@ void findAndReplaceAll( std::string& data, const std::string& match, const std::
         //Get the next occurrence from the current position 
         pos = data.find(match, pos+replace.size()); 
     } 
-} 
+}
+
+// Prints error message with bold red color
+void printError(std::string s){
+    std::cout<<"\033[1;31mCan't recorgnise char: " << s << "\033[0m" << std::endl;
+}
 
 }
 
@@ -97,35 +102,32 @@ STRING          \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
 INLINECOMMENT           "//".*
 COMMENT_START           "/*"
 COMMENT_END             "*/"
-WHITESPACE              [\t\r' ']
+WHITESPACE              [\t\r' '\n]
 
 /*Rule(condition) for nested comments support*/
 %x COMMENT
 
 %%
 
-{KEYWORD}                   {std::cout<<"Found Keyword: " << yytext << std::endl;}
-{ID}                        {std::cout<<"Found ID: " << yytext << std::endl;}
-{PUNCTUATION}               {std::cout<<"Found Punctuation: " << yytext << std::endl;}
-{OPERATOR}                  {std::cout<<"Found Operator: " << yytext << std::endl;}
-{INTEGER_CONST}             {std::cout<<"Found Integer: " << yytext << std::endl;}
-{REAL_CONST}                {std::cout<<"Found Real: " << yytext << std::endl;}
-{INLINECOMMENT}             {std::cout<<"Found InLineComment: " << yytext << std::endl;}
+{KEYWORD}                   {std::cout<<"Line: "<< yylineno << " Found Keyword: " << yytext << std::endl;}
+{PUNCTUATION}               {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl;}
+{OPERATOR}                  {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl;}
+{INLINECOMMENT}             {std::cout<<"Line: "<< yylineno << " Found InLineComment: " << yytext << std::endl;}
 {STRING}                    {
                                 std::string s = yytext;
                                 findAndReplaceAll(s,"\\n","\n");
                                 findAndReplaceAll(s,"\\t","\t");
                                 findAndReplaceAll(s,"\\\"","\"");
                                 findAndReplaceAll(s,"\\\\","\\");
-                                std::cout<<"Fround String: " << s << std::endl;
+                                std::cout<<"Line: "<< yylineno << " Fround String: " << s << std::endl;
                             }
 {COMMENT_START}             {
-                                std::cout<<"Found Comment start: " << yytext << std::endl;
+                                std::cout<<"Line: "<< yylineno << " Found Comment start: " << yytext << std::endl;
                                 BEGIN(COMMENT);
                             }
 <COMMENT>{COMMENT_START}    {
                                 ++nested_comments;
-                                std::cout << "Nested comments: " << nested_comments << std::endl;
+                                std::cout << "Line: "<< yylineno << " Nested comments: " << nested_comments << std::endl;
                             }
 <COMMENT>"*"+               {}
 <COMMENT>[^/*\n]+           {} 
@@ -136,17 +138,19 @@ WHITESPACE              [\t\r' ']
                                 std::cout << "Comment doesn't end" << std::endl;
                             }  
 <COMMENT>{COMMENT_END}      {
-                                std::cout << "Found comment end: "<< yytext << std::endl;
+                                std::cout << "Line: "<< yylineno << " Found comment end: "<< yytext << std::endl;
                                 if(nested_comments) --nested_comments;
                                 else BEGIN(INITIAL);
                             }
 
 {COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
 
+{ID}                        {std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl;}
+{INTEGER_CONST}             {std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl;}
+{REAL_CONST}                {std::cout<<"Line: "<< yylineno << " Found Real: " << yytext << std::endl;}
 
-"\n"            {}
-{WHITESPACE}    {}
-.               {std::cout<<"Can't recorgnise char :C " << yytext << std::endl;}
+{WHITESPACE}                {}
+.                           {std::string s = yytext; printError(s);}
 
 %%
 
