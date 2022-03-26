@@ -1,4 +1,5 @@
 %top{
+#include "parser.hpp"
 #include <iostream>
 #include <vector>
 
@@ -10,7 +11,7 @@ struct aplha_token_t{
     std::string content;   
 };
 
-#define YY_DECL int a_yylex(void* yylval)
+#define YY_DECL int yylex(void)
 
 int nested_comments = 0;
 
@@ -91,13 +92,13 @@ LESS                    "<"
 LESS_EQUAL              "<="
 OPERATOR                {ASSIGN}|{PLUS}|{MINUS}|{MULTIPLY}|{DIVISION}|{MOD}|{INCREMENT}|{DECREMENT}|{EQUAL}|{NOT_EQUAL}|{GREATER}|{GREATER_EQUAL}|{LESS}|{LESS_EQUAL}
 
-DIGIT                   [0-9]
+DIGIT                   [0-9]+
 INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 
 ID                      [a-zA-Z][a-zA-Z_0-9]*
 
-STRING          \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
+STRING                  \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
 
 INLINECOMMENT           "//".*
 COMMENT_START           "/*"
@@ -146,7 +147,7 @@ WHITESPACE              [\t\r' '\n]
 {COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
 
 {ID}                        {std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl;}
-{INTEGER_CONST}             {std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl;}
+{INTEGER_CONST}             {return INTEGER; std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl;}
 {REAL_CONST}                {std::cout<<"Line: "<< yylineno << " Found Real: " << yytext << std::endl;}
 
 {WHITESPACE}                {}
@@ -154,17 +155,3 @@ WHITESPACE              [\t\r' '\n]
 
 %%
 
-int main(int argc, char** argv){
-    std::vector<aplha_token_t>* myTokens = new std::vector<aplha_token_t>;
-    if(argc>1){
-        if(!(yyin=fopen(argv[1],"r"))){
-            fprintf(stderr,"cannto access");
-            return 1;
-        }
-    }else{
-        yyin=stdin;
-    }
-
-    a_yylex(myTokens);
-    return 0;
-}
