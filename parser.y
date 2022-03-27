@@ -9,6 +9,7 @@ extern int yylineno;
 extern char* yytext;
 extern FILE* yyin;
 
+// Prints the beginning and the end of a translated grammar rule
 void PrintParsing(std::string s1, std::string s2){
     std::cout << s1 << " -> " << s2 << std::endl;
 }
@@ -18,8 +19,8 @@ void PrintParsing(std::string s1, std::string s2){
 
 
 /*  tokens  */
-%token IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND OR NOT LOCAL TRUE FALSE NIL INTEGER REAL 
-
+%token  IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND OR NOT LOCAL TRUE FALSE NIL 
+%token  INTEGER REAL 
 %token  ID STRING
 
 /*  token rules */
@@ -40,7 +41,7 @@ void PrintParsing(std::string s1, std::string s2){
 program:        stmts                                                   {PrintParsing("program","stmts");}
                 ;
 
-stmt:           expr ';'                                                {PrintParsing("stmt","expr");}
+stmt:           expr ';'                                                {PrintParsing("stmt","expr ;");}
                 | ifstmt                                                {PrintParsing("stmt","ifstmt");}  
                 | whilestmt                                             {PrintParsing("stmt","whiletmt");}  
                 | forstmt                                               {PrintParsing("stmt","forstmt");}  
@@ -49,7 +50,8 @@ stmt:           expr ';'                                                {PrintPa
                 | CONTINUE ';'                                          {PrintParsing("stmt","continue ;");}  
                 | block                                                 {PrintParsing("stmt","block");}  
                 | funcdef                                               {PrintParsing("stmt","funcdef");}  
-                | ';'                                                   {PrintParsing("stmt",";");}  
+                | ';'                                                   {PrintParsing("stmt",";");}
+                ;  
 
 expr:           assignexpr                                              {std::cout << "expr -> assignexpr" << std::endl;}
                 | expr '+' expr                                         {PrintParsing("expr","expr + expr");}
@@ -131,7 +133,7 @@ indexed:        indexed ',' indexedelem                         {PrintParsing("i
 indexedelem:    '{' expr ':' expr '}'                           {PrintParsing("indexedelem","{ expr : expr }");}
                 ;
 
-stmts:          stmts stmt                                      {PrintParsing("stmts","stmt");}
+stmts:          stmts stmt                                      {PrintParsing("stmts","stmts stmt");}
                 |                                               {PrintParsing("stmts", "empty");}
                 ;
 
