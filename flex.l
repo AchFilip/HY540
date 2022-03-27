@@ -31,8 +31,8 @@ void findAndReplaceAll( std::string& data, const std::string& match, const std::
 }
 
 // Prints error message with bold red color
-void printError(std::string s){
-    std::cout<<"\033[1;31mCan't recorgnise char: " << s << "\033[0m" << std::endl;
+void printError(std::string s,int line){
+    std::cout<<"\033[1;31mError with: " << s << "at line "<< line << "\033[0m" << std::endl;
 }
 
 }
@@ -97,7 +97,7 @@ REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 
 ID                      [a-zA-Z][a-zA-Z_0-9]*
 
-STRING          \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
+STRING                  \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
 
 INLINECOMMENT           "//".*
 COMMENT_START           "/*"
@@ -115,6 +115,11 @@ WHITESPACE              [\t\r' '\n]
 {INLINECOMMENT}             {std::cout<<"Line: "<< yylineno << " Found InLineComment: " << yytext << std::endl;}
 {STRING}                    {
                                 std::string s = yytext;
+                                if(s[s.length() - 2] == '\\')
+                                {
+                                    printError(s, yylineno);
+                                    exit(0);
+                                }
                                 findAndReplaceAll(s,"\\n","\n");
                                 findAndReplaceAll(s,"\\t","\t");
                                 findAndReplaceAll(s,"\\\"","\"");
@@ -150,7 +155,7 @@ WHITESPACE              [\t\r' '\n]
 {REAL_CONST}                {std::cout<<"Line: "<< yylineno << " Found Real: " << yytext << std::endl;}
 
 {WHITESPACE}                {}
-.                           {std::string s = yytext; printError(s);}
+.                           {std::string s = yytext; printError(s, yylineno);}
 
 %%
 
