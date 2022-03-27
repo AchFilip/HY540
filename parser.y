@@ -28,6 +28,7 @@ program:        stmts                                            {std::cout << "
 stmt:           expr ';'                                         {std::cout << "stmt -> expr ;" << std::endl;}
                 | ifstmt
                 | whilestmt
+                | forstmt
                 | returnstmt
                 | break ';'
                 | continue ';'
@@ -109,11 +110,15 @@ funcdef:        FUNCTION '('  idlist ')' block                  {std::cout << "f
                 |  FUNCTION ID '(' idlist ')' block             { std::cout << "funcdef -> FUNCTION ID (idlist) block"   << std::endl;}
                 ;
 
-const:          NUMBER                                          {std::cout << "const -> NUMBER"                         << std::endl;}
+const:          number                                          {std::cout << "const -> number"                         << std::endl;}
                 | STRING                                        {std::cout << "const -> STRING"                         << std::endl;}
                 | NIL                                           {std::cout << "const -> NIL"                            << std::endl;}
                 | TRUE                                          {std::cout << "const -> TRUE"                           << std::endl;}
                 | FALSE                                         {std::cout << "const -> FALSE"                          << std::endl;}
+                ;
+
+number:         INTEGER                                         {std::cout << "number -> INTEGER"                       << std::endl;}
+                | REAL                                          {std::cout << "number -> REAL"                          << std::endl;}
                 ;
 
 idlist:         idlist ',' ID                                   {std::cout << "idlist -> idlist, ID"                    << std::endl;}
