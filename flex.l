@@ -146,8 +146,8 @@ WHITESPACE              [\t\r' '\n]
 
 {COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
 
-{ID}                        {std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl;}
-{INTEGER_CONST}             {return INTEGER; std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl;}
+{ID}                        {return ID;std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl;}
+{INTEGER_CONST}             {std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl;}
 {REAL_CONST}                {std::cout<<"Line: "<< yylineno << " Found Real: " << yytext << std::endl;}
 
 {WHITESPACE}                {}
