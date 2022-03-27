@@ -8,38 +8,64 @@ int yylex(void);
 extern int yylineno;
 extern char* yytext;
 extern FILE* yyin;
+
+void PrintParsing(std::string s1, std::string s2){
+    std::cout << s1 << " -> " << s2 << std::endl;
+}
 %}
 
 %start program
 
 
 /*  tokens  */
-%token  ID
+%token IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND OR NOT LOCAL TRUE FALSE NIL INTEGER REAL 
+
+%token  ID STRING
 
 /*  token rules */
-%right  '='
-%left   '+' '-'
+%left '(' ')' 
+%left '[' ']' 
+%left '.' DOUBLEDOTS 
+%right NOT PP MM UMINUS
+%left '*' '/' '%' 
+%left '+' '-'
+%nonassoc '>' '<' BRANCHBIGEQ BRANCHSMALLEQ
+%nonassoc EQEQ DIF DOUBLECOLON
+%left AND
+%left OR 
+%right '=' 
 
 %%
 /*  grammar rules   */
-program:        stmts                                            {std::cout << "program -> stmts" << std::endl;}
+program:        stmts                                            {PrintParsing("program","stmts");}
                 ;
 
-stmt:           expr ';'                                         {std::cout << "stmt -> expr ;" << std::endl;}
+stmt:           expr ';'                                         {PrintParsing("stmt","expr");}
                 | ifstmt
                 | whilestmt
                 | forstmt
                 | returnstmt
-                | break ';'
-                | continue ';'
+                | BREAK ';'
+                | CONTINUE ';'
                 | block
                 | funcdef
                 | ';'                                           {std::cout << "stmt -> ;" << std::endl;}
 
-expr:           assignexpr                                      {std::cout << "expr -> assignexpr" << std::endl;}
-                | expr '+' expr                                 {std::cout << "expr -> expr + expr" << std::endl;}
-                //gia ola ta ipoloipa
-                | term
+expr:           assignexpr                                              {std::cout << "expr -> assignexpr" << std::endl;}
+                | expr '+' expr                                         {PrintParsing("expr","expr + expr")}
+                | expr '-' expr                                         {PrintParsing("expr","expr - expr")}
+                | expr '*' expr                                         {PrintParsing("expr","expr * expr")}
+                | expr '/' expr                                         {PrintParsing("expr","expr / expr")}
+                | expr '%' expr                                         {PrintParsing("expr","expr % expr")}
+                | expr '>' expr                                         {PrintParsing("expr","expr > expr")}
+                | expr 'BRANCHBIGEQ' expr                               {PrintParsing("expr","expr >= expr")}
+                | expr '<' expr                                         {PrintParsing("expr","expr < expr")}
+                | expr 'BRANCHSMALLEQ' expr                             {PrintParsing("expr","expr <= expr")}
+                | expr 'EQEQ' expr                                      {PrintParsing("expr","expr == expr")}
+                | expr 'DIF' expr                                       {PrintParsing("expr","expr != expr")}
+                | expr 'AND' expr                                       {PrintParsing("expr","expr and expr")}
+                | expr 'OR' expr                                        {PrintParsing("expr","expr or expr")}
+                | term                                                  {PrintParsing("expr","term")}
                 ;
 
 term:           '(' expr ')'
@@ -62,10 +88,10 @@ primary:        lvalue
                 | const
                 ;
 
-lvalue:         ID                                              {std::cout << "lvalue -> ID"}
-                | local ID
-                | DOUBLEDOTS ID
-                | member
+lvalue:         ID                                              {PrintParsing("lvalue","ID");}
+                | local ID                                      {PrintParsing("lvalue","local ID");}
+                | DOUBLEDOTS ID                                 {PrintParsing("lvalue","DOUBLEDOTS ID");}
+                | member                                        {PrintParsing("lvalue","member");}
                 ;
 
 call:           call '(' elist ')'
