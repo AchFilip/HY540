@@ -52,20 +52,20 @@ stmt:           expr ';'                                                {PrintPa
                 | ';'                                                   {PrintParsing("stmt",";");}  
 
 expr:           assignexpr                                              {std::cout << "expr -> assignexpr" << std::endl;}
-                | expr '+' expr                                         {PrintParsing("expr","expr + expr")}
-                | expr '-' expr                                         {PrintParsing("expr","expr - expr")}
-                | expr '*' expr                                         {PrintParsing("expr","expr * expr")}
-                | expr '/' expr                                         {PrintParsing("expr","expr / expr")}
-                | expr '%' expr                                         {PrintParsing("expr","expr % expr")}
-                | expr '>' expr                                         {PrintParsing("expr","expr > expr")}
-                | expr 'BRANCHBIGEQ' expr                               {PrintParsing("expr","expr >= expr")}
-                | expr '<' expr                                         {PrintParsing("expr","expr < expr")}
-                | expr 'BRANCHSMALLEQ' expr                             {PrintParsing("expr","expr <= expr")}
-                | expr 'EQEQ' expr                                      {PrintParsing("expr","expr == expr")}
-                | expr 'DIF' expr                                       {PrintParsing("expr","expr != expr")}
-                | expr 'AND' expr                                       {PrintParsing("expr","expr and expr")}
-                | expr 'OR' expr                                        {PrintParsing("expr","expr or expr")}
-                | term                                                  {PrintParsing("expr","term")}
+                | expr '+' expr                                         {PrintParsing("expr","expr + expr");}
+                | expr '-' expr                                         {PrintParsing("expr","expr - expr");}
+                | expr '*' expr                                         {PrintParsing("expr","expr * expr");}
+                | expr '/' expr                                         {PrintParsing("expr","expr / expr");}
+                | expr '%' expr                                         {PrintParsing("expr","expr % expr");}
+                | expr '>' expr                                         {PrintParsing("expr","expr > expr");}
+                | expr BRANCHBIGEQ expr                                 {PrintParsing("expr","expr >= expr");}
+                | expr '<' expr                                         {PrintParsing("expr","expr < expr");}
+                | expr BRANCHSMALLEQ expr                               {PrintParsing("expr","expr <= expr");}
+                | expr EQEQ expr                                        {PrintParsing("expr","expr == expr");}
+                | expr DIF expr                                         {PrintParsing("expr","expr != expr");}
+                | expr AND expr                                         {PrintParsing("expr","expr and expr");}
+                | expr OR expr                                          {PrintParsing("expr","expr or expr");}
+                | term                                                  {PrintParsing("expr","term");}
                 ;
 
 term:           '(' expr ')'                                            {PrintParsing("term","( expr )");}
