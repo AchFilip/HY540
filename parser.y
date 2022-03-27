@@ -37,19 +37,19 @@ void PrintParsing(std::string s1, std::string s2){
 
 %%
 /*  grammar rules   */
-program:        stmts                                            {PrintParsing("program","stmts");}
+program:        stmts                                                   {PrintParsing("program","stmts");}
                 ;
 
-stmt:           expr ';'                                         {PrintParsing("stmt","expr");}
-                | ifstmt
-                | whilestmt
-                | forstmt
-                | returnstmt
-                | BREAK ';'
-                | CONTINUE ';'
-                | block
-                | funcdef
-                | ';'                                           {std::cout << "stmt -> ;" << std::endl;}
+stmt:           expr ';'                                                {PrintParsing("stmt","expr");}
+                | ifstmt                                                {PrintParsing("stmt","ifstmt");}  
+                | whilestmt                                             {PrintParsing("stmt","whiletmt");}  
+                | forstmt                                               {PrintParsing("stmt","forstmt");}  
+                | returnstmt                                            {PrintParsing("stmt","returnstmt");}  
+                | BREAK ';'                                             {PrintParsing("stmt","break ;");}  
+                | CONTINUE ';'                                          {PrintParsing("stmt","continue ;");}  
+                | block                                                 {PrintParsing("stmt","block");}  
+                | funcdef                                               {PrintParsing("stmt","funcdef");}  
+                | ';'                                                   {PrintParsing("stmt",";");}  
 
 expr:           assignexpr                                              {std::cout << "expr -> assignexpr" << std::endl;}
                 | expr '+' expr                                         {PrintParsing("expr","expr + expr")}
@@ -68,61 +68,67 @@ expr:           assignexpr                                              {std::co
                 | term                                                  {PrintParsing("expr","term")}
                 ;
 
-term:           '(' expr ')'
-                | '-' expr
-                | NOT lvalue
-                | PP lvalue
-                | lvalue PP
-                | MM lvalue
-                | lvalue MM
-                | primary
+term:           '(' expr ')'                                            {PrintParsing("term","( expr )");}
+                | '-' expr                                              {PrintParsing("term","- expr");}
+                | NOT lvalue                                            {PrintParsing("term","not lvalue");}
+                | PP lvalue                                             {PrintParsing("term","++ lvalue");}
+                | lvalue PP                                             {PrintParsing("term","lvalue ++");}
+                | MM lvalue                                             {PrintParsing("term","-- lvalue");}
+                | lvalue MM                                             {PrintParsing("term","lvalue --");}
+                | primary                                               {PrintParsing("term","primary");}
                 ;
 
-assignexpr:     lvalue '=' expr                                 {std::cout << "assignexpr -> lvalue = expr"             << std::endl;}
+assignexpr:     lvalue '=' expr                                 {PrintParsing("assignexpr","lvalue = expr");}
                 ;
 
-primary:        lvalue
-                | call
-                | objectdef
-                | '(' funcdef ')'
-                | const
+primary:        lvalue                                          {PrintParsing("primary","lvalue");}
+                | call                                          {PrintParsing("primary","call");}
+                | objectdef                                     {PrintParsing("primary","objectdef");}
+                | '(' funcdef ')'                               {PrintParsing("primary","( funcdef )");}
+                | const                                         {PrintParsing("primary","const");}
                 ;
 
 lvalue:         ID                                              {PrintParsing("lvalue","ID");}
-                | local ID                                      {PrintParsing("lvalue","local ID");}
+                | LOCAL ID                                      {PrintParsing("lvalue","local ID");}
                 | DOUBLEDOTS ID                                 {PrintParsing("lvalue","DOUBLEDOTS ID");}
                 | member                                        {PrintParsing("lvalue","member");}
                 ;
 
-call:           call '(' elist ')'
-                | lvalue callsuffix
-                | '(' funcdef ')' '(' elist ')'
+member:         lvalue '.' ID                                   {PrintParsing("member","lvalue . ID");}
+                | lvalue '[' expr ']'                           {PrintParsing("member","lvalue [ expr ]");}
+                | call '.' ID                                   {PrintParsing("member","call . ID");}
+                | call '[' expr ']'                             {PrintParsing("member","call [ expr ]");}
                 ;
 
-callsuffix:     normcall
-                | methodcall
+call:           call '(' elist ')'                              {PrintParsing("call","call ( elist )");}
+                | lvalue callsuffix                             {PrintParsing("call","lvalue callsuffix");}
+                | '(' funcdef ')' '(' elist ')'                 {PrintParsing("call","( funcdef ) ( elist )");}
                 ;
 
-normcall:       '(' elist ')'
+callsuffix:     normcall                                        {PrintParsing("callsuffix","normcall");}
+                | methodcall                                    {PrintParsing("callsuffix","methodcall");}
                 ;
 
-methodcall:      DOUBLEDOTS ID '(' elist ')'
+normcall:       '(' elist ')'                                   {PrintParsing("normcall","( elist )");}
                 ;
 
-elist:          elist ',' expr                                  {std::cout << "elist -> elist, expr"                    << std::endl;}
-                |expr                                           {std::cout << "elist -> expr"                           << std::endl;}
-                | /*empty*/                                     {std::cout << "elist -> /*empty*/"                      << std::endl;}
+methodcall:     DOUBLEDOTS ID '(' elist ')'                     {PrintParsing("methodcall",":: ID ( elist )");}
                 ;
 
-objectdef:      '['elist']'                                     {std::cout << "objectdef -> [elist]"                    << std::endl;}
-                |'['indexed']'                                  {std::cout << "objectdef -> [indexed]"                  << std::endl;}
+elist:          elist ',' expr                                  {PrintParsing("elist","elist , expr");}
+                |expr                                           {PrintParsing("elist","expr");}
+                | /*empty*/                                     {PrintParsing("elist"," ");}
                 ;
 
-indexed:        indexed ',' indexedelem                         {std::cout << "indexed -> indexed, indexedelem"         << std::endl;}
-                | indexedelem                                   {std::cout << "indexed -> indexedelem"                  << std::endl;}
+objectdef:      '['elist']'                                     {PrintParsing("objectdef","[ elist ]");}
+                |'['indexed']'                                  {PrintParsing("indexed","indexed , indexedelem");}
                 ;
 
-indexedelem:    '{' expr ':' expr '}'                           {std::cout << "indexedelem -> {expr : expr}"            << std::endl;}
+indexed:        indexed ',' indexedelem                         {PrintParsing("indexed","indexed , indexedelem");}
+                | indexedelem                                   {PrintParsing("indexed","indexedelem");}
+                ;
+
+indexedelem:    '{' expr ':' expr '}'                           {PrintParsing("indexedelem","{ expr : expr }");}
                 ;
 
 stmts:          stmts stmt                                      {std::cout << "stmts -> stmts stmt"                     << std::endl;}
