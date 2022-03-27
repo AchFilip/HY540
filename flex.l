@@ -128,7 +128,9 @@ WHITESPACE              [\t\r' '\n]
 {RIGHT_BRACKET}             {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ']';}
 {SEMICOLON}                 {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ';';}
 {COMMA}                     {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ',';}
+{DOUBLE_COLON}              {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return DOUBLECOLON;}
 {COLON}                     {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ':';}
+{DOUBLE_DOT}                {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return DOUBLEDOTS;}
 {DOT}                       {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return '.';}
 
 {INCREMENT}             {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return PP;}
