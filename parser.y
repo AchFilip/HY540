@@ -131,45 +131,45 @@ indexed:        indexed ',' indexedelem                         {PrintParsing("i
 indexedelem:    '{' expr ':' expr '}'                           {PrintParsing("indexedelem","{ expr : expr }");}
                 ;
 
-stmts:          stmts stmt                                      {std::cout << "stmts -> stmts stmt"                     << std::endl;}
-                |                                               {std::cout << "stmts -> /*empty*/"                      << std::endl;}
+stmts:          stmts stmt                                      {PrintParsing("stmts","stmt");}
+                |                                               {PrintParsing("stmts", "empty");}
                 ;
 
-block:          '{' stmts '}'                                   { std::cout << "block -> {stmts}" << std::endl; }
+block:          '{' stmts '}'                                   {PrintParsing("block", "stmts");}
                 ;
 
-funcdef:        FUNCTION '('  idlist ')' block                  {std::cout << "funcdef -> FUNCTION (idlist) block"      << std::endl;}
-                |  FUNCTION ID '(' idlist ')' block             { std::cout << "funcdef -> FUNCTION ID (idlist) block"   << std::endl;}
+funcdef:        FUNCTION '('  idlist ')' block                  {PrintParsing("funcdef", "FUNCTION (idlist) block");}
+                |  FUNCTION ID '(' idlist ')' block             {PrintParsing("funcdef", "FUNCTION ID (idlist) block");}
                 ;
 
-const:          number                                          {std::cout << "const -> number"                         << std::endl;}
-                | STRING                                        {std::cout << "const -> STRING"                         << std::endl;}
-                | NIL                                           {std::cout << "const -> NIL"                            << std::endl;}
-                | TRUE                                          {std::cout << "const -> TRUE"                           << std::endl;}
-                | FALSE                                         {std::cout << "const -> FALSE"                          << std::endl;}
+const:          number                                          {PrintParsing("const", "number");}
+                | STRING                                        {PrintParsing("const", "STRING");}
+                | NIL                                           {PrintParsing("const", "NIL");}
+                | TRUE                                          {PrintParsing("const", "TRUE");}
+                | FALSE                                         {PrintParsing("const", "FALSE");}
                 ;
 
-number:         INTEGER                                         {std::cout << "number -> INTEGER"                       << std::endl;}
-                | REAL                                          {std::cout << "number -> REAL"                          << std::endl;}
+number:         INTEGER                                         {PrintParsing("number", "INTEGER");}
+                | REAL                                          {PrintParsing("number", "REAL");}
                 ;
 
-idlist:         idlist ',' ID                                   {std::cout << "idlist -> idlist, ID"                    << std::endl;}
-                |ID                                             {std::cout << "idlist -> ID"                            << std::endl;}                                                                        
-                |                                               {std::cout << "idlist -> /*empty*/"                                    << std::endl;}
+idlist:         idlist ',' ID                                   {PrintParsing("idlist", "idlist , ID");}
+                |ID                                             {PrintParsing("idlist", "ID");}                                                                        
+                |                                               {PrintParsing("idlist", "empty");}
                 ;
 
-ifstmt:         IF '(' expr ')' stmt                            {std::cout << "ifstmt -> IF (expr) stmt"                << std::endl;}
-                | IF '(' expr ')' stmt ELSE stmt                {std::cout << "ifstmt -> IF (expr) stmt ELSE stmt"                << std::endl;}
+ifstmt:         IF '(' expr ')' stmt                            {PrintParsing("ifstmt", "IF ( expr ) stmt");}
+                | IF '(' expr ')' stmt ELSE stmt                {PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");}
                 ;
 
-whilestmt:      WHILE '(' expr ')' stmt                         {std::cout << "whilestmt -> WHILE (expr) stmt"          << std::endl;}
+whilestmt:      WHILE '(' expr ')' stmt                         {PrintParsing("whilestmt", "WHILE ( expr ) stmt");}
                 ;
 
-forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {std::cout << "forstmt -> FOR (elist; expr; elist)"     << std::endl;}
+forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {PrintParsing("forstmt", "FOR ( elist ; expr ; elist ) stmt");}
                 ;
 
-returnstmt:     RETURN ';'                                      {std::cout << "returnstmt -> RETURN;"                   << std::endl;}
-                | RETURN expr ';'                               {std::cout << "returnstmt -> RETURN expr;"              << std::endl;}
+returnstmt:     RETURN ';'                                      {PrintParsing("returnstmt", " RETURN ;");}
+                | RETURN expr ';'                               {PrintParsing("returnstmt", " RETURN expr ;");}
                 ;
                 
 %%
