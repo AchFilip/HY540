@@ -1,3 +1,8 @@
+//#include <functional>
+#pragma once
+#include "TreeVisitor.h"
+#include <map>
+
 class TreeHost {
 	private:
 	using Acceptor  = std::function<void(const Object&)>;

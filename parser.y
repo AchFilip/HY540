@@ -1,4 +1,9 @@
 %{
+#include "AST/Object.h"
+#include "AST/Value.h"
+#include "AST/TreeVisitor.h"
+#include "AST/TreeHost.h"
+#include "AST/ValueStack.h"
 #include <iostream>
 #include <vector>
 

@@ -1,3 +1,6 @@
+#pragma once
+#include "Value.h"
+#include <functional>
 
 
 class Object {
@@ -25,7 +28,8 @@ class Object {
 	void		    Apply (const Applier& f); // RW access
 	void		    Visit (const Visitor& f) const; // RO access
 
-    Object* Value::ToObject_NoConst (void) const;
-    Object* Value::ToProgramFunctionAST_NoConst (void) const;
-    Object* Value::ToProgramFunctionClosure_NoConst (void) const;
+	// Do we need those here or not? 
+	//Object* Value::ToObject_NoConst (void) const;
+    //Object* Value::ToProgramFunctionAST_NoConst (void) const;
+    //Object* Value::ToProgramFunctionClosure_NoConst (void) const;
 };

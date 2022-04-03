@@ -1,6 +1,7 @@
 // define AST tags for all grammar symbols you
 // need to encompass in the syntax tree,
 // all nodes have a 'type' and 'line' key
+#pragma once
 
 #define AST_TAG_TYPE_KEY    "type"
 #define AST_TAG_LINE_KEY    "line"
@@ -52,7 +53,7 @@ class Value{
         Value(const std::string&);
         Value(double);
         Value(LibraryFunc);
-        Value(NIL);
+        Value(enum NIL);
         Value(const Object&);
         Value(const Value&);
         Value(void);

@@ -1,3 +1,9 @@
+#pragma once
+#include <list>
+#include <assert.h>
+#include "Value.h"
+
+
 class ValueStack {
 
 	protected:

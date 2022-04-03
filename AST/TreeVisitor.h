@@ -1,11 +1,13 @@
-// some node types tags for AST_TAG_TYPE_KEY
-#define AST_TAG_IF		"if"
-#define AST_TAG_IF_COND	"if_cond"
-#define AST_TAG_IF_STMT	"if_stmt"
+#define AST_TAG_IF			"if"
+#define AST_TAG_IF_COND		"if_cond"
+#define AST_TAG_IF_STMT		"if_stmt"
 #define AST_TAG_WHILE_COND	"while_cond"
 #define AST_TAG_WHILE_STMT	"while_stmt"
 #define AST_TAG_WHILE		"while"
-#define AST_TAG_FOR		"for“
+#define AST_TAG_FOR			"for"
+
+#pragma once
+#include "Object.h"
 
 class TreeVisitor {
 	public:
