@@ -1,9 +1,7 @@
 %{
-#include "AST/Object.h"
-#include "AST/Value.h"
-#include "AST/TreeVisitor.h"
-#include "AST/TreeHost.h"
-#include "AST/ValueStack.h"
+#include "./AST/Object.h"
+#include "./AST/Value.h"
+#include "./AST/TreeTags.h"
 #include <iostream>
 #include <vector>
 
@@ -18,15 +16,38 @@ extern FILE* yyin;
 void PrintParsing(std::string s1, std::string s2){
     std::cout << s1 << " -> " << s2 << std::endl;
 }
+
+Object* CreateObject(AST_TAG ast_tag){
+    Object* obj = new Object();
+    obj->ast_tag = ast_tag;
+    return obj;
+}
 %}
 
 %start program
 
+%union {
+    std::string*    strVal;
+    double          numVal;
+    Object*         objVal;
+    struct
+    {
+        Object *ast;
+        Object *closure;
+    } progFuncVal;
+    struct
+    {
+        void *ptr;
+        char *typeId;
+    } nativePtrVal;
+}
 
 /*  tokens  */
 %token  IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND OR NOT LOCAL TRUE FALSE NIL 
-%token  INTEGER REAL 
-%token  ID STRING
+%token  <numVal> NUMBER 
+%token  <strVal> ID STRING
+
+%type <objVal> id const primary funcdef idlist block;
 
 /*  token rules */
 %left '(' ')' 
@@ -88,22 +109,35 @@ term:           '(' expr ')'                                            {PrintPa
 assignexpr:     lvalue '=' expr                                 {PrintParsing("assignexpr","lvalue = expr");}
                 ;
 
-primary:        lvalue                                          {PrintParsing("primary","lvalue");}
-                | call                                          {PrintParsing("primary","call");}
-                | objectdef                                     {PrintParsing("primary","objectdef");}
-                | '(' funcdef ')'                               {PrintParsing("primary","( funcdef )");}
-                | const                                         {PrintParsing("primary","const");}
+primary:        lvalue                                          {
+                                                                    PrintParsing("primary","lvalue");
+                                                                }
+                | call                                          {
+                                                                    PrintParsing("primary","call");
+                                                                }
+                | objectdef                                     {
+                                                                    PrintParsing("primary","objectdef");
+                                                                }
+                | '(' funcdef ')'                               {
+                                                                    PrintParsing("primary","( funcdef )");
+                                                                }
+                | const                                         {
+                                                                    PrintParsing("primary","const");
+                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
+                                                                    obj->AddChild("$child", $1);
+                                                                    $$ = obj;
+                                                                }
                 ;
 
-lvalue:         ID                                              {PrintParsing("lvalue","ID");}
-                | LOCAL ID                                      {PrintParsing("lvalue","local ID");}
-                | DOUBLEDOTS ID                                 {PrintParsing("lvalue","DOUBLEDOTS ID");}
+lvalue:         id                                              {PrintParsing("lvalue","ID");}
+                | LOCAL id                                      {PrintParsing("lvalue","local ID");}
+                | DOUBLEDOTS id                                 {PrintParsing("lvalue","DOUBLEDOTS ID");}
                 | member                                        {PrintParsing("lvalue","member");}
                 ;
 
-member:         lvalue '.' ID                                   {PrintParsing("member","lvalue . ID");}
+member:         lvalue '.' id                                   {PrintParsing("member","lvalue . ID");}
                 | lvalue '[' expr ']'                           {PrintParsing("member","lvalue [ expr ]");}
-                | call '.' ID                                   {PrintParsing("member","call . ID");}
+                | call '.' id                                   {PrintParsing("member","call . ID");}
                 | call '[' expr ']'                             {PrintParsing("member","call [ expr ]");}
                 ;
 
@@ -119,7 +153,7 @@ callsuffix:     normcall                                        {PrintParsing("c
 normcall:       '(' elist ')'                                   {PrintParsing("normcall","( elist )");}
                 ;
 
-methodcall:     DOUBLEDOTS ID '(' elist ')'                     {PrintParsing("methodcall",":: ID ( elist )");}
+methodcall:     DOUBLEDOTS id '(' elist ')'                     {PrintParsing("methodcall",":: ID ( elist )");}
                 ;
 
 elist:          elist ',' expr                                  {PrintParsing("elist","elist , expr");}
@@ -144,26 +178,65 @@ stmts:          stmts stmt                                      {PrintParsing("s
 
 block:          '{' stmts '}'                                   {PrintParsing("block", "stmts");}
                 ;
+id:             ID                                              {
+                                                                    Object* obj = CreateObject(AST_TAG_ID);
+                                                                    obj->value = new Value(*$1);
+                                                                    $$ = obj;
+                                                                }
+funcdef:        FUNCTION '('  idlist ')' block                  {
+                                                                    PrintParsing("funcdef", "FUNCTION (idlist) block");
+                                                                }
+                | FUNCTION id '(' idlist ')' block              {
+                                                                    PrintParsing("funcdef", "FUNCTION ID (idlist) block");
+                                                                    Object* obj = CreateObject(AST_TAG_FUNCDEF);
+                                                                    
+                                                                    obj->AddChild(std::string("$id"), $2);
+                                                                    obj->AddChild(std::string("$idlist"), $4);
+                                                                    obj->AddChild(std::string("$block"), $6);
+                                                                    // TODO: Create value. Not sure what this should be
+                                                                    // Maybe idlist and block children of value object.
 
-funcdef:        FUNCTION '('  idlist ')' block                  {PrintParsing("funcdef", "FUNCTION (idlist) block");}
-                |  FUNCTION ID '(' idlist ')' block             {PrintParsing("funcdef", "FUNCTION ID (idlist) block");}
+                                                                    $$ = obj;
+                                                                }
                 ;
 
-const:          number                                          {PrintParsing("const", "number");}
-                | STRING                                        {PrintParsing("const", "STRING");}
-                | NIL                                           {PrintParsing("const", "NIL");}
-                | TRUE                                          {PrintParsing("const", "TRUE");}
-                | FALSE                                         {PrintParsing("const", "FALSE");}
+const:          NUMBER                                          {
+                                                                    PrintParsing("const", "number");
+                                                                    Object* obj = CreateObject(AST_TAG_CONST);
+                                                                    obj->value = new Value($1);
+                                                                    $$ = obj;
+                                                                }
+                | STRING                                        {
+                                                                    PrintParsing("const", "STRING");
+                                                                    Object* obj = CreateObject(AST_TAG_CONST);
+                                                                    obj->value = new Value(*$1);
+                                                                    $$ = obj;
+                                                                }
+                | NIL                                           {
+                                                                    PrintParsing("const", "NIL");
+                                                                    Object* obj = CreateObject(AST_TAG_CONST);
+                                                                    obj->value = new Value(_NIL_);
+                                                                    $$ = obj;
+                                                                }
+                | TRUE                                          {
+                                                                    PrintParsing("const", "TRUE");
+                                                                    Object* obj = CreateObject(AST_TAG_CONST);
+                                                                    obj->value = new Value(true);
+                                                                    $$ = obj;
+                                                                }
+                | FALSE                                         {
+                                                                    PrintParsing("const", "FALSE");
+                                                                    Object* obj = CreateObject(AST_TAG_CONST);
+                                                                    obj->value = new Value(false);
+                                                                    $$ = obj;
+                                                                }
                 ;
 
-number:         INTEGER                                         {PrintParsing("number", "INTEGER");}
-                | REAL                                          {PrintParsing("number", "REAL");}
-                ;
-
-idlist:         idlist ',' ID                                   {PrintParsing("idlist", "idlist , ID");}
-                |ID                                             {PrintParsing("idlist", "ID");}                                                                        
+idlist:         idlist ',' id                                   {PrintParsing("idlist", "idlist , ID");}
+                |id                                             {PrintParsing("idlist", "ID");}                                                                        
                 |                                               {PrintParsing("idlist", "empty");}
                 ;
+
 
 ifstmt:         IF '(' expr ')' stmt                            {PrintParsing("ifstmt", "IF ( expr ) stmt");}
                 | IF '(' expr ')' stmt ELSE stmt                {PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");}
@@ -196,8 +269,7 @@ int main(int argc, char** argv){
         yyin=stdin;
     }
 
-    yyparse();
+    yyparse();  
+
     return 0;
 }
-
-

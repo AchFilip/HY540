@@ -6,6 +6,7 @@
 #define AST_TAG_VAR "var"
 #define AST_TAG_ID "id"
 
+#define AST_TAG std::string
 #define AST_TAG_PROGRAM "program"
 #define AST_TAG_STMTS "stms"
 #define AST_TAG_STMT "stmt"

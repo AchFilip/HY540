@@ -1,4 +1,6 @@
 %top{
+#include "./AST/Object.h"
+#include "./AST/Value.h"
 #include "parser.hpp"
 #include <iostream>
 #include <vector>
@@ -89,6 +91,7 @@ LESS_EQUAL              "<="
 DIGIT                   [0-9]+
 INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
+NUMBER                  {INTEGER_CONST}|{REAL_CONST}
 
 ID                      [a-zA-Z][a-zA-Z_0-9]*
 
@@ -161,6 +164,10 @@ WHITESPACE              [\t\r' '\n]
                                 findAndReplaceAll(s,"\\\"","\"");
                                 findAndReplaceAll(s,"\\\\","\\");
                                 std::cout<<"Line: "<< yylineno << " Fround String: " << s << std::endl;
+                                    
+                                // TODO: Copy to new string before adding to yyval;
+
+
                                 return STRING;
                             }
 {COMMENT_START}             {
@@ -188,8 +195,7 @@ WHITESPACE              [\t\r' '\n]
 {COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
 
 {ID}                        {std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl; return ID;}
-{INTEGER_CONST}             {std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl; return INTEGER;}
-{REAL_CONST}                {std::cout<<"Line: "<< yylineno << " Found Real: " << yytext << std::endl; return REAL;}
+{NUMBER}                    {std::cout<<"Line: "<< yylineno << " Found : " << yytext << std::endl; return NUMBER;}
 
 {WHITESPACE}                {}
 .                           {std::string s = yytext; printError(s);}

@@ -1,14 +1,20 @@
 #pragma once
-#include "Value.h"
 #include <functional>
+#include <map>
+#include "Value.h"
+#include "./TreeTags.h"
 
 
 class Object {
 	public:
 	Object (void) = default;
-    	Object (const Object& other);
+	Object (const Object& other);
 	~Object();
 	
+	AST_TAG 						ast_tag;
+	std::map<std::string , Object*> children;
+	Value*							value;
+
 	using Applier = std::function<void(const Value& key, Value& val)>;
 	using Visitor = std::function<void(const Value& key, const Value& val)>;
 	void		    IncRefCounter (void);
@@ -27,6 +33,10 @@ class Object {
 	unsigned		GetTotal (void) const;
 	void		    Apply (const Applier& f); // RW access
 	void		    Visit (const Visitor& f) const; // RO access
+
+	void AddChild(std::string ast_tag, Object* child){
+		children.insert({ast_tag, child});
+	}
 
 	// Do we need those here or not? 
 	//Object* Value::ToObject_NoConst (void) const;

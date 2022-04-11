@@ -1,7 +1,7 @@
 
 #pragma once
 #include "Object.h"
-#include "TreeTags.h"s
+#include "TreeTags.h"
 
 class TreeVisitor {
  public:
