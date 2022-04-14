@@ -47,7 +47,7 @@ Object* CreateObject(AST_TAG ast_tag){
 %token  <numVal> NUMBER 
 %token  <strVal> ID STRING
 
-%type <objVal> id const primary funcdef idlist block;
+%type <objVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call objectdef assignexpr term ifstmt forstmt;
 
 /*  token rules */
 %left '(' ')' 
@@ -67,59 +67,190 @@ Object* CreateObject(AST_TAG ast_tag){
 program:        stmts                                                   {PrintParsing("program","stmts");}
                 ;
 
-stmt:           expr ';'                                                {PrintParsing("stmt","expr ;");}
-                | ifstmt                                                {PrintParsing("stmt","ifstmt");}  
-                | whilestmt                                             {PrintParsing("stmt","whiletmt");}  
-                | forstmt                                               {PrintParsing("stmt","forstmt");}  
-                | returnstmt                                            {PrintParsing("stmt","returnstmt");}  
-                | BREAK ';'                                             {PrintParsing("stmt","break ;");}  
-                | CONTINUE ';'                                          {PrintParsing("stmt","continue ;");}  
-                | block                                                 {PrintParsing("stmt","block");}  
-                | funcdef                                               {PrintParsing("stmt","funcdef");}  
-                | ';'                                                   {PrintParsing("stmt",";");}
+stmt:           expr ';'                                                {
+                                                                            PrintParsing("stmt","expr ;");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }
+                | ifstmt                                                {
+                                                                            PrintParsing("stmt","ifstmt");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }  
+                | whilestmt                                             {
+                                                                            PrintParsing("stmt","whiletmt");\
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }  
+                | forstmt                                               {
+                                                                            PrintParsing("stmt","forstmt");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }  
+                | returnstmt                                            {
+                                                                            PrintParsing("stmt","returnstmt");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }  
+                | BREAK ';'                                             {
+                                                                            PrintParsing("stmt","break ;");
+                                                                        }  
+                | CONTINUE ';'                                          {
+                                                                            PrintParsing("stmt","continue ;");
+                                                                        }  
+                | block                                                 {
+                                                                            PrintParsing("stmt","block");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }  
+                | funcdef                                               {
+                                                                            PrintParsing("stmt","funcdef");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }  
+                | ';'                                                   {
+                                                                            PrintParsing("stmt",";");
+                                                                        }
                 ;  
 
-expr:           assignexpr                                              {std::cout << "expr -> assignexpr" << std::endl;}
-                | expr '+' expr                                         {PrintParsing("expr","expr + expr");}
-                | expr '-' expr                                         {PrintParsing("expr","expr - expr");}
-                | expr '*' expr                                         {PrintParsing("expr","expr * expr");}
-                | expr '/' expr                                         {PrintParsing("expr","expr / expr");}
-                | expr '%' expr                                         {PrintParsing("expr","expr % expr");}
-                | expr '>' expr                                         {PrintParsing("expr","expr > expr");}
-                | expr BRANCHBIGEQ expr                                 {PrintParsing("expr","expr >= expr");}
-                | expr '<' expr                                         {PrintParsing("expr","expr < expr");}
-                | expr BRANCHSMALLEQ expr                               {PrintParsing("expr","expr <= expr");}
-                | expr EQEQ expr                                        {PrintParsing("expr","expr == expr");}
-                | expr DIF expr                                         {PrintParsing("expr","expr != expr");}
-                | expr AND expr                                         {PrintParsing("expr","expr and expr");}
-                | expr OR expr                                          {PrintParsing("expr","expr or expr");}
-                | term                                                  {PrintParsing("expr","term");}
+expr:           assignexpr                                              {
+                                                                            std::cout << "expr -> assignexpr" << std::endl;
+                                                                        }
+                | expr '+' expr                                         {
+                                                                            PrintParsing("expr","expr + expr");
+                                                                        }
+                | expr '-' expr                                         {
+                                                                            PrintParsing("expr","expr - expr");
+                                                                        }
+                | expr '*' expr                                         {
+                                                                            PrintParsing("expr","expr * expr");
+                                                                        }
+                | expr '/' expr                                         {
+                                                                            PrintParsing("expr","expr / expr");
+                                                                        }
+                | expr '%' expr                                         {
+                                                                            PrintParsing("expr","expr % expr");
+                                                                        }
+                | expr '>' expr                                         {
+                                                                            PrintParsing("expr","expr > expr");
+                                                                        }
+                | expr BRANCHBIGEQ expr                                 {
+                                                                            PrintParsing("expr","expr >= expr");
+                                                                        }
+                | expr '<' expr                                         {
+                                                                            PrintParsing("expr","expr < expr");
+                                                                        }
+                | expr BRANCHSMALLEQ expr                               {
+                                                                            PrintParsing("expr","expr <= expr");
+                                                                        }
+                | expr EQEQ expr                                        {
+                                                                            PrintParsing("expr","expr == expr");
+                                                                        }
+                | expr DIF expr                                         {
+                                                                            PrintParsing("expr","expr != expr");
+                                                                        }
+                | expr AND expr                                         {
+                                                                            PrintParsing("expr","expr and expr");
+                                                                        }
+                | expr OR expr                                          {
+                                                                            PrintParsing("expr","expr or expr");
+                                                                        }
+                | term                                                  {
+                                                                            PrintParsing("expr","term");
+                                                                        }
                 ;
 
-term:           '(' expr ')'                                            {PrintParsing("term","( expr )");}
-                | '-' expr                                              {PrintParsing("term","- expr");}
-                | NOT lvalue                                            {PrintParsing("term","not lvalue");}
-                | PP lvalue                                             {PrintParsing("term","++ lvalue");}
-                | lvalue PP                                             {PrintParsing("term","lvalue ++");}
-                | MM lvalue                                             {PrintParsing("term","-- lvalue");}
-                | lvalue MM                                             {PrintParsing("term","lvalue --");}
-                | primary                                               {PrintParsing("term","primary");}
+term:           '(' expr ')'                                            {
+                                                                        //Need different name to differntiate between different lvalue/expr
+                                                                        //Maybe differnt AST_TAG (??)
+                                                                            PrintParsing("term","( expr )");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$parenthesisexpr", $2);
+                                                                            $$ = obj;
+                                                                        }
+                | '-' expr                                              {
+                                                                            PrintParsing("term","- expr");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$minusexpr", $2);
+                                                                            $$ = obj;
+                                                                        }
+                | NOT lvalue                                            {
+                                                                            PrintParsing("term","not lvalue");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$notlvalue", $2);
+                                                                            $$ = obj;
+                                                                        }
+                | PP lvalue                                             {
+                                                                            PrintParsing("term","++ lvalue");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$pplvalue", $2);
+                                                                            $$ = obj;
+                                                                        }
+                | lvalue PP                                             {
+                                                                            PrintParsing("term","lvalue ++");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$lvaluepp", $1);
+                                                                            $$ = obj;
+                                                                        }
+                | MM lvalue                                             {
+                                                                            PrintParsing("term","-- lvalue");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$mmlvalue", $2);
+                                                                            $$ = obj;
+                                                                        }
+                | lvalue MM                                             {
+                                                                            PrintParsing("term","lvalue --");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$lvaluemm", $1);
+                                                                            $$ = obj;
+                                                                        }
+                | primary                                               {
+                                                                            PrintParsing("term","primary");
+                                                                            Object* obj = CreateObject(AST_TAG_TERM);
+                                                                            obj->AddChild("$child", $1);
+                                                                            $$ = obj;
+                                                                        }
                 ;
 
-assignexpr:     lvalue '=' expr                                 {PrintParsing("assignexpr","lvalue = expr");}
+assignexpr:     lvalue '=' expr                                 {
+                                                                    PrintParsing("assignexpr","lvalue = expr");
+                                                                    Object* obj = CreateObject(AST_TAG_ASSIGNEXPR);
+                                                                    obj->AddChild("$lvalue", $1);
+                                                                    obj->AddChild("$expr", $3);
+                                                                    $$ = obj;
+                                                                }
                 ;
 
 primary:        lvalue                                          {
                                                                     PrintParsing("primary","lvalue");
+                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
+                                                                    obj->AddChild("$child", $1);
+                                                                    $$ = obj;
                                                                 }
                 | call                                          {
                                                                     PrintParsing("primary","call");
+                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
+                                                                    obj->AddChild("$child", $1);
+                                                                    $$ = obj;
                                                                 }
                 | objectdef                                     {
                                                                     PrintParsing("primary","objectdef");
+                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
+                                                                    obj->AddChild("$child", $1);
+                                                                    $$ = obj;
                                                                 }
                 | '(' funcdef ')'                               {
                                                                     PrintParsing("primary","( funcdef )");
+                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
+                                                                    obj->AddChild("$child", $2);
+                                                                    $$ = obj;
                                                                 }
                 | const                                         {
                                                                     PrintParsing("primary","const");
@@ -128,11 +259,33 @@ primary:        lvalue                                          {
                                                                     $$ = obj;
                                                                 }
                 ;
-
-lvalue:         id                                              {PrintParsing("lvalue","ID");}
-                | LOCAL id                                      {PrintParsing("lvalue","local ID");}
-                | DOUBLEDOTS id                                 {PrintParsing("lvalue","DOUBLEDOTS ID");}
-                | member                                        {PrintParsing("lvalue","member");}
+                                        
+lvalue:         id                                              {
+                                                                    //Need different name to differntiate between id, LOCAL id, DOUBLEDOTS id (??)
+                                                                    //Maybe differnt AST_TAG (??)
+                                                                    PrintParsing("lvalue","ID");                                                                    
+                                                                    Object* obj = CreateObject("AST_TAG_LVALUE");
+                                                                    obj->AddChild("$id", $1);
+                                                                    $$ = obj;
+                                                                }
+                | LOCAL id                                      {
+                                                                    PrintParsing("lvalue","local ID");
+                                                                    Object* obj = CreateObject("AST_TAG_LVALUE");
+                                                                    obj->AddChild("$localid", $2);
+                                                                    $$ = obj;
+                                                                }
+                | DOUBLEDOTS id                                 {
+                                                                    PrintParsing("lvalue","DOUBLEDOTS ID");
+                                                                    Object* obj = CreateObject("AST_TAG_LVALUE");
+                                                                    obj->AddChild("$doubledotsid", $2);
+                                                                    $$ = obj;
+                                                                }
+                | member                                        {
+                                                                    PrintParsing("lvalue","member");
+                                                                    Object* obj = CreateObject("AST_TAG_LVALUE");
+                                                                    obj->AddChild("$member", $1);
+                                                                    $$ = obj;
+                                                                }
                 ;
 
 member:         lvalue '.' id                                   {PrintParsing("member","lvalue . ID");}
@@ -176,7 +329,12 @@ stmts:          stmts stmt                                      {PrintParsing("s
                 |                                               {PrintParsing("stmts", "empty");}
                 ;
 
-block:          '{' stmts '}'                                   {PrintParsing("block", "stmts");}
+block:          '{' stmts '}'                                   {
+                                                                    PrintParsing("block", "stmts");
+                                                                    Object* obj = CreateObject(AST_TAG_BLOCK);
+                                                                    obj->AddChild(std::string("$stmts"), $2);
+                                                                    $$ = obj;
+                                                                }
                 ;
 id:             ID                                              {
                                                                     Object* obj = CreateObject(AST_TAG_ID);
@@ -195,7 +353,6 @@ funcdef:        FUNCTION '('  idlist ')' block                  {
                                                                     obj->AddChild(std::string("$block"), $6);
                                                                     // TODO: Create value. Not sure what this should be
                                                                     // Maybe idlist and block children of value object.
-
                                                                     $$ = obj;
                                                                 }
                 ;
@@ -232,9 +389,15 @@ const:          NUMBER                                          {
                                                                 }
                 ;
 
-idlist:         idlist ',' id                                   {PrintParsing("idlist", "idlist , ID");}
-                |id                                             {PrintParsing("idlist", "ID");}                                                                        
-                |                                               {PrintParsing("idlist", "empty");}
+idlist:         idlist ',' id                                   {
+                                                                    PrintParsing("idlist", "idlist , ID");
+                                                                }
+                |id                                             {
+                                                                    PrintParsing("idlist", "ID");
+                                                                }                                                                        
+                |                                               {
+                                                                    PrintParsing("idlist", "empty");
+                                                                }
                 ;
 
 
@@ -242,14 +405,34 @@ ifstmt:         IF '(' expr ')' stmt                            {PrintParsing("i
                 | IF '(' expr ')' stmt ELSE stmt                {PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");}
                 ;
 
-whilestmt:      WHILE '(' expr ')' stmt                         {PrintParsing("whilestmt", "WHILE ( expr ) stmt");}
+whilestmt:      WHILE '(' expr ')' stmt                         {
+                                                                    PrintParsing("whilestmt", "WHILE ( expr ) stmt");
+                                                                    //Two choices
+                                                                    //1. Whilenode has 2 children, whilecond && whilestmt 
+                                                                    Object* whileNode = CreateObject(AST_TAG_WHILE);
+                                                                    whileNode->AddChild(std::string("$whilecond"), $3);
+                                                                    whileNode->AddChild(std::string("$whilestmt"), $5);
+                                                                    $$ = whileNode;
+                                                                }
                 ;
 
 forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {PrintParsing("forstmt", "FOR ( elist ; expr ; elist ) stmt");}
                 ;
 
-returnstmt:     RETURN ';'                                      {PrintParsing("returnstmt", " RETURN ;");}
-                | RETURN expr ';'                               {PrintParsing("returnstmt", " RETURN expr ;");}
+returnstmt:     RETURN ';'                                      {
+                                                                    PrintParsing("returnstmt", " RETURN ;");
+                                                                    Object* obj = CreateObject(AST_TAG_RETURNSTMT);
+                                                                    //value of return is undef for now
+                                                                    obj->value = new Value();
+                                                                    $$ = obj;
+                                                                }
+                | RETURN expr ';'                               {
+                                                                    PrintParsing("returnstmt", " RETURN expr ;");
+                                                                    Object* obj = CreateObject(AST_TAG_RETURNSTMT);
+                                                                    //made expr value of returnstmt for now
+                                                                    obj->value = new Value(*$2);
+                                                                    $$ = obj;
+                                                                }
                 ;
                 
 %%

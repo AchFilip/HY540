@@ -39,18 +39,18 @@ private:
     {
         double numVal;
         bool boolVal;
-        char *strVal;
-        char *libFuncVal;
-        Object *objVal;
+        char* strVal;
+        char* libFuncVal;
+        const Object* objVal;
         struct
         {
-            Object *ast;
-            Object *closure;
+            Object* ast;
+            Object* closure;
         } progFuncVal;
         struct
         {
-            void *ptr;
-            char *typeId;
+            void* ptr;
+            char* typeId;
         } nativePtrVal;
     } data;
 
@@ -75,9 +75,14 @@ public:
         type = BooleanType;
         data.boolVal = boolVal;
     }
-    Value(const Object &);
+    Value(const Object & obj){
+        type = ObjectType;
+        data.objVal = &obj;
+    };
     Value(const Value &);
-    Value(void);
+    Value(void){
+        type = UndefType;
+    };
     ~Value();
 
 public:
