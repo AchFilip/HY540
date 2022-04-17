@@ -194,7 +194,7 @@ WHITESPACE              [\t\r' '\n]
 
 {COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
 
-{ID}                        {std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl; return ID;}
+{ID}                        {std::string *s=new std::string(strdup(yytext)); yylval.strVal = s; return ID;}
 {NUMBER}                    {std::cout<<"Line: "<< yylineno << " Found : " << yytext << std::endl; return NUMBER;}
 
 {WHITESPACE}                {}

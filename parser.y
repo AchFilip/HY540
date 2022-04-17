@@ -80,7 +80,7 @@ stmt:           expr ';'                                                {
                                                                             $$ = obj;
                                                                         }  
                 | whilestmt                                             {
-                                                                            PrintParsing("stmt","whiletmt");\
+                                                                            PrintParsing("stmt","whiletmt");
                                                                             Object* obj = CreateObject(AST_TAG_STMT);
                                                                             obj->AddChild("$child", $1);
                                                                             $$ = obj;
@@ -337,7 +337,9 @@ block:          '{' stmts '}'                                   {
                                                                 }
                 ;
 id:             ID                                              {
+                                                                    PrintParsing("id", "ID"); 
                                                                     Object* obj = CreateObject(AST_TAG_ID);
+                                                                    //std::cout << *$1 << std::endl; <-- uncomment and check.
                                                                     obj->value = new Value(*$1);
                                                                     $$ = obj;
                                                                 }
