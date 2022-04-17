@@ -86,7 +86,41 @@ public:
     ~Value();
 
 public:
-    Type GetType(void) const;
+    Type GetType(void) const{
+        switch (type)
+        {
+        case UndefType:
+            return UndefType;
+            break;
+        case NumberType:
+            return NumberType;
+            break;
+        case BooleanType:
+            return BooleanType;
+            break;
+        case StringType:
+            return StringType;
+            break;
+        case ObjectType:
+            return ObjectType;
+            break;
+        case ProgramFunctionType:
+            return ProgramFunctionType;
+            break;
+        case LibraryFunctionType:
+            return LibraryFunctionType;
+            break;
+        case NativePtrType:
+            return NativePtrType;
+            break;
+        case NilType:
+            return NilType;
+            break;
+        default:
+            break;
+        }
+        return NilType;
+    }
     double ToNumber(void) const;
     bool ToBool(void) const;
     const std::string &ToString(void) const;
