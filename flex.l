@@ -107,51 +107,51 @@ WHITESPACE              [\t\r' '\n]
 
 %%
 
-{IF}                        {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return IF;}
-{ELSE}                      {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return ELSE;}
-{FOR}                       {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return FOR;}
-{WHILE}                     {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return WHILE;}
-{FUNCTION}                  {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return FUNCTION;}
-{RETURN}                    {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return RETURN;}
-{BREAK}                     {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return BREAK;}
-{CONTINUE}                  {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return CONTINUE;}
-{AND}                       {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return AND;}
-{NOT}                       {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return NOT;}
-{OR}                        {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return OR;}
-{LOCAL}                     {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return LOCAL;}
-{TRUE}                      {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return TRUE;}
-{FALSE}                     {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return FALSE;}
-{NIL}                       {std::cout << "Line: " << yylineno << " Found Keyword: " << yytext << std::endl; return NIL;}
+{IF}                        {return IF;}
+{ELSE}                      {return ELSE;}
+{FOR}                       {return FOR;}
+{WHILE}                     {return WHILE;}
+{FUNCTION}                  {return FUNCTION;}
+{RETURN}                    {return RETURN;}
+{BREAK}                     {return BREAK;}
+{CONTINUE}                  {return CONTINUE;}
+{AND}                       {return AND;}
+{NOT}                       {return NOT;}
+{OR}                        {return OR;}
+{LOCAL}                     {return LOCAL;}
+{TRUE}                      {return TRUE;}
+{FALSE}                     {return FALSE;}
+{NIL}                       {return NIL;}
 
-{LEFT_CURLY_BRACKET}        {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return '{';}
-{RIGHT_CURLY_BRACKET}       {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return '}';}
-{LEFT_PARENTHESIS}          {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return '(';}
-{RIGHT_PARENTHESIS}         {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ')';}
-{LEFT_BRACKET}              {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return '[';}
-{RIGHT_BRACKET}             {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ']';}
-{SEMICOLON}                 {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ';';}
-{COMMA}                     {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ',';}
-{DOUBLE_COLON}              {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return DOUBLECOLON;}
-{COLON}                     {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return ':';}
-{DOUBLE_DOT}                {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return DOUBLEDOTS;}
-{DOT}                       {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl; return '.';}
+{LEFT_CURLY_BRACKET}        {return '{';}
+{RIGHT_CURLY_BRACKET}       {return '}';}
+{LEFT_PARENTHESIS}          {return '(';}
+{RIGHT_PARENTHESIS}         {return ')';}
+{LEFT_BRACKET}              {return '[';}
+{RIGHT_BRACKET}             {return ']';}
+{SEMICOLON}                 {return ';';}
+{COMMA}                     {return ',';}
+{DOUBLE_COLON}              {return DOUBLECOLON;}
+{COLON}                     {return ':';}
+{DOUBLE_DOT}                {return DOUBLEDOTS;}
+{DOT}                       {return '.';}
 
-{INCREMENT}             {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return PP;}
-{DECREMENT}             {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return MM;}
-{EQUAL}                 {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return EQEQ;}
-{NOT_EQUAL}             {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return DIF;}
-{GREATER_EQUAL}         {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return BRANCHBIGEQ;}
-{LESS_EQUAL}            {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return BRANCHSMALLEQ;}
-{ASSIGN}                {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '=';}
-{PLUS}                  {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '+';}
-{MINUS}                 {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '-';}
-{MULTIPLY}              {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '*';}
-{DIVISION}              {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '/';}
-{MOD}                   {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '%';}
-{GREATER}               {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '>';}
-{LESS}                  {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl; return '<';}
+{INCREMENT}                 {return PP;}
+{DECREMENT}                 {return MM;}
+{EQUAL}                     {return EQEQ;}
+{NOT_EQUAL}                 {return DIF;}
+{GREATER_EQUAL}             {return BRANCHBIGEQ;}
+{LESS_EQUAL}                {return BRANCHSMALLEQ;}
+{ASSIGN}                    {return '=';}
+{PLUS}                      {return '+';}
+{MINUS}                     {return '-';}
+{MULTIPLY}                  {return '*';}
+{DIVISION}                  {return '/';}
+{MOD}                       {return '%';}
+{GREATER}                   {return '>';}
+{LESS}                      {return '<';}
 
-{INLINECOMMENT}             {std::cout<<"Line: "<< yylineno << " Found InLineComment: " << yytext << std::endl;}
+{INLINECOMMENT}             {}
 {STRING}                    {
                                 std::string s = yytext;
                                 if(s[s.length() - 2] == '\\')
@@ -163,20 +163,17 @@ WHITESPACE              [\t\r' '\n]
                                 findAndReplaceAll(s,"\\t","\t");
                                 findAndReplaceAll(s,"\\\"","\"");
                                 findAndReplaceAll(s,"\\\\","\\");
-                                std::cout<<"Line: "<< yylineno << " Fround String: " << s << std::endl;
-                                    
-                                // TODO: Copy to new string before adding to yyval;
 
+                                //parsing it with ""    
+                                yylval.strVal = new std::string(strdup(yytext));
 
                                 return STRING;
                             }
 {COMMENT_START}             {
-                                std::cout<<"Line: "<< yylineno << " Found Comment start: " << yytext << std::endl;
                                 BEGIN(COMMENT);
                             }
 <COMMENT>{COMMENT_START}    {
                                 ++nested_comments;
-                                std::cout << "Line: "<< yylineno << " Nested comments: " << nested_comments << std::endl;
                             }
 <COMMENT>"*"+               {}
 <COMMENT>[^/*\n]+           {} 
@@ -184,18 +181,16 @@ WHITESPACE              [\t\r' '\n]
 <COMMENT>\n                 {} 
 <COMMENT><<EOF>>            {   
                                 BEGIN(INITIAL);        
-                                std::cout << "Comment doesn't end" << std::endl;
                             }  
 <COMMENT>{COMMENT_END}      {
-                                std::cout << "Line: "<< yylineno << " Found comment end: "<< yytext << std::endl;
                                 if(nested_comments) --nested_comments;
                                 else BEGIN(INITIAL);
                             }
 
-{COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
-
-{ID}                        {std::string *s=new std::string(strdup(yytext)); yylval.strVal = s; return ID;}
-{NUMBER}                    {std::cout<<"Line: "<< yylineno << " Found : " << yytext << std::endl; return NUMBER;}
+{COMMENT_END}               {}
+                            
+{ID}                        {std::string *s = new std::string(strdup(yytext)); /*<-- can be skipped*/ yylval.strVal = s; return ID;} 
+{NUMBER}                    {yylval.numVal = std::stod(yytext); return NUMBER;}
 
 {WHITESPACE}                {}
 .                           {std::string s = yytext; printError(s);}
