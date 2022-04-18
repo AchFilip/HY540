@@ -38,6 +38,10 @@ class Object {
 		children.insert({ast_tag, child});
 	}
 
+	void RecursivePrint(){
+		// TODO: Print every children recursively
+	}
+
 	// Do we need those here or not? 
 	//Object* Value::ToObject_NoConst (void) const;
     //Object* Value::ToProgramFunctionAST_NoConst (void) const;

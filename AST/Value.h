@@ -75,11 +75,11 @@ public:
         type = BooleanType;
         data.boolVal = boolVal;
     }
-    Value(const Object & obj){
+    Value(const Object& obj){
         type = ObjectType;
         data.objVal = &obj;
     };
-    Value(const Value &);
+    Value(const Value&);
     Value(void){
         type = UndefType;
     };
