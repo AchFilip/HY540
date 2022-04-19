@@ -58,9 +58,10 @@ public:
     static void CreateGraph(Object *root)
     {
         std::string graph_text = "graph AST {\n";
+        graph_text += "\t" + root->ast_tag + " [label=" + root->ast_tag + "]\n";
         graph_text += GraphVisitChildren(root, 0);
         graph_text += "}";
-        std::cout << graph_text << std::endl;
+        // std::cout << graph_text << std::endl;
         std::ofstream graph_file;
         graph_file.open("ast.gv");
         graph_file << graph_text;
@@ -69,14 +70,13 @@ public:
 
     static std::string GraphVisitChildren(Object *node, int cnt)
     {
+        // TODO: check again
         std::string text = "";
-        if (cnt == 0)
-            text += "\t" + node->ast_tag + std::to_string(cnt) + " [label=" + node->ast_tag + "]\n";
         for (auto child : node->children)
         {
             text += "\t" + child.second->ast_tag + std::to_string(cnt) + " [label=" + child.second->ast_tag + "]\n";
             if (cnt == 0)
-                text += "\t" + node->ast_tag + std::to_string(cnt) + " -- " + child.second->ast_tag + std::to_string(cnt) + "\n";
+                text += "\t" + node->ast_tag + " -- " + child.second->ast_tag + std::to_string(cnt) + "\n";
             else
                 text += "\t" + node->ast_tag + std::to_string(cnt - 1) + " -- " + child.second->ast_tag + std::to_string(cnt) + "\n";
             text += GraphVisitChildren(child.second, cnt + 1);
