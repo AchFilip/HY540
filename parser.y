@@ -579,6 +579,9 @@ int main(int argc, char** argv){
 
     // Example of accesing the ast after parsing. ast is the root node.
     std::cout << "Root children: " << ast->children.size() << std::endl;
+    ast->RecursivePrint(0);
+
+    Object::CreateGraph(ast);
 
     return 0;
 }
