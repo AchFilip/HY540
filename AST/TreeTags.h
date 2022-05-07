@@ -27,7 +27,7 @@
 #define AST_TAG_ELIST "elist"
 #define AST_TAG_OBJECTDEF "objectdef"
 #define AST_TAG_INDEXED "indexed"
-#define AST_TAG_INDEXEDELEM "indexed"
+#define AST_TAG_INDEXEDELEM "indexed_elem"
 #define AST_TAG_BLOCK "block"
 #define AST_TAG_FUNCDEF "funcdef"
 #define AST_TAG_CONST "const"

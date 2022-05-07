@@ -49,9 +49,10 @@ public:
         // TODO: Print every children recursively
         std::cout << std::setw(4 * tabs);
         std::cout << "--" << this->ast_tag << std::endl;
-        for (auto child : this->children)
+        // Reverse traverse of the tree or else it starts from the last command
+        for (auto child = this->children.rbegin(); child != this->children.rend(); child++)
         {
-            child.second->RecursivePrint(tabs + 1);
+            child->second->RecursivePrint(tabs + 1);
         }
     }
 
@@ -72,20 +73,21 @@ public:
     {
         // TODO: check again
         std::string text = "";
-        for (auto child : node->children)
+        // for (auto child : node->children)
+        for (auto child = node->children.rbegin(); child != node->children.rend(); child++)
         {
-            text += "\t" + child.second->ast_tag + std::to_string(cnt) + " [label=" + child.second->ast_tag + "]\n";
+            text += "\t" + child->second->ast_tag + std::to_string(cnt) + " [label=" + child->second->ast_tag + "]\n";
             if (cnt == 0)
-                text += "\t" + node->ast_tag + " -- " + child.second->ast_tag + std::to_string(cnt) + "\n";
+                text += "\t" + node->ast_tag + " -- " + child->second->ast_tag + std::to_string(cnt) + "\n";
             else
-                text += "\t" + node->ast_tag + std::to_string(cnt - 1) + " -- " + child.second->ast_tag + std::to_string(cnt) + "\n";
-            text += GraphVisitChildren(child.second, cnt + 1);
-            if (child.second->children.empty())
+                text += "\t" + node->ast_tag + std::to_string(cnt - 1) + " -- " + child->second->ast_tag + std::to_string(cnt) + "\n";
+            text += GraphVisitChildren(child->second, cnt + 1);
+            if (child->second->children.empty())
             {
-                if (child.second->value)
+                if (child->second->value)
                 {
-                    text += "\tvalue" + std::to_string(cnt) + " [label=" + child.second->value->ToString() + "]\n";
-                    text += "\t" + child.second->ast_tag + std::to_string(cnt) + " -- value" + std::to_string(cnt) + "\n";
+                    text += "\tvalue" + std::to_string(cnt) + " [label=" + child->second->value->ToString() + "]\n";
+                    text += "\t" + child->second->ast_tag + std::to_string(cnt) + " -- value" + std::to_string(cnt) + "\n";
                 }
             }
         }
