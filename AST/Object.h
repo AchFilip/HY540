@@ -80,9 +80,18 @@ public:
             else
                 text += "\t" + node->ast_tag + std::to_string(cnt - 1) + " -- " + child.second->ast_tag + std::to_string(cnt) + "\n";
             text += GraphVisitChildren(child.second, cnt + 1);
+            if (child.second->children.empty())
+            {
+                if (child.second->value)
+                {
+                    text += "\tvalue" + std::to_string(cnt) + " [label=" + child.second->value->ToString() + "]\n";
+                    text += "\t" + child.second->ast_tag + std::to_string(cnt) + " -- value" + std::to_string(cnt) + "\n";
+                }
+            }
         }
         return text;
     }
+
     // Do we need those here or not?
     // Object* Value::ToObject_NoConst (void) const;
     // Object* Value::ToProgramFunctionAST_NoConst (void) const;

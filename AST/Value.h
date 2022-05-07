@@ -39,54 +39,61 @@ private:
     {
         double numVal;
         bool boolVal;
-        char* strVal;
-        char* libFuncVal;
-        const Object* objVal;
+        char *strVal;
+        char *libFuncVal;
+        const Object *objVal;
         struct
         {
-            Object* ast;
-            Object* closure;
+            Object *ast;
+            Object *closure;
         } progFuncVal;
         struct
         {
-            void* ptr;
-            char* typeId;
+            void *ptr;
+            char *typeId;
         } nativePtrVal;
     } data;
 
 public:
     Value(void *ptr, const std::string &type);
     Value(const NativePtr &);
-    Value(const std::string& strVal){
+    Value(const std::string &strVal)
+    {
         type = StringType;
-        char* temp = new char[strVal.length() + 1];
+        char *temp = new char[strVal.length() + 1];
         strcpy(temp, strVal.c_str());
         data.strVal = temp;
     }
-    Value(double number){
+    Value(double number)
+    {
         type = NumberType;
         data.numVal = number;
     };
     Value(LibraryFunc);
-    Value(enum NIL){
+    Value(enum NIL)
+    {
         type = NilType;
     };
-    Value(bool boolVal){
+    Value(bool boolVal)
+    {
         type = BooleanType;
         data.boolVal = boolVal;
     }
-    Value(const Object& obj){
+    Value(const Object &obj)
+    {
         type = ObjectType;
         data.objVal = &obj;
     };
-    Value(const Value&);
-    Value(void){
+    Value(const Value &);
+    Value(void)
+    {
         type = UndefType;
     };
     ~Value();
 
 public:
-    Type GetType(void) const{
+    Type GetType(void) const
+    {
         switch (type)
         {
         case UndefType:
@@ -123,7 +130,42 @@ public:
     }
     double ToNumber(void) const;
     bool ToBool(void) const;
-    const std::string &ToString(void) const;
+    const std::string ToString(void) const // FIXME: changed return type to std::string to avoid some errors until fully fixed
+    {
+        switch (type)
+        {
+        case UndefType:
+            return "undefined";
+            break;
+        case NumberType:
+            return std::to_string(data.numVal);
+            break;
+        case BooleanType:
+            return std::to_string(data.boolVal);
+            break;
+        case StringType:
+            return data.strVal;
+            break;
+        case ObjectType:
+            return "Object";
+            break;
+        case ProgramFunctionType:
+            return "Program Funtion";
+            break;
+        case LibraryFunctionType:
+            return "Library Function";
+            break;
+        case NativePtrType:
+            return "Native Pointer";
+            break;
+        case NilType:
+            return "NIL";
+            break;
+        default:
+            break;
+        }
+        return "NIL";
+    };
     const Object *ToObject(void) const;
     const Object *ToProgramFunctionAST(void) const;
     const Object *ToProgramFunctionClosure(void) const;
