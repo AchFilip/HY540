@@ -23,15 +23,21 @@ public:
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void);
     void DecRefCounter(void);
-    const Value *operator[](const std::string &key) const; // null=not found
-    const Value *operator[](
-        double key) const; // null=not found
-                           // read and remove access: special purpose
-    const Value GetAndRemove(const std::string &key);
-    const Value GetAndRemove(double key);
+    const Object *operator[](const std::string &key) const {
+        if (children.find(key) != children.end())
+            return children[key];
+        else
+            return nullptr;
+    };
+    const Object *operator[](double key) const {
+        return this[to_string(key)]
+    };
+                                                // read and remove access: special purpose
+    const Object GetAndRemove(const std::string &key);
+    const Object GetAndRemove(double key);
 
-    void Set(const std::string &key, const Value &value);
-    void Set(double key, const Value &value);
+    void Set(const std::string &key, const Object &value);
+    void Set(double key, const Object &value);
     void Remove(const std::string &key);
     void Remove(double key);
 
@@ -42,6 +48,9 @@ public:
     void AddChild(std::string ast_tag, Object *child)
     {
         children.insert({ast_tag, child});
+    }
+    Object* GetChild(std::string ast_tag){
+        return children[ast_tag];
     }
 
     void RecursivePrint(int tabs)

@@ -128,9 +128,13 @@ stmt:           expr ';'                                                {
                                                                         }  
                 | BREAK ';'                                             {
                                                                             PrintParsing("stmt","break ;");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            $$ = obj;
                                                                         }  
                 | CONTINUE ';'                                          {
                                                                             PrintParsing("stmt","continue ;");
+                                                                            Object* obj = CreateObject(AST_TAG_STMT);
+                                                                            $$ = obj;
                                                                         }  
                 | block                                                 {
                                                                             PrintParsing("stmt","block");
@@ -575,7 +579,10 @@ int main(int argc, char** argv){
         yyin=stdin;
     }
 
+    // Step 1: Create AST
     yyparse();  
+    // Step 2: Run TreeVisitor on AST
+    // VisitAST(ast);
 
     // Example of accesing the ast after parsing. ast is the root node.
     // std::cout << "Root children: " << ast->children.size() << std::endl;
