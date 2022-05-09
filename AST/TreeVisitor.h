@@ -7,7 +7,6 @@ class TreeVisitor
 {
 public:
     virtual void VisitVarDecl(const Object &node) {}
-
     virtual void VisitStmts(const Object &node) {}
     virtual void VisitStmt(const Object &node) {}
     virtual void VisitExpr(const Object &node) {}

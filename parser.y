@@ -32,8 +32,8 @@ Object* CreateExpressionNodeOperational(std::string ast_tag, std::string op, Obj
     operationalObj->AddChild("$child1", child1);
     operationalObj->AddChild("$child2", child2);
 
-    exprObj->AddChild("$child", exprObj);
-    return exprObj;
+    // exprObj->AddChild("$child", exprObj);
+    return operationalObj;
 }
 Object* CreateAstNodeOneChild(std::string ast_tag, std::string value, Object* child){
     Object* obj = CreateObject(ast_tag);

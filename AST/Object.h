@@ -23,18 +23,29 @@ public:
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void);
     void DecRefCounter(void);
-    const Object *operator[](const std::string &key) const {
+    const Object *operator[](const std::string &key)
+    {
         if (children.find(key) != children.end())
             return children[key];
         else
             return nullptr;
     };
-    const Object *operator[](double key) const {
-        return this[to_string(key)]
+    const Object *operator[](double key)
+    {
+        return children[std::to_string(key)];
     };
-                                                // read and remove access: special purpose
-    const Object GetAndRemove(const std::string &key);
-    const Object GetAndRemove(double key);
+
+    // read and remove access: special purpose
+    const Object GetAndRemove(const std::string &key)
+    {
+        Object to_return = *children[key];
+        children[key] = nullptr;
+        return to_return;
+    }
+    const Object GetAndRemove(double key)
+    {
+        return GetAndRemove(std::to_string(key));
+    }
 
     void Set(const std::string &key, const Object &value);
     void Set(double key, const Object &value);
@@ -45,11 +56,18 @@ public:
     void Apply(const Applier &f);       // RW access
     void Visit(const Visitor &f) const; // RO access
 
+    std::string ToString() const
+    {
+        // FIXME:
+        return ast_tag;
+    }
+
     void AddChild(std::string ast_tag, Object *child)
     {
         children.insert({ast_tag, child});
     }
-    Object* GetChild(std::string ast_tag){
+    Object *GetChild(std::string ast_tag)
+    {
         return children[ast_tag];
     }
 
