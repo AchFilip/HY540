@@ -23,32 +23,38 @@ public:
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void);
     void DecRefCounter(void);
-    const Object *operator[](const std::string &key)
+    Object *operator[](const std::string &key)
     {
         if (children.find(key) != children.end())
             return children[key];
         else
             return nullptr;
-    };
-    const Object *operator[](double key)
+    }
+    Object *operator[](double key)
     {
         return children[std::to_string(key)];
-    };
+    }
 
     // read and remove access: special purpose
-    const Object GetAndRemove(const std::string &key)
+    Object *GetAndRemove(const std::string &key)
     {
-        Object to_return = *children[key];
+        Object *to_return = children[key];
         children[key] = nullptr;
         return to_return;
     }
-    const Object GetAndRemove(double key)
+    Object *GetAndRemove(double key)
     {
         return GetAndRemove(std::to_string(key));
     }
 
-    void Set(const std::string &key, const Object &value);
-    void Set(double key, const Object &value);
+    void Set(const std::string &key, Object &value)
+    {
+        children.insert({key, &value});
+    };
+    void Set(double key, Object &value)
+    {
+        Set(std::to_string(key), value);
+    };
     void Remove(const std::string &key);
     void Remove(double key);
 

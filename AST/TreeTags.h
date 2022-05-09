@@ -42,3 +42,10 @@
 #define AST_TAG_FOR "for"
 #define AST_TAG_FORSTMT "forstmt"
 #define AST_TAG_RETURNSTMT "returnstm"
+
+
+#define OUTER_SCOPE_KEY "$outer"
+#define PREVIOUS_SCOPE_KEY "$previous"
+#define LOCAL_SCOPE_KEY "$local"
+#define TAIL_SCOPE_KEY "$tail"
+#define CLOSURE_SCOPE_KEY "$closure"

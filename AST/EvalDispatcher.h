@@ -12,7 +12,6 @@ public:
 private:
     std::map<std::string, F> evals;
 
-	
 public:
     void Install(const std::string &tag, const F &f)
     {

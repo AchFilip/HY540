@@ -2,8 +2,10 @@
 #include "./AST/Object.h"
 #include "./AST/Value.h"
 #include "./AST/TreeTags.h"
+#include "./AST/Intepreter.h"
 #include <iostream>
 #include <vector>
+
 
 int yyerror(char const *s);
 int yylex(void);

@@ -1,179 +1,159 @@
 #pragma once
+#include "./TreeTags.h"
 #include "./Object.h"
 #include "./Value.h"
+#include "./ValueStack.h"
 #include "./EvalDispatcher.h"
 #include <iostream>
 
 class Interpreter
 {
 private:
-    EvalDispatcher dispatcher;
+    EvalDispatcher *dispatcher;
+    ValueStack *pain;
 
-    void EvalStmt(const Object &node)
+    const Value EvalStmt(Object &node)
     {
         if (node["$child"] != nullptr)
-            Eval(*node["$child"]);
-        visitor->VisitStmt(node);
+            dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalExpr(const Object &node)
+    const Value EvalExpr(Object &node)
     {
         if (node["$child"] != nullptr)
-            Eval(*node["$child"]);
+            dispatcher->Eval(*node["$child"]);
         else
         {
-            Eval(*node["$child1"]);
-            Eval(*node["$child2"]);
+            dispatcher->Eval(*node["$child1"]);
+            dispatcher->Eval(*node["$child2"]);
         }
-        visitor->VisitExpr(node);
     }
-    const Value EvalTerm(const Object &node)
+    const Value EvalTerm(Object &node)
     {
         if (node["$child"] != nullptr)
-            Eval(*node["$child"]);
+            dispatcher->Eval(*node["$child"]);
         else
         {
-            Eval(*node["$child1"]);
-            Eval(*node["$child2"]);
+            dispatcher->Eval(*node["$child1"]);
+            dispatcher->Eval(*node["$child2"]);
         }
-        visitor->VisitTerm(node);
     }
-    const Value EvalAssignexpr(const Object &node)
+    const Value EvalAssignexpr(Object &node)
     {
-        Eval(*node["$lvalue"]);
-        Eval(*node["$expr"]);
-        visitor->VisitAssignexpr(node);
+        dispatcher->Eval(*node["$lvalue"]);
+        dispatcher->Eval(*node["$expr"]);
     }
-    const Value EvalPrimary(const Object &node)
+    const Value EvalPrimary(Object &node)
     {
-        Eval(*node["$child"]);
-        visitor->VisitPrimary(node);
+        dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalLvalue(const Object &node)
+    const Value EvalLvalue(Object &node)
     {
-        Eval(*node["$child"]);
-        visitor->VisitLvalue(node);
+        dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalMember(const Object &node)
+    const Value EvalMember(Object &node)
     {
-        Eval(*node["$child1"]);
-        Eval(*node["$child2"]);
-        visitor->VisitMember(node);
+        dispatcher->Eval(*node["$child1"]);
+        dispatcher->Eval(*node["$child2"]);
     }
-    const Value EvalCall(const Object &node)
+    const Value EvalCall(Object &node)
     {
-        Eval(*node["$child1"]);
-        Eval(*node["$child2"]);
-        visitor->VisitCall(node);
+        dispatcher->Eval(*node["$child1"]);
+        dispatcher->Eval(*node["$child2"]);
     }
-    const Value EvalCallSuffix(const Object &node)
+    const Value EvalCallSuffix(Object &node)
     {
-        Eval(*node["$child"]);
-        visitor->VisitCallSuffix(node);
+        dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalNormCall(const Object &node)
+    const Value EvalNormCall(Object &node)
     {
-        Eval(*node["$child"]);
-        visitor->VisitNormCall(node);
+        dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalMethodCall(const Object &node)
+    const Value EvalMethodCall(Object &node)
     {
-        Eval(*node["$child1"]);
-        Eval(*node["$child2"]);
-        visitor->VisitMethodCall(node);
+        dispatcher->Eval(*node["$child1"]);
+        dispatcher->Eval(*node["$child2"]);
     }
-    const Value EvalElist(const Object &node)
+    const Value EvalElist(Object &node)
     {
         if (node["$child"] != nullptr)
-            Eval(*node["$child"]);
+            dispatcher->Eval(*node["$child"]);
         else if (node["$child1"] != nullptr)
         {
-            Eval(*node["$child1"]);
-            Eval(*node["$child2"]);
+            dispatcher->Eval(*node["$child1"]);
+            dispatcher->Eval(*node["$child2"]);
         }
-        visitor->VisitElist(node);
     }
-    const Value EvalObjectDef(const Object &node)
+    const Value EvalObjectDef(Object &node)
     {
-        Eval(*node["$child"]);
-        visitor->VisitObjectDef(node);
+        dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalIndexed(const Object &node)
+    const Value EvalIndexed(Object &node)
     {
         if (node["$child"] != nullptr)
-            Eval(*node["$child"]);
+            dispatcher->Eval(*node["$child"]);
         else
         {
-            Eval(*node["$child1"]);
-            Eval(*node["$child2"]);
+            dispatcher->Eval(*node["$child1"]);
+            dispatcher->Eval(*node["$child2"]);
         }
-        visitor->VisitIndexed(node);
     }
-    const Value EvalIndexedElem(const Object &node)
+    const Value EvalIndexedElem(Object &node)
     {
-        Eval(*node["$child1"]);
-        Eval(*node["$child2"]);
-        visitor->VisitIndexedElem(node);
+        dispatcher->Eval(*node["$child1"]);
+        dispatcher->Eval(*node["$child2"]);
     }
-    const Value EvalStmts(const Object &node)
+    const Value EvalStmts(Object &node)
     {
         if (node["$child1"] != nullptr)
         {
-            Eval(*node["$child1"]);
-            Eval(*node["$child2"]);
+            dispatcher->Eval(*node["$child1"]);
+            dispatcher->Eval(*node["$child2"]);
         }
-        visitor->VisitStmts(node);
     }
-    const Value EvalBlock(const Object &node)
+    const Value EvalBlock(Object &node)
     {
-        Eval(*node["$child"]);
-        visitor->VisitBlock(node);
+        dispatcher->Eval(*node["$child"]);
     }
-    const Value EvalId(const Object &node)
+    const Value EvalId(Object &node)
     {
-        visitor->VisitId(node);
     }
-    const Value EvalFuncDef(const Object &node)
+    const Value EvalFuncDef(Object &node)
     {
         if (node["$id"] != nullptr)
-            Eval(*node["$id"]);
-        Eval(*node["$idlist"]);
-        Eval(*node["$block"]);
-        visitor->VisitFuncDef(node);
+            dispatcher->Eval(*node["$id"]);
+        dispatcher->Eval(*node["$idlist"]);
+        dispatcher->Eval(*node["$block"]);
     }
-    const Value EvalConst(const Object &node)
+    const Value EvalConst(Object &node)
     {
-        visitor->VisitConst(node);
     }
-    const Value EvalIdlist(const Object &node)
+    const Value EvalIdlist(Object &node)
     {
         if (node["$child"] != nullptr)
-            Eval(*node["$child"]);
+            dispatcher->Eval(*node["$child"]);
         else if (node["$child1"] != nullptr)
         {
-            Eval(*node["$child1"]);
-            Eval(*node["$child2"]);
+            dispatcher->Eval(*node["$child1"]);
+            dispatcher->Eval(*node["$child2"]);
         }
-        visitor->VisitIdlist(node);
     }
-    const Value EvalForstmt(const Object &node)
+    const Value EvalForstmt(Object &node)
     {
-        Eval(*node["$init"]);
-        Eval(*node["$cond"]);
-        Eval(*node["$expr"]);
-        Eval(*node["$stmt"]);
-        visitor->VisitFor(node);
+        dispatcher->Eval(*node["$init"]);
+        dispatcher->Eval(*node["$cond"]);
+        dispatcher->Eval(*node["$expr"]);
+        dispatcher->Eval(*node["$stmt"]);
     }
-    const Value EvalReturn(const Object &node)
+    const Value EvalReturn(Object &node)
     {
-        visitor->VisitReturn(node);
     }
 
     const Value EvalIf(Object &node)
     {
-        if (dispatcher.Eval(*node["$ifcond"])
-            dispatcher.Eval(*node["$ifstmt"]);
+        if (dispatcher->Eval(*node["$ifcond"]))
+            dispatcher->Eval(*node["$ifstmt"]);
         else if (auto *elseStmt = node["$elsestmt"])
-            dispatcher.Eval(*elseStmt);
+            dispatcher->Eval(*elseStmt);
         return _NIL_;
     }
 
@@ -189,10 +169,10 @@ private:
 
     const Value EvalWhile(Object &node)
     {
-        while (dispatcher.Eval(*node["$whilecond"]))
+        while (dispatcher->Eval(*node["$whilecond"]))
             try
             {
-                dispatcher.Eval(*node["$whilestmt"]);
+                dispatcher->Eval(*node["$whilestmt"]);
             }
             catch (const BreakException &)
             {
@@ -207,18 +187,77 @@ private:
 
     void Install(void)
     {
-        dispatcher.Install(AST_TAG_IF, [this](Object &node)
-                           { return EvalIfElse(node); });
-        dispatcher.Install(AST_TAG_IF_COND, [this](Object &node)
+        dispatcher->Install(std::string(AST_TAG_IF), [this](Object &node)
+                           { return EvalIf(node); });
+        dispatcher->Install(std::string(AST_TAG_IF_COND), [this](Object &node)
                            { return EvalExpr(node); });
-        dispatcher.Install(AST_TAG_IF_STMT, [this](Object &node)
+        dispatcher->Install(std::string(AST_TAG_IF_STMT), [this](Object &node){
+             return EvalStmt(node); 
+        });
+
+        dispatcher->Install(std::string(AST_TAG_WHILE_COND), [this](Object &node)
+                           { return EvalExpr(node); });
+        dispatcher->Install(std::string(AST_TAG_WHILE_STMT), [this](Object &node)
                            { return EvalStmt(node); });
 
-        dispatcher.Install(AST_TAG_WHILE_COND, [this](Object &node)
-                           { return Eval_Expr(node); });
-        dispatcher.Install(AST_TAG_WHILE_STMT, [this](Object &node)
-                           { return Eval_Stmt(node); });
-
         // ... all the rest ../
+    }
+
+    // Environment Handling Methods
+    Object *GetCurrentScope()
+    {
+        return pain->Top().ToObject_NoConst()->children[TAIL_SCOPE_KEY];
+    }
+    void SetCurrentScope(Value *scope)
+    {
+        pain->Top().ToObject_NoConst()->children[TAIL_SCOPE_KEY] = scope->ToObject_NoConst();
+    }
+    Object *PushNewScope()
+    {
+        Object *newScope = new Object();
+        SetCurrentScope(new Value(newScope));
+        return newScope;
+    }
+    Object *PopScope()
+    {
+        // Assert something for antonis
+        std::string parentKey = (GetCurrentScope()->children.find(OUTER_SCOPE_KEY) != GetCurrentScope()->children.end())
+                                    ? OUTER_SCOPE_KEY : PREVIOUS_SCOPE_KEY;
+        SetCurrentScope(new Value(GetCurrentScope()->children[parentKey]));
+        // Assert something for antonis
+    }
+    void PushSlice()
+    {
+        Object *previous = GetCurrentScope();
+        Object *newScope = PushNewScope();
+        newScope->Set(std::string(PREVIOUS_SCOPE_KEY), *previous);
+    }
+    void PushNested()
+    {
+        Object *outer = GetCurrentScope();
+        Object *newScope = PushNewScope();
+        newScope->Set(std::string(OUTER_SCOPE_KEY), *outer);
+    }
+    void PushScopeSpace()
+    {
+        Object *newScopeSpace = new Object();
+        pain->Push(new Value(newScopeSpace));
+    }
+    void PushScopeSpace(Object *closure)
+    {
+        PushScopeSpace();
+        SetCurrentScope(new Value(closure));
+        pain->Top().ToObject_NoConst()->children[CLOSURE_SCOPE_KEY] = closure;
+    }
+    Value *PopScopeSpace()
+    {
+        pain->Pop();
+    }
+
+public:
+    Interpreter()
+    {
+        dispatcher = new EvalDispatcher();
+        pain = new ValueStack();
     }
 };
