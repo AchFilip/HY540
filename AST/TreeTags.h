@@ -10,12 +10,12 @@
 #define AST_TAG_PROGRAM "$program"
 #define AST_TAG_STMTS "$stms"
 #define AST_TAG_STMT "$stmt"
+
 #define AST_TAG_EXPR "$expr"
-#define AST_TAG_EXPR_ARITHMETIC "$expr_arithmetic"
-#define AST_TAG_EXPR_RELATIONAL "$expr_relational"
+#define AST_TAG_EXPR_LEFT "$expr_left"
+#define AST_TAG_EXPR_RIGHT "$expr_right"
+
 #define AST_TAG_TERM "$term"
-#define AST_TAG_TERM_LVALUE "$term_lvalue"
-#define AST_TAG_TERM_EXPR "$term_expr"
 #define AST_TAG_ASSIGNEXPR "$assignexpr"
 #define AST_TAG_PRIMARY "$primary"
 #define AST_TAG_LVALUE "$lvalue"
@@ -33,14 +33,21 @@
 #define AST_TAG_CONST "$const"
 #define AST_TAG_NUMBER "$number"
 #define AST_TAG_IDLIST "$idlist"
+
 #define AST_TAG_IF "$if"
 #define AST_TAG_IF_STMT "$if_stmt"
-#define AST_TAG_IF_COND "$if_cond"
+#define AST_TAG_ELSE_STMT "$else_stmt"
+
 #define AST_TAG_WHILE "$while"
 #define AST_TAG_WHILE_COND "$while_cond"
 #define AST_TAG_WHILE_STMT "$while_stmt"
+
 #define AST_TAG_FOR "$for"
-#define AST_TAG_FORSTMT "$forstmt"
+#define AST_TAG_INIT "$for_init"
+#define AST_TAG_FORSTMT "$for_stmt"
+#define AST_TAG_FORCOND "$for_cond"
+#define AST_TAG_EXPR
+
 #define AST_TAG_RETURNSTMT "$returnstmt"
 #define AST_TAG_BREAK "$break"
 #define AST_TAG_CONTINUE "$continue"
