@@ -2,7 +2,7 @@
 #include "./AST/Object.h"
 #include "./AST/Value.h"
 #include "./AST/TreeTags.h"
-#include "./AST/Intepreter.h"
+// #include "./AST/Intepreter.h"
 #include <iostream>
 #include <vector>
 
@@ -14,41 +14,35 @@ extern int yylineno;
 extern char* yytext;
 extern FILE* yyin;
 
-Object* ast;
+Value* ast;
 
 // Prints the beginning and the end of a translated grammar rule
 void PrintParsing(std::string s1, std::string s2){
     std::cout << s1 << " -> " << s2 << std::endl;
 }
 
-Object* CreateObject(AST_TAG ast_tag){
+Value* CreateAstNodeOneChild(std::string nodeType, std::string childType, std::string disambiguate, const Value& child){
     Object* obj = new Object();
-    obj->ast_tag = ast_tag;
-    return obj;
+    const Value* keyVal = new Value(nodeType);
+    obj->Set(AST_TAG_TYPE_KEY, *keyVal);
+    obj->Set(childType, child);
+    if(!disambiguate.empty()){
+        const Value* disambiguateVal = new Value(disambiguate);
+        obj->Set(AST_TAG_DISAMBIGUATE_OBJECT, *disambiguateVal);
+    }        
+    return new Value(*obj);
 }
-Object* CreateExpressionNodeOperational(std::string ast_tag, std::string op, Object* child1, Object* child2){
-    Object* exprObj = CreateObject(AST_TAG_EXPR);
-    
-    Object* operationalObj = CreateObject(ast_tag);
-    operationalObj->value = new Value(op);
-    operationalObj->AddChild("$child1", child1);
-    operationalObj->AddChild("$child2", child2);
-
-    // exprObj->AddChild("$child", exprObj);
-    return operationalObj;
-}
-Object* CreateAstNodeOneChild(std::string ast_tag, std::string value, Object* child){
-    Object* obj = CreateObject(ast_tag);
-    obj->value = new Value(value);
-    obj->AddChild("$child", child);
-    return obj;
-}
-Object* CreateAstNodeTwoChildren(std::string ast_tag, std::string value, Object* child1, Object* child2){
-    Object* obj = CreateObject(ast_tag);
-    obj->value = new Value(value);
-    obj->AddChild("$child1", child1);
-    obj->AddChild("$child2", child2);
-    return obj;
+Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, std::string child2Type, std::string disambiguate, const Value& child1, const Value& child2){
+    Object* obj = new Object();
+    const Value* keyVal = new Value(nodeType);
+    obj->Set(AST_TAG_TYPE_KEY, *keyVal);
+    if(!disambiguate.empty()){
+        const Value* disambiguateVal = new Value(disambiguate);
+        obj->Set(AST_TAG_DISAMBIGUATE_OBJECT, *disambiguateVal);
+    } 
+    obj->Set(child1Type, child1);
+    obj->Set(child2Type, child2);
+    return new Value(*obj);
 }
 %}
 
@@ -57,7 +51,7 @@ Object* CreateAstNodeTwoChildren(std::string ast_tag, std::string value, Object*
 %union {
     std::string*    strVal;
     double          numVal;
-    Object*         objVal;
+    Value*          valVal;
     struct
     {
         Object *ast;
@@ -75,7 +69,7 @@ Object* CreateAstNodeTwoChildren(std::string ast_tag, std::string value, Object*
 %token  <numVal> NUMBER 
 %token  <strVal> ID STRING
 
-%type <objVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call callsuffix objectdef assignexpr term ifstmt forstmt elist normcall methodcall indexed indexedelem;
+%type <valVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call callsuffix objectdef assignexpr term ifstmt forstmt elist normcall methodcall indexed indexedelem;
 
 /*  token rules */
 %left '(' ')' 
@@ -100,467 +94,401 @@ program:        stmts                                                   {
 
 stmt:           expr ';'                                                {
                                                                             PrintParsing("stmt","expr ;");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_EXPR, "", *$1);
                                                                         }
                 | ifstmt                                                {
                                                                             PrintParsing("stmt","ifstmt");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_IF, "", *$1);
                                                                         }  
                 | whilestmt                                             {
                                                                             PrintParsing("stmt","whiletmt");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_WHILE, "", *$1);
                                                                         }  
                 | forstmt                                               {
                                                                             PrintParsing("stmt","forstmt");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_FOR, "", *$1);
                                                                         }  
                 | returnstmt                                            {
                                                                             PrintParsing("stmt","returnstmt");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_RETURNSTMT, "", *$1);
                                                                         }  
                 | BREAK ';'                                             {
                                                                             PrintParsing("stmt","break ;");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_BREAK, "", Value(_NIL_));
                                                                         }  
                 | CONTINUE ';'                                          {
-                                                                            PrintParsing("stmt","continue ;");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            $$ = obj;
+                                                                            PrintParsing("stmt","continue ;");                                                                            
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_CONTINUE, "", Value(_NIL_));
                                                                         }  
                 | block                                                 {
                                                                             PrintParsing("stmt","block");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_BLOCK, "", *$1);
                                                                         }  
                 | funcdef                                               {
                                                                             PrintParsing("stmt","funcdef");
-                                                                            Object* obj = CreateObject(AST_TAG_STMT);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_FUNCDEF, "", *$1);
                                                                         }  
                 | ';'                                                   {
                                                                             PrintParsing("stmt",";");
+                                                                            $$ = new Value(_NIL_);
                                                                         }
                 ;  
 
 expr:           assignexpr                                              {
                                                                             std::cout << "expr -> assignexpr" << std::endl;
-                                                                            Object* obj = CreateObject(AST_TAG_EXPR);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_EXPR, AST_TAG_ASSIGNEXPR, "", *$1);
                                                                         }
                 | expr '+' expr                                         {
                                                                             PrintParsing("expr","expr + expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_ARITHMETIC, "+", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1", "$child2", "+", *$1, $3);
                                                                         }
                 | expr '-' expr                                         {
                                                                             PrintParsing("expr","expr - expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_ARITHMETIC, "-", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "-", *$1, $3);
                                                                         }
                 | expr '*' expr                                         {
                                                                             PrintParsing("expr","expr * expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_ARITHMETIC, "*", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "*", *$1, $3);
                                                                             
                                                                         }
                 | expr '/' expr                                         {
                                                                             PrintParsing("expr","expr / expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_ARITHMETIC, "/", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "/", *$1, $3);
                                                                             
                                                                         }
                 | expr '%' expr                                         {
                                                                             PrintParsing("expr","expr % expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_ARITHMETIC, "%", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "%", *$1, $3);
                                                                             
                                                                         }
                 | expr '>' expr                                         {
                                                                             PrintParsing("expr","expr > expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, ">", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", ">", *$1, $3);
                                                                             
                                                                         }
                 | expr BRANCHBIGEQ expr                                 {
                                                                             PrintParsing("expr","expr >= expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, ">=", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", ">=", *$1, $3);
                                                                             
                                                                         }
                 | expr '<' expr                                         {
                                                                             PrintParsing("expr","expr < expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, "<", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "<", *$1, $3);
                                                                             
                                                                         }
                 | expr BRANCHSMALLEQ expr                               {
                                                                             PrintParsing("expr","expr <= expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, "<=", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "<=", *$1, $3);
                                                                             
                                                                         }
                 | expr EQEQ expr                                        {
                                                                             PrintParsing("expr","expr == expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, "==", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "==", *$1, $3);
                                                                             
                                                                         }
                 | expr DIF expr                                         {
                                                                             PrintParsing("expr","expr != expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, "!=", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "!=", *$1, $3);
                                                                             
                                                                         }
                 | expr AND expr                                         {
                                                                             PrintParsing("expr","expr and expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, "&&", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "&&", *$1, $3);
                                                                             
                                                                         }
                 | expr OR expr                                          {
                                                                             PrintParsing("expr","expr or expr");
-                                                                            $$ = CreateExpressionNodeOperational(AST_TAG_EXPR_RELATIONAL, "||", $1, $3);
+                                                                            $$ = CreateAstNodeTwoChildren(AST_TAG_EXPR, "child1","$child2", "||", *$1, $3);
                                                                             
                                                                         }
                 | term                                                  {
                                                                             PrintParsing("expr","term");
-                                                                            Object* obj = CreateObject(AST_TAG_EXPR);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_EXPR, AST_TAG_TERM, "", *$1);
                                                                         }
                 ;
 
 term:           '(' expr ')'                                            {
                                                                             PrintParsing("term","( expr )");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "(expr)", $2);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_EXPR, "(expr)", $2);                                                                    
                                                                         }
                 | '-' expr                                              {
                                                                             PrintParsing("term","- expr");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "-expr", $2);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_EXPR, "-expr", $2);
                                                                         }
                 | NOT lvalue                                            {
                                                                             PrintParsing("term","not lvalue");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "notlvalue", $2);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_LVALUE, "notlvalue", $2);
                                                                         }
                 | PP lvalue                                             {
                                                                             PrintParsing("term","++ lvalue");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "++lvalue", $2);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_LVALUE, "++lvalue", $2);
                                                                         }
                 | lvalue PP                                             {
                                                                             PrintParsing("term","lvalue ++");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "lvalue++", $1);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_LVALUE, "lvalue++", *$1);
                                                                         }
                 | MM lvalue                                             {
                                                                             PrintParsing("term","-- lvalue");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "--lvalue", $2);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_LVALUE, "--lvalue", $2);
                                                                         }
                 | lvalue MM                                             {
                                                                             PrintParsing("term","lvalue --");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, "lvalue--", $1);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_LVALUE, "lvalue--", *$1);
                                                                         }
                 | primary                                               {
                                                                             PrintParsing("term","primary");
-                                                                            Object* obj = CreateObject(AST_TAG_TERM);
-                                                                            obj->AddChild("$child", $1);
-                                                                            $$ = obj;
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_TERM, AST_TAG_PRIMARY, "", *$1);
                                                                         }
                 ;
 
 assignexpr:     lvalue '=' expr                                 {
                                                                     PrintParsing("assignexpr","lvalue = expr");
-                                                                    Object* obj = CreateObject(AST_TAG_ASSIGNEXPR);
-                                                                    obj->AddChild("$lvalue", $1);
-                                                                    obj->AddChild("$expr", $3);
-                                                                    $$ = obj;
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_ASSIGNEXPR, AST_TAG_LVALUE, AST_TAG_EXPR, "", *$1, $3);
                                                                 }
                 ;
 
 primary:        lvalue                                          {
                                                                     PrintParsing("primary","lvalue");
-                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
-                                                                    obj->AddChild("$child", $1);
-                                                                    $$ = obj;
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_LVALUE, "", *$1);
                                                                 }
                 | call                                          {
                                                                     PrintParsing("primary","call");
-                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
-                                                                    obj->AddChild("$child", $1);
-                                                                    $$ = obj;
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_CALL, "", *$1);
                                                                 }
                 | objectdef                                     {
                                                                     PrintParsing("primary","objectdef");
-                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
-                                                                    obj->AddChild("$child", $1);
-                                                                    $$ = obj;
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_OBJECTDEF, "", *$1);
                                                                 }
                 | '(' funcdef ')'                               {
-                                                                    PrintParsing("primary","( funcdef )");
-                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
-                                                                    obj->AddChild("$child", $2);
-                                                                    $$ = obj;
+                                                                    PrintParsing("primary","( funcdef )");;
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_FUNCDEF, "", $2);
                                                                 }
                 | const                                         {
                                                                     PrintParsing("primary","const");
-                                                                    Object* obj = CreateObject(AST_TAG_PRIMARY);
-                                                                    obj->AddChild("$child", $1);
-                                                                    $$ = obj;
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_CONST, "", *$1);
                                                                 }
                 ;
                                         
 lvalue:         id                                              {
                                                                     PrintParsing("lvalue","ID");                                                                    
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, "id", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "id", *$1);
                                                                 }
                 | LOCAL id                                      {
                                                                     PrintParsing("lvalue","local ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, "local_id", $2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "local_id", $2);
                                                                 }
                 | DOUBLEDOTS id                                 {
                                                                     PrintParsing("lvalue","DOUBLEDOTS ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, "doubledots_id", $2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "doubledots_id", $2);
                                                                 }
                 | member                                        {
                                                                     PrintParsing("lvalue","member");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, "member", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_MEMBER, "", *$1);
                                                                 }
                 ;
 
 member:         lvalue '.' id                                   {
                                                                     PrintParsing("member","lvalue . ID");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, "lvalue.id", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_LVALUE, AST_TAG_ID, "", *$1, $3);
                                                                 }
                 | lvalue '[' expr ']'                           {
                                                                     PrintParsing("member","lvalue [ expr ]");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, "lvalue[expr]", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_LVALUE, AST_TAG_EXPR, "", *$1, $3);
                                                                 }
                 | call '.' id                                   {
                                                                     PrintParsing("member","call . ID");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, "call.id", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_CALL, AST_TAG_ID, "", *$1, $3);
                                                                 }
                 | call '[' expr ']'                             {
                                                                     PrintParsing("member","call [ expr ]");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, "call[expr]", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_CALL, AST_TAG_EXPR, "", *$1, $3);
                                                                 }
                 ;
 
 call:           call '(' elist ')'                              {
                                                                     PrintParsing("call","call ( elist )");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_CALL, "call(elist)", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_CALL, AST_TAG_CALL, AST_TAG_ELIST, "", *$1, $3);
                                                                 }
                 | lvalue callsuffix                             {
                                                                     PrintParsing("call","lvalue callsuffix");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_CALL, "lvalue callsuffix", $1, $2);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_CALL, AST_TAG_LVALUE, AST_TAG_CALLSUFFIX, "", *$1, $2);
                                                                 }
                 | '(' funcdef ')' '(' elist ')'                 {
                                                                     PrintParsing("call","( funcdef ) ( elist )");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_CALL, "(funcdef)(elist)", $2, $5);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_CALL, AST_TAG_FUNCDEF, AST_TAG_ELIST, "", $2, $5);
                                                                 }
                 ;
 
 callsuffix:     normcall                                        {
                                                                     PrintParsing("callsuffix","normcall");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_CALLSUFFIX, "normcall", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_CALLSUFFIX, AST_TAG_NORMCALL, "", *$1);
                                                                 }
                 | methodcall                                    {
                                                                     PrintParsing("callsuffix","methodcall");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_CALLSUFFIX, "methodcall", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_CALLSUFFIX, AST_TAG_METHODCALL, "", *$1);
                                                                 }
                 ;
 
 normcall:       '(' elist ')'                                   {
                                                                     PrintParsing("normcall","( elist )");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_NORMCALL, "(elist)", $2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_NORMCALL, AST_TAG_ELIST, "", $2);
                                                                 }
                 ;
 
 methodcall:     DOUBLEDOTS id '(' elist ')'                     {
                                                                     PrintParsing("methodcall",":: ID ( elist )");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_METHODCALL, "::id(elist)", $2, $4);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_METHODCALL, AST_TAG_ID, AST_TAG_ELIST, "", $2, $4);
                                                                 }
                 ;
 
 elist:          elist ',' expr                                  {
                                                                     PrintParsing("elist","elist , expr");        
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_ELIST, "elist,expr", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_ELIST, AST_TAG_ELIST, AST_TAG_EXPR, "", *$1, $3);
                                                                 }
                 |expr                                           {
                                                                     PrintParsing("elist","expr");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_ELIST, "expr", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_ELIST, AST_TAG_EXPR, "", *$1);
                                                                 }
                 | /*empty*/                                     {
                                                                     PrintParsing("elist"," ");
-                                                                    $$ = CreateObject(AST_TAG_ELIST);
+                                                                    $$ = new Value(_NIL_);
                                                                 }
                 ;
 
 objectdef:      '['elist']'                                     {
                                                                     PrintParsing("objectdef","[ elist ]");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_OBJECTDEF, "[elist]", $2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_OBJECTDEF, AST_TAG_ELIST, "", $2);
                                                                 }
                 |'['indexed']'                                  {
                                                                     PrintParsing("indexed","indexed , indexedelem");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_OBJECTDEF, "[indexed]", $2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_OBJECTDEF, AST_TAG_INDEXED, "", $2);
                                                                 }
                 ;
 
 indexed:        indexed ',' indexedelem                         {
                                                                     PrintParsing("indexed","indexed , indexedelem");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXED, "indexed,indexedelem", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXED, AST_TAG_INDEXED, AST_TAG_INDEXEDELEM, "", *$1, $3);
                                                                 }
                 | indexedelem                                   {
                                                                     PrintParsing("indexed","indexedelem");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_INDEXED, "indexedelem", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_INDEXED, AST_TAG_INDEXEDELEM, "", *$1);
                                                                 }
                 ;
 
 indexedelem:    '{' expr ':' expr '}'                           {
                                                                     PrintParsing("indexedelem","{ expr : expr }");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXEDELEM, "{expr:expr}", $2, $4);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXEDELEM, AST_TAG_EXPR, AST_TAG_EXPR, "", $2, $4);
                                                                 }
                 ;
 
 stmts:          stmts stmt                                      {
                                                                     PrintParsing("stmts","stmts stmt");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_STMTS, "stmts stmt", $1, $2);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_STMTS, AST_TAG_STMTS, AST_TAG_STMT, "", *$1, $2);
                                                                 }
                 |                                               {
                                                                     PrintParsing("stmts", "empty");
-                                                                    $$ = CreateObject(AST_TAG_STMTS);
+                                                                    $$ = new Value(_NIL_);
                                                                 }
                 ;
 
 block:          '{' stmts '}'                                   {
                                                                     PrintParsing("block", "stmts");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_BLOCK, "{stmts}", $2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_BLOCK, AST_TAG_STMTS, "", $2);
                                                                 }
                 ;
 id:             ID                                              {
                                                                     PrintParsing("id", "ID"); 
-                                                                    Object* obj = CreateObject(AST_TAG_ID);
-                                                                    obj->value = new Value(*$1);
-                                                                    $$ = obj;
+                                                                    $$ = new Value(*$1);
                                                                 }
 funcdef:        FUNCTION '('  idlist ')' block                  {
                                                                     PrintParsing("funcdef", "FUNCTION (idlist) block");
-                                                                    PrintParsing("funcdef", "FUNCTION ID (idlist) block");
-                                                                    Object* obj = CreateObject(AST_TAG_FUNCDEF);
-                                                                    obj->AddChild(std::string("$idlist"), $3);
-                                                                    obj->AddChild(std::string("$block"), $5);
-                                                                    // TODO: Create value. Not sure what this should be
-                                                                    // Maybe idlist and block children of value object.
-                                                                    $$ = obj;
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_FUNCDEF, AST_TAG_IDLIST, AST_TAG_BLOCK, "", $3, $5);
                                                                 }
                 | FUNCTION id '(' idlist ')' block              {
                                                                     PrintParsing("funcdef", "FUNCTION ID (idlist) block");
-                                                                    Object* obj = CreateObject(AST_TAG_FUNCDEF);
-                                                                    
-                                                                    obj->AddChild(std::string("$id"), $2);
-                                                                    obj->AddChild(std::string("$idlist"), $4);
-                                                                    obj->AddChild(std::string("$block"), $6);
-                                                                    // TODO: Create value. Not sure what this should be
-                                                                    // Maybe idlist and block children of value object.
-                                                                    $$ = obj;
+                                                                    Object* obj = new Object();
+                                                                    obj->Set(AST_TAG_ID, $2);
+                                                                    obj->Set(AST_TAG_IDLIST, $4);
+                                                                    obj->Set(AST_TAG_BLOCK, $6);
+                                                                    $$ = new Value(*obj);
                                                                 }
                 ;
 
 const:          NUMBER                                          {
                                                                     PrintParsing("const", "number");
-                                                                    Object* obj = CreateObject(AST_TAG_CONST);
-                                                                    obj->value = new Value($1);
-                                                                    $$ = obj;
+                                                                    $$ = new Value($1);                                                                
                                                                 }
                 | STRING                                        {
                                                                     PrintParsing("const", "STRING");
-                                                                    Object* obj = CreateObject(AST_TAG_CONST);
-                                                                    obj->value = new Value(*$1);
-                                                                    $$ = obj;
+                                                                    $$ = new Value(*$1);
                                                                 }
                 | NIL                                           {
                                                                     PrintParsing("const", "NIL");
-                                                                    Object* obj = CreateObject(AST_TAG_CONST);
-                                                                    obj->value = new Value(_NIL_);
-                                                                    $$ = obj;
+                                                                    $$ = new Value(_NIL_);
                                                                 }
                 | TRUE                                          {
                                                                     PrintParsing("const", "TRUE");
-                                                                    Object* obj = CreateObject(AST_TAG_CONST);
-                                                                    obj->value = new Value(true);
-                                                                    $$ = obj;
+                                                                    $$ = new Value(true);
                                                                 }
                 | FALSE                                         {
                                                                     PrintParsing("const", "FALSE");
-                                                                    Object* obj = CreateObject(AST_TAG_CONST);
-                                                                    obj->value = new Value(false);
-                                                                    $$ = obj;
+                                                                    $$ = new Value(false);
                                                                 }
                 ;
 
 idlist:         idlist ',' id                                   {
                                                                     PrintParsing("idlist", "idlist , ID");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IDLIST, "idlist,id", $1, $3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IDLIST, AST_TAG_IDLIST, AST_TAG_ID, "", *$1, $3);
                                                                 }
                 |id                                             {
                                                                     PrintParsing("idlist", "ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_IDLIST, "id", $1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_IDLIST, "id", "", *$1);
                                                                 }                                                                        
                 |                                               {
                                                                     PrintParsing("idlist", "empty");
-                                                                    $$ = CreateObject(AST_TAG_IDLIST);
+                                                                    $$ = new Value(_NIL_);
                                                                 }
                 ;
 
 
 ifstmt:         IF '(' expr ')' stmt                            {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt");
-                                                                    Object* ifNode = CreateObject(AST_TAG_IF);
-                                                                    ifNode->AddChild(std::string("$ifcond"), $3);
-                                                                    ifNode->AddChild(std::string("$ifstmt"), $5);
-                                                                    $$ = ifNode;
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IF, AST_TAG_EXPR, AST_TAG_STMT, "", $3, $5);
                                                                 }
                 | IF '(' expr ')' stmt ELSE stmt                {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");
-                                                                    Object* ifNode = CreateObject(AST_TAG_IF);
-                                                                    ifNode->AddChild(std::string("$ifcond"), $3);
-                                                                    ifNode->AddChild(std::string("$ifstmt"), $5);
-                                                                    ifNode->AddChild(std::string("$elsestmt"), $7);
-                                                                    $$ = ifNode;
+                                                                    Object* obj = new Object();
+                                                                    obj->Set(AST_TAG_EXPR, $3);
+                                                                    obj->Set("$ifstmt", $5);
+                                                                    obj->Set("$elsestmt", $7);
+                                                                    $$ = new Value(obj);
                                                                 }
                 ;
 
 whilestmt:      WHILE '(' expr ')' stmt                         {
                                                                     PrintParsing("whilestmt", "WHILE ( expr ) stmt");
-                                                                    Object* whileNode = CreateObject(AST_TAG_WHILE);
-                                                                    whileNode->AddChild(std::string("$whilecond"), $3);
-                                                                    whileNode->AddChild(std::string("$whilestmt"), $5);
-                                                                    $$ = whileNode;
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_WHILE, AST_TAG_EXPR, AST_TAG_STMT, "", $3, $5);
                                                                 }
                 ;
 
 forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {
                                                                     PrintParsing("forstmt", "FOR ( elist ; expr ; elist ) stmt");
-                                                                    Object* forNode = CreateObject(AST_TAG_FOR);
-                                                                    forNode->AddChild(std::string("$init"), $3);
-                                                                    forNode->AddChild(std::string("$cond"), $5);
-                                                                    forNode->AddChild(std::string("$expr"), $7);
-                                                                    forNode->AddChild(std::string("$stmt"), $9);
-                                                                    $$ = forNode;
+                                                                    Object* obj = new Object();
+                                                                    obj->Set("$init", $3);
+                                                                    obj->Set("$cond", $5);
+                                                                    obj->Set("$expr", $7);
+                                                                    obj->Set("$stmt", $9);
+                                                                    $$ = new Value(*obj);
                                                                 }
                 ;
 
 returnstmt:     RETURN ';'                                      {
                                                                     PrintParsing("returnstmt", " RETURN ;");
-                                                                    Object* obj = CreateObject(AST_TAG_RETURNSTMT);
-                                                                    obj->value = new Value();
-                                                                    $$ = obj;
+                                                                    $$ = new Value(_NIL_);
                                                                 }
                 | RETURN expr ';'                               {
-                                                                    PrintParsing("returnstmt", " RETURN expr ;");
-                                                                    Object* obj = CreateObject(AST_TAG_RETURNSTMT);
-                                                                    //made expr value of returnstmt for now
-                                                                    obj->value = new Value(*$2);
-                                                                    $$ = obj;
+                                                                    PrintParsing("returnstmt", " RETURN expr ;");     
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_RETURNSTMT, AST_TAG_EXPR, "", $2);                                                          
                                                                 }
                 ;
                 
@@ -583,13 +511,8 @@ int main(int argc, char** argv){
 
     // Step 1: Create AST
     yyparse();  
-    // Step 2: Run TreeVisitor on AST
-    // VisitAST(ast);
-
-    // Example of accesing the ast after parsing. ast is the root node.
-    // std::cout << "Root children: " << ast->children.size() << std::endl;
-    ast->RecursivePrint(0);
-    Object::CreateGraph(ast);
+    std::cout << std::endl <<ast->ToString() << std::endl;
+    
 
     return 0;
 }

@@ -15,45 +15,45 @@ public:
     Object(const Object &other);
     ~Object();
 
-    AST_TAG ast_tag;
-    std::map<std::string, Object *> children;
-    Value *value;
+    std::map<std::string, Value> children;
 
     using Applier = std::function<void(const Value &key, Value &val)>;
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void);
     void DecRefCounter(void);
-    Object *operator[](const std::string &key)
+    Value* operator[](const std::string &key)
     {
         if (children.find(key) != children.end())
-            return children[key];
+            return &(children[key]);
         else
             return nullptr;
     }
-    Object *operator[](double key)
+    Value* operator[](double key)
     {
-        return children[std::to_string(key)];
+        return &(children[std::to_string(key)]);
     }
 
     // read and remove access: special purpose
-    Object *GetAndRemove(const std::string &key)
+    Value GetAndRemove(const std::string &key)
     {
-        Object *to_return = children[key];
-        children[key] = nullptr;
+        Value to_return = children[key];
+        auto it = children.find(key);
+        if (it != children.end()) 
+            children.erase(it);
         return to_return;
     }
-    Object *GetAndRemove(double key)
+    Value GetAndRemove(double key)
     {
         return GetAndRemove(std::to_string(key));
     }
 
-    void Set(const std::string &key, Object &value)
+    void Set(const std::string &key, const Value &value)
     {
         children.insert({key, &value});
     };
-    void Set(double key, Object &value)
+    void Set(double key, const Value &value)
     {
-        Set(std::to_string(key), value);
+        Set(std::to_string(key), &value);
     };
     void Remove(const std::string &key);
     void Remove(double key);
@@ -62,20 +62,10 @@ public:
     void Apply(const Applier &f);       // RW access
     void Visit(const Visitor &f) const; // RO access
 
-    std::string ToString() const
-    {
-        // FIXME:
-        return ast_tag;
+    std::string ToString() const{
+        return "";
     }
-
-    void AddChild(std::string ast_tag, Object *child)
-    {
-        children.insert({ast_tag, child});
-    }
-    Object *GetChild(std::string ast_tag)
-    {
-        return children[ast_tag];
-    }
+/* COMMENTED OUT METHODS FOR PRINTING 
 
     void RecursivePrint(int tabs)
     {
@@ -126,6 +116,9 @@ public:
         }
         return text;
     }
+
+*/
+    
 
     // Do we need those here or not?
     // Object* Value::ToObject_NoConst (void) const;

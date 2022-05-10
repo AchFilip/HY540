@@ -84,14 +84,13 @@ public:
         type = ObjectType;
         data.objVal = &obj;
     };
-    Value(const Value &);
+    // Value(const Value &);
     Value(void)
     {
         type = UndefType;
     };
-    ~Value();
+    // ~Value();
 
-public:
     Type GetType(void) const
     {
         switch (type)
@@ -128,8 +127,12 @@ public:
         }
         return NilType;
     }
-    double ToNumber(void) const;
-    bool ToBool(void) const;
+    double ToNumber(void) {
+        return data.numVal;
+    }
+    bool ToBool(void) const{
+        return data.boolVal;
+    }
     const std::string ToString(void) const // FIXME: changed return type to std::string to avoid some errors until fully fixed
     {
         switch (type)
@@ -166,7 +169,9 @@ public:
         }
         return "NIL";
     };
-    const Object *ToObject(void) const;
+    const Object *ToObject(void){
+        return data.objVal;
+    };
     const Object *ToProgramFunctionAST(void) const;
     const Object *ToProgramFunctionClosure(void) const;
     Object *ToObject_NoConst(void) const;
