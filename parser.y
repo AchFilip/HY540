@@ -2,6 +2,7 @@
 #include "./AST/Object.h"
 #include "./AST/Value.h"
 #include "./AST/TreeTags.h"
+#include "./AST/TreeHost.h"
 // #include "./AST/Intepreter.h"
 #include <iostream>
 #include <vector>
@@ -130,7 +131,7 @@ stmt:           expr ';'                                                {
                                                                         }  
                 | ';'                                                   {
                                                                             PrintParsing("stmt",";");
-                                                                            $$ = new Value(_NIL_);
+                                                                            // $$ = new Value(_NIL_);
                                                                         }
                 ;  
 
@@ -377,7 +378,7 @@ indexed:        indexed ',' indexedelem                         {
 
 indexedelem:    '{' expr ':' expr '}'                           {
                                                                     PrintParsing("indexedelem","{ expr : expr }");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXEDELEM, AST_TAG_EXPR, AST_TAG_EXPR, "", *$2, *$4);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXEDELEM, AST_TAG_EXPR_LEFT, AST_TAG_EXPR_RIGHT, "", *$2, *$4);
                                                                 }
                 ;
 
@@ -442,7 +443,7 @@ idlist:         idlist ',' id                                   {
                                                                 }
                 |id                                             {
                                                                     PrintParsing("idlist", "ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_IDLIST, "id", "", *$1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_IDLIST, AST_TAG_ID, "", *$1);
                                                                 }                                                                        
                 |                                               {
                                                                     PrintParsing("idlist", "empty");
@@ -453,7 +454,7 @@ idlist:         idlist ',' id                                   {
 
 ifstmt:         IF '(' expr ')' stmt                            {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IF, AST_TAG_EXPR, AST_TAG_STMT, "", *$3, *$5);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IF, AST_TAG_EXPR, AST_TAG_IF_STMT, "", *$3, *$5);
                                                                 }
                 | IF '(' expr ')' stmt ELSE stmt                {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");
