@@ -142,7 +142,9 @@ public:
     };
     const Object *ToProgramFunctionAST(void) const;
     const Object *ToProgramFunctionClosure(void) const;
-    Object *ToObject_NoConst(void) const;
+    Object *ToObject_NoConst(void) const{
+        return const_cast<Object*>(data.objVal);
+    }
     Object *ToProgramFunctionAST_NoConst(void) const;
     Object *ToProgramFunctionClosure_NoConst(void) const;
     LibraryFunc ToLibraryFunction(void) const;
