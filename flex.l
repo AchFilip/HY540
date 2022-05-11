@@ -1,4 +1,6 @@
 %top{
+#include "./AST/Object.h"
+#include "./AST/Value.h"
 #include "parser.hpp"
 #include <iostream>
 #include <vector>
@@ -32,8 +34,8 @@ void findAndReplaceAll( std::string& data, const std::string& match, const std::
 }
 
 // Prints error message with bold red color
-void printError(std::string s,int line){
-    std::cout<<"\033[1;31mError with: " << s << "at line "<< line << "\033[0m" << std::endl;
+void printError(std::string s){
+    std::cout<<"\033[1;31mCan't recorgnise char: " << s << "\033[0m" << std::endl;
 }
 
 }
@@ -57,24 +59,19 @@ LOCAL                   "local"
 TRUE                    "true"
 FALSE                   "false"
 NIL                     "nil"
-KEYWORD                 {IF}|{ELSE}|{WHILE}|{FOR}|{FUNCTION}|{RETURN}|{BREAK}|{CONTINUE}|{AND}|{NOT}|{OR}|{LOCAL}|{TRUE}|{FALSE}|{NIL}
 
 LEFT_CURLY_BRACKET      "{"
 RIGHT_CURLY_BRACKET     "}"
-CURLY_BRACKET           {LEFT_CURLY_BRACKET}|{RIGHT_CURLY_BRACKET}
 LEFT_BRACKET            "["
 RIGHT_BRACKET           "]"
-BRACKET                 {LEFT_BRACKET}|{RIGHT_BRACKET}
 LEFT_PARENTHESIS        "("
 RIGHT_PARENTHESIS       ")"
-PARENTHESIS             {LEFT_PARENTHESIS}|{RIGHT_PARENTHESIS}
 SEMICOLON               ";"
 COMMA                   ","
 COLON                   ":"
 DOUBLE_COLON            "::"
 DOT                     "."
 DOUBLE_DOT              ".."
-PUNCTUATION             {CURLY_BRACKET}|{BRACKET}|{PARENTHESIS}|{SEMICOLON}|{COMMA}|{COLON}|{DOUBLE_COLON}|{DOT}|{DOUBLE_DOT}
 
 ASSIGN                  "="
 PLUS                    "+"
@@ -90,11 +87,11 @@ GREATER                 ">"
 GREATER_EQUAL           ">="
 LESS                    "<"
 LESS_EQUAL              "<="
-OPERATOR                {ASSIGN}|{PLUS}|{MINUS}|{MULTIPLY}|{DIVISION}|{MOD}|{INCREMENT}|{DECREMENT}|{EQUAL}|{NOT_EQUAL}|{GREATER}|{GREATER_EQUAL}|{LESS}|{LESS_EQUAL}
 
 DIGIT                   [0-9]+
 INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
+NUMBER                  {INTEGER_CONST}|{REAL_CONST}
 
 ID                      [a-zA-Z][a-zA-Z_0-9]*
 
@@ -110,30 +107,73 @@ WHITESPACE              [\t\r' '\n]
 
 %%
 
-{KEYWORD}                   {std::cout<<"Line: "<< yylineno << " Found Keyword: " << yytext << std::endl;}
-{PUNCTUATION}               {std::cout<<"Line: "<< yylineno << " Found Punctuation: " << yytext << std::endl;}
-{OPERATOR}                  {std::cout<<"Line: "<< yylineno << " Found Operator: " << yytext << std::endl;}
-{INLINECOMMENT}             {std::cout<<"Line: "<< yylineno << " Found InLineComment: " << yytext << std::endl;}
+{IF}                        {return IF;}
+{ELSE}                      {return ELSE;}
+{FOR}                       {return FOR;}
+{WHILE}                     {return WHILE;}
+{FUNCTION}                  {return FUNCTION;}
+{RETURN}                    {return RETURN;}
+{BREAK}                     {return BREAK;}
+{CONTINUE}                  {return CONTINUE;}
+{AND}                       {return AND;}
+{NOT}                       {return NOT;}
+{OR}                        {return OR;}
+{LOCAL}                     {return LOCAL;}
+{TRUE}                      {return TRUE;}
+{FALSE}                     {return FALSE;}
+{NIL}                       {return NIL;}
+
+{LEFT_CURLY_BRACKET}        {return '{';}
+{RIGHT_CURLY_BRACKET}       {return '}';}
+{LEFT_PARENTHESIS}          {return '(';}
+{RIGHT_PARENTHESIS}         {return ')';}
+{LEFT_BRACKET}              {return '[';}
+{RIGHT_BRACKET}             {return ']';}
+{SEMICOLON}                 {return ';';}
+{COMMA}                     {return ',';}
+{DOUBLE_COLON}              {return DOUBLECOLON;}
+{COLON}                     {return ':';}
+{DOUBLE_DOT}                {return DOUBLEDOTS;}
+{DOT}                       {return '.';}
+
+{INCREMENT}                 {return PP;}
+{DECREMENT}                 {return MM;}
+{EQUAL}                     {return EQEQ;}
+{NOT_EQUAL}                 {return DIF;}
+{GREATER_EQUAL}             {return BRANCHBIGEQ;}
+{LESS_EQUAL}                {return BRANCHSMALLEQ;}
+{ASSIGN}                    {return '=';}
+{PLUS}                      {return '+';}
+{MINUS}                     {return '-';}
+{MULTIPLY}                  {return '*';}
+{DIVISION}                  {return '/';}
+{MOD}                       {return '%';}
+{GREATER}                   {return '>';}
+{LESS}                      {return '<';}
+
+{INLINECOMMENT}             {}
 {STRING}                    {
                                 std::string s = yytext;
                                 if(s[s.length() - 2] == '\\')
                                 {
-                                    printError(s, yylineno);
+                                    printError(s);
                                     exit(0);
                                 }
                                 findAndReplaceAll(s,"\\n","\n");
                                 findAndReplaceAll(s,"\\t","\t");
                                 findAndReplaceAll(s,"\\\"","\"");
                                 findAndReplaceAll(s,"\\\\","\\");
-                                std::cout<<"Line: "<< yylineno << " Fround String: " << s << std::endl;
+
+                                //parsing it with ""    
+                                yylval.strVal = new std::string(strdup(yytext));
+
+                                return STRING;
                             }
 {COMMENT_START}             {
-                                std::cout<<"Line: "<< yylineno << " Found Comment start: " << yytext << std::endl;
                                 BEGIN(COMMENT);
                             }
 <COMMENT>{COMMENT_START}    {
                                 ++nested_comments;
-                                std::cout << "Line: "<< yylineno << " Nested comments: " << nested_comments << std::endl;
                             }
 <COMMENT>"*"+               {}
 <COMMENT>[^/*\n]+           {} 
@@ -141,22 +181,19 @@ WHITESPACE              [\t\r' '\n]
 <COMMENT>\n                 {} 
 <COMMENT><<EOF>>            {   
                                 BEGIN(INITIAL);        
-                                std::cout << "Comment doesn't end" << std::endl;
                             }  
 <COMMENT>{COMMENT_END}      {
-                                std::cout << "Line: "<< yylineno << " Found comment end: "<< yytext << std::endl;
                                 if(nested_comments) --nested_comments;
                                 else BEGIN(INITIAL);
                             }
 
-{COMMENT_END}               {std::cout<<"Found Comment end - ERROR: has no starting comment: " << yytext << std::endl;}
-
-{ID}                        {std::cout<<"Line: "<< yylineno << " Found ID: " << yytext << std::endl;}
-{INTEGER_CONST}             {return INTEGER; std::cout<<"Line: "<< yylineno << " Found Integer: " << yytext << std::endl;}
-{REAL_CONST}                {std::cout<<"Line: "<< yylineno << " Found Real: " << yytext << std::endl;}
+{COMMENT_END}               {}
+                            
+{ID}                        {std::string *s = new std::string(strdup(yytext)); /*<-- can be skipped*/ yylval.strVal = s; return ID;} 
+{NUMBER}                    {yylval.numVal = std::stod(yytext); return NUMBER;}
 
 {WHITESPACE}                {}
-.                           {std::string s = yytext; printError(s, yylineno);}
+.                           {std::string s = yytext; printError(s);}
 
 %%
 
