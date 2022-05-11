@@ -462,7 +462,7 @@ ifstmt:         IF '(' expr ')' stmt                            {
                                                                     obj->Set(AST_TAG_EXPR, *$3);
                                                                     obj->Set(AST_TAG_IF_STMT, *$5);
                                                                     obj->Set(AST_TAG_ELSE_STMT, *$7);
-                                                                    $$ = new Value(obj);
+                                                                    $$ = new Value(*obj);
                                                                 }
                 ;
 
@@ -513,8 +513,6 @@ int main(int argc, char** argv){
 
     // Step 1: Create AST
     yyparse();  
-    std::cout << std::endl <<ast->ToString() << std::endl;
-    
-
+    std::cout << std::endl << ast->ToString() << std::endl;
     return 0;
 }

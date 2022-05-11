@@ -46,7 +46,6 @@
 #define AST_TAG_INIT "$for_init"
 #define AST_TAG_FORSTMT "$for_stmt"
 #define AST_TAG_FORCOND "$for_cond"
-#define AST_TAG_EXPR
 
 #define AST_TAG_RETURNSTMT "$returnstmt"
 #define AST_TAG_BREAK "$break"
