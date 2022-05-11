@@ -21,16 +21,16 @@ public:
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void);
     void DecRefCounter(void);
-    const Value* operator[](const std::string &key)
+    const Value* operator[](const std::string &key) const
     {
         if (children.find(key) != children.end())
-            return &(children[key]);
+            return &(children.at(key));
         else
             return nullptr;
     }
-    const Value* operator[](double key)
+    const Value* operator[](double key) const
     {
-        return &(children[std::to_string(key)]);
+        return &(children.at(std::to_string(key)));
     }
 
     // read and remove access: special purpose
