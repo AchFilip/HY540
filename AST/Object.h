@@ -15,20 +15,20 @@ public:
     Object(const Object &other);
     ~Object();
 
-    std::map<std::string, Value> children;
+    std::map<std::string, const Value> children;
 
     using Applier = std::function<void(const Value &key, Value &val)>;
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void);
     void DecRefCounter(void);
-    Value* operator[](const std::string &key)
+    const Value* operator[](const std::string &key)
     {
         if (children.find(key) != children.end())
             return &(children[key]);
         else
             return nullptr;
     }
-    Value* operator[](double key)
+    const Value* operator[](double key)
     {
         return &(children[std::to_string(key)]);
     }
@@ -49,11 +49,11 @@ public:
 
     void Set(const std::string &key, const Value &value)
     {
-        children.insert({key, &value});
+        children.insert({key, value});
     };
     void Set(double key, const Value &value)
     {
-        Set(std::to_string(key), &value);
+        Set(std::to_string(key), value);
     };
     void Remove(const std::string &key);
     void Remove(double key);

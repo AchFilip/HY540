@@ -135,39 +135,7 @@ public:
     }
     const std::string ToString(void) const // FIXME: changed return type to std::string to avoid some errors until fully fixed
     {
-        switch (type)
-        {
-        case UndefType:
-            return "undefined";
-            break;
-        case NumberType:
-            return std::to_string(data.numVal);
-            break;
-        case BooleanType:
-            return std::to_string(data.boolVal);
-            break;
-        case StringType:
-            return data.strVal;
-            break;
-        case ObjectType:
-            return "Object";
-            break;
-        case ProgramFunctionType:
-            return "Program Funtion";
-            break;
-        case LibraryFunctionType:
-            return "Library Function";
-            break;
-        case NativePtrType:
-            return "Native Pointer";
-            break;
-        case NilType:
-            return "NIL";
-            break;
-        default:
-            break;
-        }
-        return "NIL";
+        return this->data.strVal;
     };
     const Object *ToObject(void){
         return data.objVal;

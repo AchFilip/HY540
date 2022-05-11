@@ -2,6 +2,7 @@
 
 #define AST_TAG_TYPE_KEY "$type"
 #define AST_TAG_LINE_KEY "$line"
+#define AST_TAG_DISAMBIGUATE_OBJECT "$disambiguate"
 
 #define AST_TAG_VAR "$var"
 #define AST_TAG_ID "$id"
@@ -51,7 +52,7 @@
 #define AST_TAG_BREAK "$break"
 #define AST_TAG_CONTINUE "$continue"
 
-#define AST_TAG_DISAMBIGUATE_OBJECT "$disambiguate"
+
 
 
 #define OUTER_SCOPE_KEY "$outer"
