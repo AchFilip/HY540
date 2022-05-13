@@ -132,7 +132,7 @@ stmt:           expr ';'                                                {
                                                                         }  
                 | ';'                                                   {
                                                                             PrintParsing("stmt",";");
-                                                                            // $$ = new Value(_NIL_);
+                                                                            $$ = new Value(_NIL_);
                                                                         }
                 ;  
 

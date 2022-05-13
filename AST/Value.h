@@ -6,6 +6,7 @@
 #include <cstring>
 #include <string>
 #include <tuple>
+#include <assert.h>
 
 #include "TreeTags.h"
 
@@ -126,6 +127,20 @@ public:
             break;
         }
         return NilType;
+    }
+    std::string Stringify() const {
+        if(this->GetType() == UndefType)
+            return "Undef";
+        else if(this->GetType() == NumberType)
+            return std::to_string(data.numVal);
+        else if(this->GetType() == BooleanType)            
+            return std::to_string(data.boolVal);
+        else if(this->GetType() == StringType)
+            return data.strVal;
+        else if(this->GetType() == NilType)
+            return "Nill";
+        else
+            assert(false);
     }
     double ToNumber(void) {
         return data.numVal;

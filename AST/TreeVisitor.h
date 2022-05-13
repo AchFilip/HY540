@@ -35,6 +35,8 @@ public:
     virtual void VisitWhile(const Object &node) {}
     virtual void VisitFor(const Object &node) {}
     virtual void VisitReturn(const Object &node) {}
+    virtual void VisitBreak(const Object &node) {}
+    virtual void VisitContinue(const Object &node) {}
 
     virtual TreeVisitor *Clone(void) const = 0;
     TreeVisitor(void) = default;

@@ -16,8 +16,8 @@ private:
 
 	void Accept(const Object &node)
 	{
-		std::cout << "type: " << node[AST_TAG_TYPE_KEY]->ToString() << std::endl;
 		acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
+		std::cout << "type: " << node[AST_TAG_TYPE_KEY]->ToString() << std::endl;
 	}
 
 	void AcceptStmt(const Object &node)
@@ -30,7 +30,7 @@ private:
 			Accept(*node[AST_TAG_WHILE]->ToObject());
 		else if(node[AST_TAG_FOR] != nullptr)
 			Accept(*node[AST_TAG_FOR]->ToObject());
-		else if(node[AST_TAG_RETURNSTMT] != nullptr)
+		else if(node[AST_TAG_RETURNSTMT] != nullptr && node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType)
 			Accept(*node[AST_TAG_RETURNSTMT]->ToObject());
 		else if(node[AST_TAG_BREAK] != nullptr)
 			Accept(*node[AST_TAG_BREAK]->ToObject());
@@ -40,8 +40,6 @@ private:
 			Accept(*node[AST_TAG_BLOCK]->ToObject());
 		else if(node[AST_TAG_FUNCDEF] != nullptr)
 			Accept(*node[AST_TAG_FUNCDEF]->ToObject());
-		else
-			assert(false);
 		visitor->VisitStmt(node);
 	}
 	void AcceptExpr(const Object &node)
@@ -83,21 +81,19 @@ private:
 		else if(node[AST_TAG_FUNCDEF] != nullptr)
 			Accept(*node[AST_TAG_FUNCDEF]->ToObject());
 		else if(node[AST_TAG_CONST] != nullptr)
-			Accept(*node[AST_TAG_CONST]->ToObject());
+			;
 		visitor->VisitPrimary(node);
 	}
 	void AcceptLvalue(const Object &node)
 	{
-		if(node[AST_TAG_ID] != nullptr)
-			Accept(*node[AST_TAG_ID]->ToObject());
-		else if(node[AST_TAG_MEMBER] != nullptr)
+		if(node[AST_TAG_MEMBER] != nullptr)
 			Accept(*node[AST_TAG_MEMBER]->ToObject());
 		visitor->VisitLvalue(node);
 	}
 	void AcceptMember(const Object &node)
 	{
 		if(node[AST_TAG_ID] != nullptr)
-			Accept(*node[AST_TAG_ID]->ToObject());
+			;
 		else if(node[AST_TAG_EXPR] != nullptr)
 			Accept(*node[AST_TAG_EXPR]->ToObject());
 		visitor->VisitMember(node);
@@ -106,7 +102,8 @@ private:
 	{
 		if(node[AST_TAG_CALL] != nullptr){
 			Accept(*node[AST_TAG_CALL]->ToObject());
-			Accept(*node[AST_TAG_ELIST]->ToObject());
+			if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+				Accept(*node[AST_TAG_ELIST]->ToObject());
 		}
 		else if(node[AST_TAG_LVALUE] != nullptr){
 			Accept(*node[AST_TAG_LVALUE]->ToObject());
@@ -114,42 +111,41 @@ private:
 		}
 		else if(node[AST_TAG_FUNCDEF] != nullptr){
 			Accept(*node[AST_TAG_FUNCDEF]->ToObject());
-			Accept(*node[AST_TAG_ELIST]->ToObject());
+			if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+				Accept(*node[AST_TAG_ELIST]->ToObject());					
 		}
 		visitor->VisitCall(node);
 	}
 	void AcceptCallSuffix(const Object &node)
 	{
-		if(node[AST_TAG_NORMCALL] != nullptr)
+		if(node[AST_TAG_NORMCALL] != nullptr && node[AST_TAG_NORMCALL]->GetType() != Value::NilType)
 			Accept(*node[AST_TAG_NORMCALL]->ToObject());
-		else if(node[AST_TAG_METHODCALL] != nullptr)
+		else if(node[AST_TAG_METHODCALL] != nullptr && node[AST_TAG_METHODCALL]->GetType() != Value::NilType)
 			Accept(*node[AST_TAG_METHODCALL]->ToObject());
 		visitor->VisitCallSuffix(node);
 	}
 	void AcceptNormCall(const Object &node)
 	{
-		Accept(*node[AST_TAG_ELIST]->ToObject());
+		if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_ELIST]->ToObject());
 		visitor->VisitNormCall(node);
 	}
 	void AcceptMethodCall(const Object &node)
 	{
-		Accept(*node[AST_TAG_ID]->ToObject());
-		Accept(*node[AST_TAG_ELIST]->ToObject());
+		if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_ELIST]->ToObject());
 		visitor->VisitMethodCall(node);
 	}
 	void AcceptElist(const Object &node)
 	{
-		if(node[AST_TAG_ELIST] != nullptr){
-			Accept(*node[AST_TAG_ELIST]->ToObject());
-			Accept(*node[AST_TAG_EXPR]->ToObject());
-		}
-		else if(node[AST_TAG_EXPR] != nullptr)
-			Accept(*node[AST_TAG_EXPR]->ToObject());
+		if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_ELIST]->ToObject());			
+		Accept(*node[AST_TAG_EXPR]->ToObject());
 		visitor->VisitElist(node);
 	}
 	void AcceptObjectDef(const Object &node)
 	{
-		if(node[AST_TAG_ELIST] != nullptr)
+		if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
 			Accept(*node[AST_TAG_ELIST]->ToObject());
 		else if(node[AST_TAG_INDEXED] != nullptr)
 			Accept(*node[AST_TAG_INDEXED]->ToObject());
@@ -173,16 +169,23 @@ private:
 	}
 	void AcceptStmts(const Object &node)
 	{
-		if(node[AST_TAG_STMTS]->GetType() != Value::NilType){
-			Accept(*node[AST_TAG_STMTS]->ToObject());
-		}
-		Accept(*node[AST_TAG_STMT]->ToObject());
+		if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_STMTS]->ToObject());		
+		if(node[AST_TAG_STMT]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_STMT]->ToObject());
 		visitor->VisitStmts(node);
 	}
 	void AcceptBlock(const Object &node)
 	{
-		Accept(*node[AST_TAG_STMTS]->ToObject());
+		if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_STMTS]->ToObject());
 		visitor->VisitBlock(node);
+	}
+	void AcceptBreak(const Object &node){
+		visitor->VisitBreak(node);
+	}
+	void AcceptContinue(const Object &node){
+		visitor->VisitContinue(node);
 	}
 	void AcceptId(const Object &node)
 	{
@@ -190,10 +193,10 @@ private:
 	}
 	void AcceptFuncDef(const Object &node)
 	{
-		if(node[AST_TAG_ID] != nullptr)
-			Accept(*node[AST_TAG_ID]->ToObject());
-		Accept(*node[AST_TAG_IDLIST]->ToObject());
-		Accept(*node[AST_TAG_BLOCK]->ToObject());
+		if(node[AST_TAG_IDLIST]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_IDLIST]->ToObject());
+		if(node[AST_TAG_BLOCK]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_BLOCK]->ToObject());
 		visitor->VisitFuncDef(node);
 	}
 	void AcceptConst(const Object &node)
@@ -202,31 +205,37 @@ private:
 	}
 	void AcceptIdlist(const Object &node)
 	{
-		if(node[AST_TAG_IDLIST] != nullptr)
+		if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() != Value::NilType)
 			Accept(*node[AST_TAG_IDLIST]->ToObject());
-		Accept(*node[AST_TAG_ID]->ToObject());
 		visitor->VisitIdlist(node);
 	}
 	void AcceptIf(const Object &node)
 	{
 		Accept(*node[AST_TAG_EXPR]->ToObject());
-		Accept(*node[AST_TAG_IF_STMT]->ToObject());
-		if(node[AST_TAG_ELSE_STMT] != nullptr)
+		if(node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_IF_STMT]->ToObject());
+		if(node[AST_TAG_ELSE_STMT] != nullptr && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
 			Accept(*node[AST_TAG_ELSE_STMT]->ToObject());
 		visitor->VisitIf(node);
 	}
 	void AcceptWhile(const Object &node)
 	{
 		Accept(*node[AST_TAG_EXPR]->ToObject());
-		Accept(*node[AST_TAG_STMT]->ToObject());	
+		if(node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_STMT]->ToObject());	
 		visitor->VisitWhile(node);
 	}
 	void AcceptForstmt(const Object &node)
 	{
-		Accept(*node[AST_TAG_INIT]->ToObject());
+		if(node[AST_TAG_INIT]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_INIT]->ToObject());
+
 		Accept(*node[AST_TAG_EXPR]->ToObject());
-		Accept(*node[AST_TAG_FORCOND]->ToObject());
-		Accept(*node[AST_TAG_STMT]->ToObject());
+
+		if(node[AST_TAG_FORCOND]->GetType() != Value::NilType)
+			Accept(*node[AST_TAG_FORCOND]->ToObject());
+		if(node[AST_TAG_STMT]->GetType() != Value::NilType)	
+			Accept(*node[AST_TAG_STMT]->ToObject());
 		visitor->VisitFor(node);
 	}
 	void AcceptReturn(const Object &node)

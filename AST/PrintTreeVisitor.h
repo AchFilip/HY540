@@ -164,10 +164,16 @@ public:
     virtual void VisitVarDecl(const Object &node) {}
     virtual void VisitStmts(const Object &node)
     {
-        const_cast<Object &>(node).Set(PRINT_VALUE,
-                                       PrintStmts(
-                                           GetPrint(node[AST_TAG_STMTS]),
-                                           GetPrint(node[AST_TAG_STMT])));
+        if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(PRINT_VALUE,
+                                        PrintStmts(
+                                            GetPrint(node[AST_TAG_STMTS]),
+                                            GetPrint(node[AST_TAG_STMT])));
+        else
+            const_cast<Object &>(node).Set(PRINT_VALUE,
+                                        PrintStmts(
+                                            "",
+                                            GetPrint(node[AST_TAG_STMT])));
     }
     virtual void VisitStmt(const Object &node)
     {
@@ -274,13 +280,14 @@ public:
         }
         else if (node[AST_TAG_CONST])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintPrimary(GetPrint(node[AST_TAG_CONST])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintPrimary(node[AST_TAG_CONST]->Stringify()));
         }
     }
     virtual void VisitLvalue(const Object &node)
     {
-        if (node[AST_TAG_ID])
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintLvalue(GetPrint(node[AST_TAG_ID])));
+        if (node[AST_TAG_ID]){
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintLvalue(node[AST_TAG_ID]->ToString()));
+        }   
         else if (node[AST_TAG_MEMBER])
         {
             const_cast<Object &>(node).Set(PRINT_VALUE, PrintLvalue(GetPrint(node[AST_TAG_MEMBER])));
