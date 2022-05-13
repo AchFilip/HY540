@@ -2,6 +2,7 @@
 #include "./AST/Object.h"
 #include "./AST/Value.h"
 #include "./AST/TreeTags.h"
+#include "./AST/PrintTreeVisitor.h"
 // #include "./AST/Intepreter.h"
 #include <iostream>
 #include <vector>
@@ -377,7 +378,7 @@ indexed:        indexed ',' indexedelem                         {
 
 indexedelem:    '{' expr ':' expr '}'                           {
                                                                     PrintParsing("indexedelem","{ expr : expr }");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXEDELEM, AST_TAG_EXPR, AST_TAG_EXPR, "", *$2, *$4);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_INDEXEDELEM, AST_TAG_EXPR_LEFT, AST_TAG_EXPR_RIGHT, "", *$2, *$4);
                                                                 }
                 ;
 

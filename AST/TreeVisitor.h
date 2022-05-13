@@ -18,6 +18,7 @@ public:
     virtual void VisitLvalue(const Object &node) {}
     virtual void VisitMember(const Object &node) {}
     virtual void VisitCall(const Object &node) {}
+    virtual void VisitCallSuffix(const Object &node) {}
     virtual void VisitNormCall(const Object &node) {}
     virtual void VisitMethodCall(const Object &node) {}
     virtual void VisitElist(const Object &node) {}

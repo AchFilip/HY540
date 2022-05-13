@@ -1,0 +1,10 @@
+ast.gv
+ast.png
+calc.exe
+flex.cpp
+parser.cpp
+parser.hpp
+parser.output
+test.alpha
+.vscode/c_cpp_properties.json
+.vscode/settings.json

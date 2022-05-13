@@ -52,9 +52,6 @@
 #define AST_TAG_BREAK "$break"
 #define AST_TAG_CONTINUE "$continue"
 
-
-
-
 #define OUTER_SCOPE_KEY "$outer"
 #define PREVIOUS_SCOPE_KEY "$previous"
 #define LOCAL_SCOPE_KEY "$local"
