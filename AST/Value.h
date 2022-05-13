@@ -141,6 +141,7 @@ public:
             return "Nill";
         else
             assert(false);
+        return "";
     }
     double ToNumber(void) {
         return data.numVal;

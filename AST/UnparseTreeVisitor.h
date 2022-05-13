@@ -1,10 +1,17 @@
-#define UNPARSE_VALUE "$$val"
-
+#pragma once
+#include "./Object.h"
 #include "./TreeVisitor.h"
 #include "./ValueStack.h"
+
+#define UNPARSE_VALUE "$$val"
+
 class UnparseTreeVisitor final : public TreeVisitor {
 private:
-
+    //-----------------Extra explanation-----------------
+    //Some functions have an integer input called mode
+    //This was done in order to generilize a function to work for every option (of the given grammatic rule)
+    //Every function that has a mode variable there will be more information on which mode is what.
+    //---------------------------------------------------
     //Util
     //Delete later
     void PrintTheUnparsedString(std::string str){
@@ -18,10 +25,39 @@ private:
         PrintTheUnparsedString(str);
         return str;
     }
-    const std::string UnparseStmt();
-    const std::string UnparseExpr();
-    const std::string UnparseArithmeticExpr();
-    const std::string UnparseRelationalExpr();
+
+    const std::string UnparseStmt(const std::string& input,bool semicon = false){
+        std::string str;
+        semicon ? str = input + ";" : str = input;
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseExpr(const std::string& term){
+        std::string str(term);
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    //Same with the above
+    const std::string UnparseTerm(const std::string& term){
+        std::string str(term);
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    
+    const std::string UnparseArithmeticExpr(const std::string& expr1, const std::string& op, const std::string& expr2){
+        std::string str(expr1 + " " + op + " " + expr2);
+        PrintTheUnparsedString(str);
+        return str; 
+    }
+    //Same with the above
+    const std::string UnparseRelationalExpr(const std::string& expr1, const std::string& op, const std::string& expr2){
+        std::string str(expr1 + " " + op + " " + expr2);
+        PrintTheUnparsedString(str);
+        return str;
+    }
 
     const std::string UnparseAssignExpr(const std::string& lvalue,const std::string& expr){
         std::string str(lvalue + " = " + expr + ";");
@@ -29,14 +65,99 @@ private:
         return str;
     }
 
-    const std::string UnparseTerm();
-    const std::string UnparsePrimary();
-    const std::string UnparseLvalue();
-    const std::string UnparseMember();
-    const std::string UnparseCall();
-    const std::string UnparseNormCall();
-    const std::string UnparseMethodCall();
-    
+    const std::string UnparsePrimary(int mode, const std::string& input){
+        std::string str;
+        switch(mode){
+            case 0: //lvalue
+                str = input;
+                break;
+            case 1: //call
+                str = input;
+                break;
+            case 2: //objectdef
+                str = input;
+                break;
+            case 3: // ( funcdef )
+                str = "( " + input + " )";
+                break;
+            case 4: // const
+                str = input;
+                break;
+            default:
+                std::cout << "Wrong Mode.. Exiting" << std::endl;
+                exit(0);
+        }
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseLvalue(const std::string& input,const std::string& indicator = ""){
+        std::string str;
+        if(indicator.empty())
+            str = input;
+        else if(indicator == "local")
+            str = "local " + str;
+        else if(indicator == "::")
+            str = ":: " + str;
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseMember(int mode,const std::string& input1,const std::string& input2){
+        std::string str = "";
+        switch (mode)
+        {
+        case 0: //lvalue . id
+            str = input1 + " . " + input2;
+            break;
+        case 1: //lvalue [ expr ]
+            str = input1 + " [ " + input2 + " ] ";
+            break;
+        case 2: // call . id
+            str = input1 + " . " + input2;
+            break;
+        case 3: // call [ expr ]
+            str = input1 + " [ " + input2 + " ] ";
+            break;
+        default:
+            break;
+        }
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseCall(int mode, const std::string& input1, const std::string& input2){
+        std::string str = "";
+        switch (mode)
+        {
+        case 0: //call '(' elist ')'  
+            str = input1 + " ( " + input2 + " ) ";
+            break;
+        case 1: //lvalue callsuffix    
+            str = input1 + " " + input2;
+            break;
+        case 2: //'(' funcdef ')' '(' elist ')'
+            str = "( " + input1 + " ) " + "( " + input2 + " ) ";
+            break;
+        default: 
+            break;
+        }
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseNormCall(const std::string& elist){
+        std::string str("( " + elist + " )");
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseMethodCall(const std::string& id, const std::string& elist){
+        std::string str("::" + id + " ( " + elist + " )");
+        PrintTheUnparsedString(str);
+        return str;
+    }    
+
     const std::string UnparseElist(const std::string& expr, const std::string& elist = ""){
         std::string str;
         elist.empty() ? str = expr : str = elist + " , " + expr;
@@ -51,7 +172,13 @@ private:
         PrintTheUnparsedString(str);
         return str;
     }
-    const std::string UnparseIndexed();
+
+    const std::string UnparseIndexed(const std::string& indexedelem,const std::string& indexed = ""){
+        std::string str;
+        indexed.empty() ? str = indexedelem : str = indexed + " , " + indexedelem;
+        PrintTheUnparsedString(str);
+        return str;
+    }
 
     const std::string UnparseIndexedElem(const std::string& expr1, const std::string& expr2){
         std::string str("{ " + expr1 + " : " + expr2 + " }");
@@ -64,9 +191,26 @@ private:
         PrintTheUnparsedString(str);
         return str;
     }
-    const std::string UnparseFuncDef();
-    const std::string UnparseConst();
-    const std::string UnparseNumber();
+
+    const std::string UnparseFuncDef(const std::string& function,const std::string& idlist,const std::string& block,const std::string& id = ""){
+        std::string str;
+        id.empty() ? str = "function ( " + idlist + " ) " + block : "function " + id + " ( " + idlist + " ) " + block;
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseConst(const std::string& input){
+        std::string str(input);
+        PrintTheUnparsedString(str);
+        return str;
+    }
+
+    const std::string UnparseNumber(const std::string& num){
+        std::string str;
+        str = num;
+        PrintTheUnparsedString(str);
+        return num;
+    }
 
     const std::string UnparseIdlist(const std::string& id, const std::string& idlist = ""){
         std::string str;
@@ -91,6 +235,7 @@ private:
         PrintTheUnparsedString(str);
         return str;
     }
+
     const std::string UnparseIf(const std::string& expr, const std::string& stmt){
         std::string str(("if (" + expr + ") " + stmt + ";"));
         PrintTheUnparsedString(str);
@@ -102,37 +247,53 @@ private:
     }
 public:
 
-    virtual void VisitVarDecl(const Object &node) override{} //?
-    virtual void VisitStmts(const Object &node) override{}
-    virtual void VisitStmt(const Object &node) override{} //?
-    virtual void VisitExpr(const Object &node) override{} //?
-    virtual void VisitArithmeticExpr(const Object &node) override{} //?
-    virtual void VisitRelationalExpr(const Object &node) override{} //?
-    virtual void VisitAssignxpr(const Object &node) override{}  
-    virtual void VisitTerm(const Object &node) override{} //?
-    virtual void VisitPrimary(const Object &node) override{} //?
-    virtual void VisitLvalue(const Object &node) override{} //?
-    virtual void VisitMember(const Object &node) override{} //?
-    virtual void VisitCall(const Object &node) override{} //?
-    virtual void VisitNormCall(const Object &node) override{} //?
-    virtual void VisitMethodCall(const Object &node) override{} //?
+    virtual void VisitVarDecl(const Object &node) override{} 
+    virtual void VisitStmts(const Object &node) override{
+        const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt(GetPrint(node[AST_TAG_EXPR])));
+    }
+    virtual void VisitStmt(const Object &node) override{} 
+    virtual void VisitExpr(const Object &node) override{} 
+    virtual void VisitArithmeticExpr(const Object &node) override{} 
+    virtual void VisitRelationalExpr(const Object &node) override{} 
+    virtual void VisitAssignexpr(const Object &node) override{}  
+    virtual void VisitTerm(const Object &node) override{} 
+    virtual void VisitPrimary(const Object &node) override{} 
+    virtual void VisitLvalue(const Object &node) override{} 
+    virtual void VisitMember(const Object &node) override{} 
+    virtual void VisitCall(const Object &node) override{} 
+    virtual void VisitNormCall(const Object &node) override{}
+    virtual void VisitMethodCall(const Object &node) override{} 
     virtual void VisitElist(const Object &node) override{} 
     virtual void VisitObjectDef(const Object &node) override{} 
-    virtual void VisitIndexed(const Object &node) override{} //?
+    virtual void VisitIndexed(const Object &node) override{}
     virtual void VisitIndexedElem(const Object &node) override{} 
     virtual void VisitBlock(const Object &node) override{} 
-    virtual void VisitFuncDef(const Object &node) override{} //?
-    virtual void VisitConst(const Object &node) override{} //?
-    virtual void VisitNumber(const Object &node) override{} //?
+    virtual void VisitFuncDef(const Object &node) override{} 
+    virtual void VisitConst(const Object &node) override{} 
+    virtual void VisitNumber(const Object &node) override{} 
     virtual void VisitIdlist(const Object &node) override{}
     virtual void VisitWhile(const Object &node) override{} 
     virtual void VisitFor(const Object &node) override{}
-    virtual void VisitReturn(const Object &node) override{}
-    virtual void VisitIf(Object& node) override{ //maybe add else as well or do other visit.
-        GetUnparsed(node[AST_TAG_EXPR]);
-        std::cout << "Hereeee: " << "11" << std::endl;
-        std::cout << "Finished..";
+    
+    virtual void VisitReturn(const Object &node)
+    {
+        if(node[AST_TAG_EXPR] || node[AST_TAG_BREAK] || node[AST_TAG_CONTINUE])
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, PrintReturn(GetUnparsed(node[AST_TAG_EXPR]),true));
+        else
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, PrintReturn(GetUnparsed(node[AST_TAG_EXPR]));
+    }
+    
+    virtual void VisitIf(const Object& node) override{ 
+        const_cast<Object&>(node).Set(
+            UNPARSE_VALUE,
+            UnparseIf(
+                GetUnparsed(node[AST_TAG_IF]), //AST_TAG_IF_COND
+                GetUnparsed(node[AST_TAG_STMT])
+            )
+        );
     }
 
-    int test123;
+    virtual TreeVisitor *Clone(void) const {};
+    UnparseTreeVisitor(void) = default;
+    UnparseTreeVisitor(const UnparseTreeVisitor &) = default;
 };
