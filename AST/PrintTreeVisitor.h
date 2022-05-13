@@ -489,7 +489,7 @@ public:
         const_cast<Object &>(node).Set(PRINT_VALUE, PrintReturn(GetPrint(node[AST_TAG_EXPR])));
     }
 
-    virtual TreeVisitor *Clone(void) const = 0;
-    PrintTreeVisitor(void);
+    virtual TreeVisitor *Clone(void) const {};
+    PrintTreeVisitor(void) = default;
     PrintTreeVisitor(const PrintTreeVisitor &) = default;
 };

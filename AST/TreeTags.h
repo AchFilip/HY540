@@ -9,7 +9,7 @@
 
 #define AST_TAG std::string
 #define AST_TAG_PROGRAM "$program"
-#define AST_TAG_STMTS "$stms"
+#define AST_TAG_STMTS "$stmts"
 #define AST_TAG_STMT "$stmt"
 
 #define AST_TAG_EXPR "$expr"

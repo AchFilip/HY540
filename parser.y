@@ -3,6 +3,7 @@
 #include "./AST/Value.h"
 #include "./AST/TreeTags.h"
 #include "./AST/PrintTreeVisitor.h"
+#include "./AST/TreeHost.h"
 // #include "./AST/Intepreter.h"
 #include <iostream>
 #include <vector>
@@ -131,7 +132,7 @@ stmt:           expr ';'                                                {
                                                                         }  
                 | ';'                                                   {
                                                                             PrintParsing("stmt",";");
-                                                                            $$ = new Value(_NIL_);
+                                                                            // $$ = new Value(_NIL_);
                                                                         }
                 ;  
 
@@ -443,7 +444,7 @@ idlist:         idlist ',' id                                   {
                                                                 }
                 |id                                             {
                                                                     PrintParsing("idlist", "ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_IDLIST, "id", "", *$1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_IDLIST, AST_TAG_ID, "", *$1);
                                                                 }                                                                        
                 |                                               {
                                                                     PrintParsing("idlist", "empty");
@@ -454,7 +455,7 @@ idlist:         idlist ',' id                                   {
 
 ifstmt:         IF '(' expr ')' stmt                            {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IF, AST_TAG_EXPR, AST_TAG_STMT, "", *$3, *$5);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_IF, AST_TAG_EXPR, AST_TAG_IF_STMT, "", *$3, *$5);
                                                                 }
                 | IF '(' expr ')' stmt ELSE stmt                {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");
@@ -514,6 +515,11 @@ int main(int argc, char** argv){
 
     // Step 1: Create AST
     yyparse();  
+
+    TreeHost *treeHost = new TreeHost();
+    treeHost->Accept(new PrintTreeVisitor(), *ast->ToObject());
+    std::cout << "AST: " << (*ast->ToObject())[PRINT_VALUE]->ToString() << std::endl;    
+
     std::cout << std::endl << ast->ToString() << std::endl;
     return 0;
 }

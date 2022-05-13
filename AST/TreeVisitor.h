@@ -12,7 +12,7 @@ public:
     virtual void VisitExpr(const Object &node) {}
     virtual void VisitArithmeticExpr(const Object &node) {}
     virtual void VisitRelationalExpr(const Object &node) {}
-    virtual void VisitAssignxpr(const Object &node) {}
+    virtual void VisitAssignexpr(const Object &node) {}
     virtual void VisitTerm(const Object &node) {}
     virtual void VisitPrimary(const Object &node) {}
     virtual void VisitLvalue(const Object &node) {}
@@ -26,6 +26,7 @@ public:
     virtual void VisitIndexed(const Object &node) {}
     virtual void VisitIndexedElem(const Object &node) {}
     virtual void VisitBlock(const Object &node) {}
+    virtual void VisitId(const Object &node) {}
     virtual void VisitFuncDef(const Object &node) {}
     virtual void VisitConst(const Object &node) {}
     virtual void VisitNumber(const Object &node) {}
@@ -36,6 +37,6 @@ public:
     virtual void VisitReturn(const Object &node) {}
 
     virtual TreeVisitor *Clone(void) const = 0;
-    TreeVisitor(void);
+    TreeVisitor(void) = default;
     TreeVisitor(const TreeVisitor &) = default;
 };

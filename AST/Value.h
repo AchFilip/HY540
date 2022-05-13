@@ -137,7 +137,7 @@ public:
     {
         return this->data.strVal;
     };
-    const Object *ToObject(void){
+    const Object *ToObject(void) const{
         return data.objVal;
     };
     const Object *ToProgramFunctionAST(void) const;
