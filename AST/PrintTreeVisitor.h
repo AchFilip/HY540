@@ -16,62 +16,76 @@ private:
 
     const std::string PrintStmts(const std::string &stmts, const std::string &stmt)
     {
-        return std::string("--stmts\n\t--" + stmts + "\n\t--" + stmt + "\n");
+        if (!stmts.empty())
+        {
+            return std::string("--stmts\n\t" + stmts + "\n\t" + stmt);
+        }
+        else
+        {
+            return std::string("--stmts\n\t" + stmt);
+        }
     }
     const std::string PrintStmt(const std::string &expr)
     {
-        return std::string("--stmt\n\t--" + expr + "\n");
+        return std::string("--stmt\n\t" + expr);
     }
     const std::string PrintExpr(const std::string &expr, const std::string &r_expr)
     {
-        std::string res = std::string("--expr\n\t--" + expr + "\n");
+        std::string res = std::string("--expr\n\t" + expr);
         if (!r_expr.empty())
         {
-            res += std::string("\t--" + r_expr + "\n");
+            res += std::string("\t" + r_expr);
         }
         return res;
     }
     const std::string PrintAssignExpr(const std::string &lvalue, const std::string &expr)
     {
-        return std::string("--assignexpr\n\t--" + lvalue + "\n\t--" + expr + "\n");
+
+        if (lvalue.empty() || expr.empty())
+        {
+            std::cout << "wtf why empty" << std::endl;
+            return "";
+        }
+        std::cout << "aaaaaaaaaaaa" << std::endl;
+        return std::string("--assignexpr\n\t" + lvalue + "\n\t" + expr);
     }
     const std::string PrintPrimary(const std::string &expr)
     {
-        return std::string("--primary\n\t--" + expr + "\n");
+        return std::string("--primary\n\t" + expr);
     }
     const std::string PrintLvalue(const std::string &expr)
     {
-        return std::string("--lvalue\n\t--" + expr + "\n");
+        return std::string("--lvalue\n\t" + expr);
     }
     const std::string PrintMember(const std::string &lval, const std::string &expr)
     {
-        return std::string("--member\n\t--" + lval + "\n\t--" + expr + "\n");
+        return std::string("--member\n\t" + lval + "\n\t" + expr);
     }
     const std::string PrintCall(const std::string &expr1, const std::string &expr2)
     {
-        return std::string("--call\n\t--" + expr1 + "\n\t--" + expr2 + "\n");
+        return std::string("--call\n\t" + expr1 + "\n\t" + expr2);
     }
     const std::string PrintCallSuffix(const std::string &expr)
     {
-        return std::string("--callsuffix\n\t--" + expr + "\n");
+        return std::string("--callsuffix\n\t" + expr);
     }
     const std::string PrintNormCall(const std::string &expr)
     {
-        return std::string("--normcall\n\t--" + expr + "\n");
+        return std::string("--normcall\n\t" + expr);
     }
     const std::string PrintMethodCall(const std::string &id, const std::string &elist)
     {
-        return std::string("--methodcall\n\t--" + id + "\n\t--" + elist + "\n");
+        return std::string("--methodcall\n\t" + id + "\n\t" + elist);
     }
     const std::string PrintElist(const std::string &elist, const std::string &expr)
     {
         if (!elist.empty())
         {
-            return std::string("--elist\n\t--" + elist + "\n\t--" + expr + "\n");
+            return std::string("--elist\n\t" + elist + "\n\t" + expr);
         }
         else if (!expr.empty())
         {
-            return std::string("--elist\n\t--" + expr + "\n");
+            return std::string("--elist\n\t" + expr);
         }
         else
         {
@@ -80,44 +94,44 @@ private:
     }
     const std::string PrintObjectdef(const std::string &expr)
     {
-        return std::string("--objectdef\n\t--" + expr + "\n");
+        return std::string("--objectdef\n\t" + expr);
     }
     const std::string PrintIndexed(const std::string &indexed, const std::string &indexedelem)
     {
         if (!indexed.empty())
-            return std::string("--indexed\n\t--" + indexed + "\n\t--" + indexedelem + "\n");
+            return std::string("--indexed\n\t" + indexed + "\n\t" + indexedelem);
         else
-            return std::string("--indexed\n\t--" + indexedelem + "\n");
+            return std::string("--indexed\n\t" + indexedelem);
     }
     const std::string PrintIndexedElem(const std::string &expr_left, const std::string &expr_right)
     {
-        return std::string("--indexedelem\n\t--" + expr_left + "\n\t--" + expr_right + "\n");
+        return std::string("--indexedelem\n\t" + expr_left + "\n\t" + expr_right);
     }
     const std::string PrintBlock(const std::string &stmts)
     {
-        return std::string("--block\n\t--" + stmts + "\n");
+        return std::string("--block\n\t" + stmts);
     }
     const std::string PrintFuncdef(const std::string &id,
                                    const std::string &idlist, const std::string &block)
     {
         if (!id.empty())
         {
-            return std::string("--funcdef\n\t--" + id + "\n\t--" + idlist + "\n\t--" + block + "\n");
+            return std::string("--funcdef\n\t" + id + "\n\t" + idlist + "\n\t" + block);
         }
         else
         {
-            return std::string("--funcdef\n\t--" + idlist + "\n\t--" + block + "\n");
+            return std::string("--funcdef\n\t" + idlist + "\n\t" + block);
         }
     }
     const std::string PrintIdlist(const std::string &idlist, const std::string &id)
     {
         if (!idlist.empty())
         {
-            return std::string("--idlist\n\t--" + idlist + "\n\t--" + id + "\n");
+            return std::string("--idlist\n\t" + idlist + "\n\t" + id);
         }
         else if (!id.empty())
         {
-            return std::string("--idlist\n\t--" + id + "\n");
+            return std::string("--idlist\n\t" + id);
         }
         else
         {
@@ -126,7 +140,7 @@ private:
     }
     const std::string PrintTerm(const std::string &expr)
     {
-        return std::string("--term\n\t--" + expr + "\n");
+        return std::string("--term\n\t" + expr);
     }
     const std::string PrintConst()
     {
@@ -136,44 +150,40 @@ private:
                               const std::string &ifstmt, const std::string &elsestmt)
     {
         if (elsestmt.empty())
-            return std::string("--ifstmt\n\t--" + expr + "\n\t--" + ifstmt + "\n");
+            return std::string("--ifstmt\n\t" + expr + "\n\t" + ifstmt);
         else
         {
-            return std::string("--ifstmt\n\t--" + expr + "\n\t--" + ifstmt + "\n\t--" + elsestmt + "\n");
+            return std::string("--ifstmt\n\t" + expr + "\n\t" + ifstmt + "\n\t" + elsestmt);
         }
     }
     const std::string PrintWhile(const std::string &expr, const std::string &stmt)
     {
-        return std::string("--while\n\t--" + expr + "\n\t--" + stmt + "\n");
+        return std::string("--while\n\t" + expr + "\n\t" + stmt);
     }
     const std::string PrintFor(const std::string &init, const std::string &expr,
                                const std::string &cond, const std::string &stmt)
     {
-        return std::string("--for\n\t--" + init + "\n\t--" + expr + "\n\t--" + cond + "\n\t--" + stmt + "\n");
+        return std::string("--for\n\t" + init + "\n\t" + expr + "\n\t" + cond + "\n\t" + stmt);
     }
     const std::string PrintIfElse(const std::string &expr, const std::string &stmt)
     {
-        return std::string("--ifelsestmt\n\t--" + expr + "\n\t--" + stmt + "\n\t--" + stmt + "\n");
+        return std::string("--ifelsestmt\n\t" + expr + "\n\t" + stmt + "\n\t" + stmt);
     }
     const std::string PrintReturn(const std::string &expr)
     {
-        return std::string("--returnstmt\n\t--" + expr + "\n");
+        return std::string("--returnstmt\n\t" + expr);
     }
 
 public:
     virtual void VisitVarDecl(const Object &node) {}
     virtual void VisitStmts(const Object &node)
     {
-        if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
-            const_cast<Object &>(node).Set(PRINT_VALUE,
-                                        PrintStmts(
-                                            GetPrint(node[AST_TAG_STMTS]),
-                                            GetPrint(node[AST_TAG_STMT])));
+        if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmts(
+                                                            GetPrint(node[AST_TAG_STMTS]),
+                                                            GetPrint(node[AST_TAG_STMT])));
         else
-            const_cast<Object &>(node).Set(PRINT_VALUE,
-                                        PrintStmts(
-                                            "",
-                                            GetPrint(node[AST_TAG_STMT])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmts("", GetPrint(node[AST_TAG_STMT])));
     }
     virtual void VisitStmt(const Object &node)
     {
@@ -183,35 +193,35 @@ public:
         }
         else if (node[AST_TAG_IF])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_IF])));
         }
         else if (node[AST_TAG_WHILE])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_WHILE])));
         }
         else if (node[AST_TAG_FOR])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_FOR])));
         }
         else if (node[AST_TAG_RETURNSTMT])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_RETURNSTMT])));
         }
         else if (node[AST_TAG_BREAK])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_BREAK])));
         }
         else if (node[AST_TAG_CONTINUE])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_CONTINUE])));
         }
         else if (node[AST_TAG_BLOCK])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_BLOCK])));
         }
         else if (node[AST_TAG_FUNCDEF])
         {
-            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_EXPR])));
+            const_cast<Object &>(node).Set(PRINT_VALUE, PrintStmt(GetPrint(node[AST_TAG_FUNCDEF])));
         }
         else
         {
@@ -238,12 +248,19 @@ public:
     }
     virtual void VisitArithmeticExpr(const Object &node) {}
     virtual void VisitRelationalExpr(const Object &node) {}
-    virtual void VisitAssignxpr(const Object &node)
+    virtual void VisitAssignexpr(const Object &node)
     {
+        std::cout << "-----------" << GetPrint(node[AST_TAG_LVALUE]) << std::endl;
+        std::cout << "-----------" << GetPrint(node[AST_TAG_EXPR]) << std::endl;
+        // Value &v = new Value(PrintAssignExpr(GetPrint(node[AST_TAG_LVALUE]), GetPrint(node[AST_TAG_EXPR])));
+        Value v = new Value(GetPrint(node[AST_TAG_LVALUE]));
+        std::cout << "ola kala" << std::endl;
+        // std::cout << GetPrint(node[AST_TAG_EXPR]) << std::endl;
         const_cast<Object &>(node).Set(PRINT_VALUE,
                                        PrintAssignExpr(
                                            GetPrint(node[AST_TAG_LVALUE]),
                                            GetPrint(node[AST_TAG_EXPR])));
+        std::cout << "ola kala" << std::endl;
     }
     virtual void VisitTerm(const Object &node)
     {
@@ -285,9 +302,10 @@ public:
     }
     virtual void VisitLvalue(const Object &node)
     {
-        if (node[AST_TAG_ID]){
+        if (node[AST_TAG_ID])
+        {
             const_cast<Object &>(node).Set(PRINT_VALUE, PrintLvalue(node[AST_TAG_ID]->ToString()));
-        }   
+        }
         else if (node[AST_TAG_MEMBER])
         {
             const_cast<Object &>(node).Set(PRINT_VALUE, PrintLvalue(GetPrint(node[AST_TAG_MEMBER])));
@@ -493,10 +511,11 @@ public:
     }
     virtual void VisitReturn(const Object &node)
     {
+        std::cout << "dajsdh;as" << std::endl;
         const_cast<Object &>(node).Set(PRINT_VALUE, PrintReturn(GetPrint(node[AST_TAG_EXPR])));
     }
 
-    virtual TreeVisitor *Clone(void) const {return nullptr;};
+    virtual TreeVisitor *Clone(void) const { return nullptr; };
     PrintTreeVisitor(void) = default;
     PrintTreeVisitor(const PrintTreeVisitor &) = default;
 };

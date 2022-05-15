@@ -128,40 +128,51 @@ public:
         }
         return NilType;
     }
-    std::string Stringify() const {
-        if(this->GetType() == UndefType)
+    std::string Stringify() const
+    {
+        if (this->GetType() == UndefType)
             return "Undef";
-        else if(this->GetType() == NumberType)
+        else if (this->GetType() == NumberType)
             return std::to_string(data.numVal);
-        else if(this->GetType() == BooleanType)            
+        else if (this->GetType() == BooleanType)
             return std::to_string(data.boolVal);
-        else if(this->GetType() == StringType)
+        else if (this->GetType() == StringType)
             return data.strVal;
-        else if(this->GetType() == NilType)
+        else if (this->GetType() == NilType)
             return "Nill";
-        else if(this->GetType() == ObjectType)
+        else if (this->GetType() == ObjectType)
             return "Object";
         else
             assert(false);
         return "";
     }
-    double ToNumber(void) const {
+    double ToNumber(void) const
+    {
         return data.numVal;
     }
-    bool ToBool(void) const{
+    bool ToBool(void) const
+    {
         return data.boolVal;
     }
-    const std::string ToString(void) const // FIXME: changed return type to std::string to avoid some errors until fully fixed
+    const std::string ToString(void) const
     {
-        return this->data.strVal;
+        // if (this->data.strVal)
+        return std::string(this->data.strVal);
+        // else
+        // {
+        //     std::cout << "empty strVal" << std::endl;
+        //     return "";
+        // }
     };
-    const Object *ToObject(void) const{
+    const Object *ToObject(void) const
+    {
         return data.objVal;
     };
     const Object *ToProgramFunctionAST(void) const;
     const Object *ToProgramFunctionClosure(void) const;
-    Object *ToObject_NoConst(void) const{
-        return const_cast<Object*>(data.objVal);
+    Object *ToObject_NoConst(void) const
+    {
+        return const_cast<Object *>(data.objVal);
     }
     Object *ToProgramFunctionAST_NoConst(void) const;
     Object *ToProgramFunctionClosure_NoConst(void) const;
@@ -171,40 +182,50 @@ public:
     void FromNil(void);
     void FromString(const std::string &);
     void FromNativePtr(void *ptr, const std::string &type);
-    void FromNativePtr(const NativePtr &);          // alt style
-    operator bool() const{                          // true test
-        //TODO: Implement code for bool type checking
-        switch(GetType()){
-            case NilType:
-            case UndefType:
-                return false;
-            case NumberType:
-                return data.numVal != 0;
-            case StringType:
-                return data.strVal != nullptr; // Maybe not?!
-            default:
-                return true;
+    void FromNativePtr(const NativePtr &); // alt style
+    operator bool() const
+    { // true test
+        // TODO: Implement code for bool type checking
+        switch (GetType())
+        {
+        case NilType:
+        case UndefType:
+            return false;
+        case NumberType:
+            return data.numVal != 0;
+        case StringType:
+            return data.strVal != nullptr; // Maybe not?!
+        default:
+            return true;
         }
-    }                 
+    }
     Value *Clone(void) const;
     const Value operator=(const Value &);
-    const Value operator+(const Value &right){
-        if(this->GetType() == NumberType && right.GetType() == NumberType){
+    const Value operator+(const Value &right)
+    {
+        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        {
             return this->data.numVal + right.data.numVal;
         }
     }
-    const Value operator-(const Value &right){
-        if(this->GetType() == NumberType && right.GetType() == NumberType){
+    const Value operator-(const Value &right)
+    {
+        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        {
             return this->data.numVal - right.data.numVal;
         }
     }
-    const Value operator*(const Value &right){
-        if(this->GetType() == NumberType && right.GetType() == NumberType){
+    const Value operator*(const Value &right)
+    {
+        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        {
             return this->data.numVal * right.data.numVal;
         }
     }
-    const Value operator/(const Value &right){
-        if(this->GetType() == NumberType && right.GetType() == NumberType){
+    const Value operator/(const Value &right)
+    {
+        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        {
             return this->data.numVal / right.data.numVal;
         }
     }
