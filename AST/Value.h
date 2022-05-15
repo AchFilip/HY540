@@ -143,7 +143,7 @@ public:
             assert(false);
         return "";
     }
-    double ToNumber(void) {
+    double ToNumber(void) const {
         return data.numVal;
     }
     bool ToBool(void) const{
@@ -169,8 +169,21 @@ public:
     void FromNil(void);
     void FromString(const std::string &);
     void FromNativePtr(void *ptr, const std::string &type);
-    void FromNativePtr(const NativePtr &); // alt style
-    operator bool() const;                 // true test
+    void FromNativePtr(const NativePtr &);          // alt style
+    operator bool() const{                          // true test
+        //TODO: Implement code for bool type checking
+        switch(GetType()){
+            case NilType:
+            case UndefType:
+                return false;
+            case NumberType:
+                return data.numVal != 0;
+            case StringType:
+                return data.strVal != nullptr; // Maybe not?!
+            default:
+                return true;
+        }
+    }                 
     Value *Clone(void) const;
     const Value operator=(const Value &);
 
