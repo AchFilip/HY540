@@ -13,7 +13,7 @@ class Object
 public:
     Object(void) = default;
     Object(const Object &other);
-    ~Object() = delete;
+    ~Object() = default;
 
     std::map<std::string, const Value> children;
 
@@ -73,9 +73,9 @@ public:
     {
         std::cout << "~~~~" << std::endl;
         for (auto iter = children.begin(); iter != children.end(); ++iter)
-        {
+        {   
             std::cout << "[" << iter->first << ","
-                 << iter->second << "]" << std::endl;
+                 << iter->second.Stringify() << "]" << std::endl;
         }
     }
     /* COMMENTED OUT METHODS FOR PRINTING

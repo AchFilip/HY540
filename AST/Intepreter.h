@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "./TreeTags.h"
 #include "./Object.h"
 #include "./Value.h"
@@ -19,6 +20,10 @@ private:
     {
     };
 
+    const Value Eval(Object &node)
+    {
+        return dispatcher->Eval(node);
+    }
     const Value EvalStmts(Object &node)
     {
         // node.Debug_PrintChildren();
@@ -35,7 +40,6 @@ private:
     const Value EvalStmt(Object &node)
     {
         // node.Debug_PrintChildren();
-
         std::string stmtType;
         if (node[AST_TAG_EXPR])
             stmtType = AST_TAG_EXPR;
@@ -55,39 +59,52 @@ private:
             stmtType = AST_TAG_BLOCK;
         else if (node[AST_TAG_FUNCDEF])
             stmtType = AST_TAG_FUNCDEF;
-        
+
         return Eval(*node[stmtType]->ToObject_NoConst());
     }
     const Value EvalExpr(Object &node)
     {
         // node.Debug_PrintChildren();
-        std::string exprType;
-        if(node[AST_TAG_ASSIGNEXPR])
-            exprType = AST_TAG_ASSIGNEXPR;
-        else if(node[AST_TAG_TERM]){
-            exprType = AST_TAG_TERM;
-        }
-        else
-            assert(false && "Not implemented yet for other types");
 
-        return Eval(*node[exprType]->ToObject_NoConst());
+        if(node[AST_TAG_ASSIGNEXPR])
+            return Eval(*node[AST_TAG_ASSIGNEXPR]->ToObject_NoConst());
+        else if(node[AST_TAG_TERM])
+            return Eval(*node[AST_TAG_TERM]->ToObject_NoConst());
+        else if (node[AST_TAG_EXPR_LEFT] && node[AST_TAG_EXPR_RIGHT])
+        {
+            // Evaluate left and right expr
+            Value leftExpr = EvalExpr(*node[AST_TAG_EXPR_LEFT]->ToObject_NoConst());
+            Value rightExpr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
+            // Do operation based on disambiguation
+            std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
+            if (operatorStr == "+")
+                return leftExpr + rightExpr;
+            else if(operatorStr == "-")
+                return leftExpr - rightExpr;
+            else if(operatorStr == "*")
+                return leftExpr * rightExpr;
+            else if(operatorStr == "/")
+                return leftExpr / rightExpr;
+            else
+                assert(false && "This kind of operator has not been supported yet");
+        }
     }
     const Value EvalTerm(Object &node)
     {
         // node.Debug_PrintChildren();
 
         std::string termType;
-        if(node[AST_TAG_PRIMARY])
+        if (node[AST_TAG_PRIMARY])
             termType = AST_TAG_PRIMARY;
         else
             assert(false && "Not implemented yet for other types");
-        
+
         return Eval(*node[termType]->ToObject_NoConst());
     }
     const Value EvalAssignexpr(Object &node)
     {
         // node.Debug_PrintChildren();
-        
+
         Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
 
@@ -97,9 +114,11 @@ private:
     const Value EvalPrimary(Object &node)
     {
         // node.Debug_PrintChildren();
-        
         std::string primaryType;
-        if(node[AST_TAG_CONST]){
+        if (node[AST_TAG_LVALUE])
+            primaryType = AST_TAG_LVALUE;
+        else if (node[AST_TAG_CONST])
+        {
             primaryType = AST_TAG_CONST;
             return *node[AST_TAG_CONST];
         }
@@ -112,35 +131,42 @@ private:
     {
         // node.Debug_PrintChildren();
 
-        if(node[AST_TAG_ID]){
+        if (node[AST_TAG_ID])
+        {
             // Check type of ID access
             std::string id = node[AST_TAG_ID]->ToString();
             std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
 
-            if(disambiguate == "id"){
+            if (disambiguate == "id")
+            {
                 const Value *lookup = ScopeLookup(GetCurrentScope(), id);
-                if(lookup){
+                if (lookup)
+                {
                     std::cout << "Lookup result: found" << std::endl;
                     return *lookup;
                 }
-                else{
-                    std::cout << "Lookup result: not_found" << std::endl;;
+                else
+                {
+                    std::cout << "Lookup result: not_found" << std::endl;
+                    ;
                     auto &scope = GetCurrentScope();
                     scope.Set(id, *(new Value(*(new Object()))));
                     return *(scope[id]);
                 }
             }
-            else if(disambiguate == "local id"){
+            else if (disambiguate == "local id")
+            {
                 const Value *lookup = ScopeLookup(GetCurrentScope(), LOCAL_SCOPE_KEY, id);
-                if(lookup)
+                if (lookup)
                     std::cout << "Lookup result: found" << std::endl;
                 else
-                    ; // TODO
+                    std::cout << "Lookup result: found" << std::endl;
+                ; // TODO
             }
-            else if(disambiguate == "doubledots id"){
+            else if (disambiguate == "doubledots id")
+            {
                 // TODO
             }
-        
         }
         else
             assert(false && "Not implemented yet");
@@ -174,6 +200,24 @@ private:
     }
     const Value EvalBlock(Object &node)
     {
+        // Push new nested scope
+        PushNested();
+        // Eval code inside of block
+        Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        // Make sure that scopes have been restored
+        auto &currScope = GetCurrentScope();
+        bool shouldSliceOuter = currScope[PREVIOUS_SCOPE_KEY] != nullptr;
+        if (shouldSliceOuter)
+            while ((*PopScope())[PREVIOUS_SCOPE_KEY]) // Cringe fast code
+            {
+                // no-op (intentionally empty)
+            }
+        assert(GetCurrentScope()[OUTER_SCOPE_KEY] != nullptr);
+        PopScope();
+        if (shouldSliceOuter)
+        {
+            PushSlice();
+        }
     }
     const Value EvalId(Object &node)
     {
@@ -351,8 +395,6 @@ private:
                             { return EvalPrimary(node); });
         dispatcher->Install(AST_TAG_CONST, [this](Object &node)
                             { return EvalConst(node); });
-                            
-                            
 
         dispatcher->Install(AST_TAG_IF, [this](Object &node)
                             { return EvalIf(node); });
@@ -382,8 +424,8 @@ public:
         delete envStack;
     }
 
-    const Value Eval(Object &node)
+    void StartProgram(Object &node)
     {
-        return dispatcher->Eval(node);
+        Eval(node);
     }
 };

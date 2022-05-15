@@ -4,7 +4,7 @@
 #include "./AST/TreeTags.h"
 #include "./AST/PrintTreeVisitor.h"
 #include "./AST/TreeHost.h"
-// #include "./AST/Intepreter.h"
+#include "./AST/Intepreter.h"
 #include <iostream>
 #include <vector>
 
@@ -74,17 +74,17 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
 %type <valVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call callsuffix objectdef assignexpr term ifstmt forstmt elist normcall methodcall indexed indexedelem;
 
 /*  token rules */
-%left '(' ')' 
-%left '[' ']' 
-%left '.' DOUBLEDOTS 
-%right NOT PP MM UMINUS
-%left '*' '/' '%' 
-%left '+' '-'
-%nonassoc '>' '<' BRANCHBIGEQ BRANCHSMALLEQ
-%nonassoc EQEQ DIF DOUBLECOLON
-%left AND
-%left OR 
 %right '=' 
+%left OR 
+%left AND
+%nonassoc EQEQ DIF DOUBLECOLON
+%nonassoc '>' '<' BRANCHBIGEQ BRANCHSMALLEQ
+%left '+' '-'
+%left '*' '/' '%' 
+%right NOT PP MM UMINUS
+%left '.' DOUBLEDOTS 
+%left '[' ']' 
+%left '(' ')' 
 
 %%
 /*  grammar rules   */
@@ -516,9 +516,18 @@ int main(int argc, char** argv){
     // Step 1: Create AST
     yyparse();  
 
-    TreeHost *treeHost = new TreeHost();
+    /* TreeHost *treeHost = new TreeHost();
     treeHost->Accept(new PrintTreeVisitor(), *ast->ToObject());
-    std::cout << "AST: " << (*ast->ToObject())[PRINT_VALUE]->ToString() << std::endl;    
+    std::cout << "AST: " << (*ast->ToObject())[PRINT_VALUE]->ToString() << std::endl;     */
+
+    //~~~~~~
+    // Test Interpreter functions
+
+    Interpreter* interpreter = new Interpreter();
+    interpreter->StartProgram(*ast->ToObject_NoConst());
+    delete interpreter;
+
+    //~~~~~~
 
     std::cout << std::endl << ast->ToString() << std::endl;
     return 0;

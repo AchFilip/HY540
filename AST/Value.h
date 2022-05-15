@@ -139,6 +139,8 @@ public:
             return data.strVal;
         else if(this->GetType() == NilType)
             return "Nill";
+        else if(this->GetType() == ObjectType)
+            return "Object";
         else
             assert(false);
         return "";
@@ -186,6 +188,26 @@ public:
     }                 
     Value *Clone(void) const;
     const Value operator=(const Value &);
+    const Value operator+(const Value &right){
+        if(this->GetType() == NumberType && right.GetType() == NumberType){
+            return this->data.numVal + right.data.numVal;
+        }
+    }
+    const Value operator-(const Value &right){
+        if(this->GetType() == NumberType && right.GetType() == NumberType){
+            return this->data.numVal - right.data.numVal;
+        }
+    }
+    const Value operator*(const Value &right){
+        if(this->GetType() == NumberType && right.GetType() == NumberType){
+            return this->data.numVal * right.data.numVal;
+        }
+    }
+    const Value operator/(const Value &right){
+        if(this->GetType() == NumberType && right.GetType() == NumberType){
+            return this->data.numVal / right.data.numVal;
+        }
+    }
 
     // - here helper 'bool Is<type>(void)' const methods
     // - here similar 'From<type>(<type>)' methods
