@@ -301,16 +301,137 @@ public:
     }
     const Value operator==(const Value &right)
     {
+        // TODO: should not allow different types in relational expr
         switch (right.GetType())
         {
         case NumberType:
             return (double)(*this) == right.ToNumber();
         case BooleanType:
             return (bool)(*this) == right.ToBool();
+        case StringType:
+            return (std::string)(*this) == right.ToString();
         default:
             // Maybe throw exception?
             assert(false && "Not implemented yet");
         }
+    }
+    const Value operator!=(const Value &right)
+    {
+        // TODO: should not allow different types in relational expr
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)(*this) != right.ToNumber();
+        case BooleanType:
+            return (bool)(*this) != right.ToBool();
+        case StringType:
+            return (std::string)(*this) != right.ToString();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator>(const Value &right)
+    {
+        if (right.GetType() != type)
+        {
+            // should not allow different types in relational expr
+            assert(false && "Not implemented yet");
+        }
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)(*this) > right.ToNumber();
+        case StringType:
+            return (std::string)(*this) > right.ToString();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator>=(const Value &right)
+    {
+        if (right.GetType() != type)
+        {
+            // should not allow different types in relational expr
+            assert(false && "Not implemented yet");
+        }
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)(*this) >= right.ToNumber();
+        case StringType:
+            return (std::string)(*this) >= right.ToString();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator<(const Value &right)
+    {
+        if (right.GetType() != type)
+        {
+            // should not allow different types in relational expr
+            assert(false && "Not implemented yet");
+        }
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)(*this) < right.ToNumber();
+        case StringType:
+            return (std::string)(*this) < right.ToString();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator<=(const Value &right)
+    {
+        if (right.GetType() != type)
+        {
+            // should not allow different types in relational expr
+            assert(false && "Not implemented yet");
+        }
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)(*this) <= right.ToNumber();
+        case StringType:
+            return (std::string)(*this) <= right.ToString();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator&&(const Value &right)
+    {
+        return this && right;
+    }
+    const Value operator||(const Value &right)
+    {
+        return this || right;
+    }
+
+    const Value operator++()
+    {
+        // should be number check and throw exception?? TODO:
+        data.numVal += 1;
+        return data.numVal;
+    }
+    const Value operator--()
+    {
+        // should be number check and throw exception?? TODO:
+        return --data.numVal;
+    }
+    const Value operator-()
+    {
+        // should be number check and throw exception?? TODO:
+        return data.numVal * -1;
+    }
+    const Value operator!()
+    {
+        // should be boll check and throw exception?? TODO:
+        return !data.boolVal;
     }
 
     // - here helper 'bool Is<type>(void)' const methods
