@@ -76,12 +76,6 @@ private:
             Value leftExpr = EvalExpr(*node[AST_TAG_EXPR_LEFT]->ToObject_NoConst());
             Value rightExpr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
 
-            // In case either of the above expr are objects, get their value.
-            if (leftExpr.GetType() == Value::ObjectType)
-                leftExpr = EvalObjGet(*leftExpr.ToObject_NoConst());
-            if (rightExpr.GetType() == Value::ObjectType)
-                rightExpr = EvalObjGet(*rightExpr.ToObject_NoConst());
-
             // Do operation based on disambiguation
             std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
             if (operatorStr == "+")
@@ -129,30 +123,34 @@ private:
         else if (node[AST_TAG_LVALUE])
         {
             // eval the lvalue and then incr/decr
-
-            Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
-            std::cout << "lvalueObj (" << (*lvalue.ToObject_NoConst())["$value"]->Stringify() << ")" << std::endl;
-
             std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
-            if (operatorStr == "notlvalue")
+            if (operatorStr == "notlvalue"){
+                Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
                 return !lvalue;
-            else if (operatorStr == "++lvalue" || operatorStr == "lvalue++")
-            {
-                Object &lvalueObj = *lvalue.ToObject_NoConst();
-                Value newValue = *(*lvalue.ToObject_NoConst())["$value"];
-                lvalueObj.GetAndRemove("$value");
-                lvalueObj.Set("$value", ++newValue);
-                std::cout << "lvalueObj Set (" << lvalueObj["$value"]->Stringify() << ")" << std::endl;
-                return newValue;
             }
-            else if (operatorStr == "--lvalue" || operatorStr == "lvalue--")
+            else if(operatorStr == "lvalue++"){
+                Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), false));
+                Value originalValue = lvalue;
+                lvalue = lvalue + Value(1.0);
+                return originalValue;
+            }
+            else if (operatorStr == "++lvalue")
             {
-                Object &lvalueObj = *lvalue.ToObject_NoConst();
-                Value newValue = *(*lvalue.ToObject_NoConst())["$value"];
-                lvalueObj.GetAndRemove("$value");
-                lvalueObj.Set("$value", --newValue);
-                std::cout << "lvalueObj Set (" << lvalueObj["$value"]->Stringify() << ")" << std::endl;
-                return newValue;
+                Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), false));
+                lvalue = lvalue + Value(1.0);
+                return lvalue;
+            }
+            else if(operatorStr == "lvalue--"){
+                Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), false));
+                Value originalValue = lvalue;
+                lvalue = lvalue - Value(1.0);
+                return originalValue;
+            }
+            else if (operatorStr == "--lvalue")
+            {
+                Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), false));
+                lvalue = lvalue - Value(1.0);
+                return lvalue;
             }
         }
         else
@@ -166,19 +164,10 @@ private:
 
         // Eval left and right part of assignment
         // TODO: differentiate between lvalue and rvalue evals by explicite calls.
-        Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst()); // Lvalue eval
-        Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());     // Rvalue eval
-        assert(lvalue.ToObject_NoConst() != nullptr && "This should not be possible");
-
-        // In case  expr is object, get it's value.
-        if (expr.GetType() == Value::ObjectType)
-            expr = EvalObjGet(*expr.ToObject_NoConst());
-
-        // Assign the value to the node
-        Object &lvalueObj = *lvalue.ToObject_NoConst();
-        lvalueObj.GetAndRemove("$value");
-        lvalueObj.Set("$value", expr);
-        std::cout << "lvalueObj Set (" << expr.Stringify() << " " << expr.ToNumber() << ")" << std::endl;
+        Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
+        Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
+        lvalue = expr; // Do you believe in god son?
+        GetCurrentScope().Debug_PrintChildren();
     }
     const Value EvalPrimary(Object &node)
     {
@@ -199,7 +188,7 @@ private:
         else
             assert(false && "Not implmeneted yet for other types");
     }
-    const Value EvalLvalue(Object &node)
+    const Value EvalRvalue(Object &node)
     {
         node.Debug_PrintChildren();
 
@@ -214,15 +203,13 @@ private:
                 const Value *lookup = ScopeLookup(GetCurrentScope(), id);
                 if (lookup)
                 {
-                    std::cout << "Lookup result: found " << lookup->Stringify() << std::endl;
+                    std::cout << "Lookup Rvalue: found " << lookup->Stringify() << std::endl;
                     return *lookup;
                 }
                 else
                 {
-                    std::cout << "Lookup result: not_found" << std::endl;
-                    auto &scope = GetCurrentScope();
-                    scope.Set(id, *(new Value(*(new Object()))));
-                    return *(scope[id]);
+                    assert(false && "Nevermind this point, we will deal with it later");
+                    return Value();
                 }
             }
             else if (disambiguate == "local id")
@@ -359,6 +346,51 @@ private:
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
     }
+    const Value &EvalLvalue(Object &node, bool allowDefinition = false)
+    {
+        node.Debug_PrintChildren();
+
+        if (node[AST_TAG_ID])
+        {
+            // Check type of ID access
+            std::string id = node[AST_TAG_ID]->ToString();
+            std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
+
+            if (disambiguate == "id")
+            {
+                const Value *lookup = ScopeLookup(GetCurrentScope(), id);
+                if (lookup)
+                {
+                    std::cout << "Lookup Lvalue: found " << lookup->Stringify() << std::endl;
+                    return *lookup;
+                }
+                else if(allowDefinition)
+                {
+                    std::cout << "Lookup Lvalue: not_found" << std::endl;
+                    auto &scope = GetCurrentScope();
+                    scope.Set(id, *(new Value()));
+                    return *(scope[id]);
+                }
+                else
+                    assert(false && "Lvalue definition is not enabled and variable was not found");
+            }
+            else if (disambiguate == "local id")
+            {
+                const Value *lookup = ScopeLookup(GetCurrentScope(), LOCAL_SCOPE_KEY, id);
+                if (lookup)
+                    std::cout << "Lookup result: found" << std::endl;
+                else
+                    std::cout << "Lookup result: found" << std::endl;
+                ; // TODO
+            }
+            else if (disambiguate == "doubledots id")
+            {
+                // TODO
+            }
+        }
+        else
+            assert(false && "Not implemented yet");
+    }
 
     // Environment Handling Methods
     Object &GetCurrentScope()
@@ -470,7 +502,7 @@ private:
         dispatcher->Install(AST_TAG_ASSIGNEXPR, [this](Object &node)
                             { return EvalAssignexpr(node); });
         dispatcher->Install(AST_TAG_LVALUE, [this](Object &node)
-                            { return EvalLvalue(node); });
+                            { return EvalRvalue(node); });
         dispatcher->Install(AST_TAG_TERM, [this](Object &node)
                             { return EvalTerm(node); });
         dispatcher->Install(AST_TAG_PRIMARY, [this](Object &node)
