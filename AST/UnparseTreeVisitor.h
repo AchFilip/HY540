@@ -409,7 +409,7 @@ public:
         }
         else if (node[AST_TAG_CONST] != nullptr)
         {
-            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(4, GetUnparsed(node[AST_TAG_CONST])));
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(4, node[AST_TAG_CONST]->Stringify()));
         }
     }
 
