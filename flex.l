@@ -35,7 +35,7 @@ void findAndReplaceAll( std::string& data, const std::string& match, const std::
 
 // Prints error message with bold red color
 void printError(std::string s){
-    std::cout<<"\033[1;31mCan't recorgnise char: " << s << "\033[0m" << std::endl;
+    std::cout<<"\033[1;31m Can't recorgnise char: " << s << "\033[0m" << std::endl;
 }
 
 }
@@ -52,9 +52,9 @@ FUNCTION                "function"
 RETURN                  "return"
 BREAK                   "break"
 CONTINUE                "continue"
-AND                     "and"
-NOT                     "not"
-OR                      "or"
+AND                     "&&"
+NOT                     "!"
+OR                      "||"
 LOCAL                   "local"
 TRUE                    "true"
 FALSE                   "false"

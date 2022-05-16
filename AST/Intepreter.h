@@ -96,6 +96,20 @@ private:
                 return leftExpr % rightExpr;
             else if (operatorStr == "==")
                 return leftExpr == rightExpr;
+            else if (operatorStr == "!=")
+                return leftExpr != rightExpr;
+            else if (operatorStr == ">")
+                return leftExpr > rightExpr;
+            else if (operatorStr == ">=")
+                return leftExpr >= rightExpr;
+            else if (operatorStr == "<")
+                return leftExpr < rightExpr;
+            else if (operatorStr == "<=")
+                return leftExpr <= rightExpr;
+            else if (operatorStr == "&&")
+                return leftExpr && rightExpr;
+            else if (operatorStr == "||")
+                return leftExpr || rightExpr;
             else
                 assert(false && "This kind of operator has not been supported yet");
         }
@@ -107,6 +121,40 @@ private:
         std::string termType;
         if (node[AST_TAG_PRIMARY])
             termType = AST_TAG_PRIMARY;
+        else if (node[AST_TAG_EXPR])
+        {
+            termType = AST_TAG_EXPR;
+            // need to check -EXPR case
+        }
+        else if (node[AST_TAG_LVALUE])
+        {
+            // eval the lvalue and then incr/decr
+
+            Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+            std::cout << "lvalueObj (" << (*lvalue.ToObject_NoConst())["$value"]->Stringify() << ")" << std::endl;
+
+            std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
+            if (operatorStr == "notlvalue")
+                return !lvalue;
+            else if (operatorStr == "++lvalue" || operatorStr == "lvalue++")
+            {
+                Object &lvalueObj = *lvalue.ToObject_NoConst();
+                Value newValue = *(*lvalue.ToObject_NoConst())["$value"];
+                lvalueObj.GetAndRemove("$value");
+                lvalueObj.Set("$value", ++newValue);
+                std::cout << "lvalueObj Set (" << lvalueObj["$value"]->Stringify() << ")" << std::endl;
+                return newValue;
+            }
+            else if (operatorStr == "--lvalue" || operatorStr == "lvalue--")
+            {
+                Object &lvalueObj = *lvalue.ToObject_NoConst();
+                Value newValue = *(*lvalue.ToObject_NoConst())["$value"];
+                lvalueObj.GetAndRemove("$value");
+                lvalueObj.Set("$value", --newValue);
+                std::cout << "lvalueObj Set (" << lvalueObj["$value"]->Stringify() << ")" << std::endl;
+                return newValue;
+            }
+        }
         else
             assert(false && "Not implemented yet for other types");
 
@@ -130,7 +178,7 @@ private:
         Object &lvalueObj = *lvalue.ToObject_NoConst();
         lvalueObj.GetAndRemove("$value");
         lvalueObj.Set("$value", expr);
-        std::cout << "lvalueObj Set (" << expr.Stringify() << ")" << std::endl;
+        std::cout << "lvalueObj Set (" << expr.Stringify() << " " << expr.ToNumber() << ")" << std::endl;
     }
     const Value EvalPrimary(Object &node)
     {
@@ -166,7 +214,7 @@ private:
                 const Value *lookup = ScopeLookup(GetCurrentScope(), id);
                 if (lookup)
                 {
-                    std::cout << "Lookup result: found" << std::endl;
+                    std::cout << "Lookup result: found " << lookup->Stringify() << std::endl;
                     return *lookup;
                 }
                 else
