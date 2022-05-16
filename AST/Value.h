@@ -198,6 +198,8 @@ public:
             return data.numVal != 0;
         case StringType:
             return data.strVal != nullptr; // Maybe not?!
+        case BooleanType:
+            return data.boolVal;
         default:
             assert(false && "Not implemented yet");
         }
@@ -369,11 +371,8 @@ public:
     }
     const Value operator<(const Value &right)
     {
-        if (right.GetType() != type)
-        {
-            // should not allow different types in relational expr
+        if (right.GetType() != type) // should not allow different types in relational expr
             assert(false && "Not implemented yet");
-        }
         switch (right.GetType())
         {
         case NumberType:
@@ -405,11 +404,11 @@ public:
     }
     const Value operator&&(const Value &right)
     {
-        return this && right;
+        return *this && right;
     }
     const Value operator||(const Value &right)
     {
-        return this || right;
+        return *this || right;
     }
 
     const Value operator++()

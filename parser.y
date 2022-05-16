@@ -117,11 +117,18 @@ stmt:           expr ';'                                                {
                                                                         }  
                 | BREAK ';'                                             {
                                                                             PrintParsing("stmt","break ;");
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_BREAK, "", Value(_NIL_));
-                                                                        }  
+                                                                            Object *breakObj = new Object();
+                                                                            breakObj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_BREAK)));
+                                                                            Value *breakValue = new Value(*breakObj);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_BREAK, "", *breakValue);
+                                                                        }
                 | CONTINUE ';'                                          {
+                    Object *breakObj = new Object();
                                                                             PrintParsing("stmt","continue ;");                                                                            
-                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_CONTINUE, "", Value(_NIL_));
+                                                                            Object *continueObj = new Object();
+                                                                            continueObj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_CONTINUE)));
+                                                                            Value *continueValue = new Value(*continueObj);
+                                                                            $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_CONTINUE, "", *continueValue);
                                                                         }  
                 | block                                                 {
                                                                             PrintParsing("stmt","block");
@@ -461,7 +468,7 @@ ifstmt:         IF '(' expr ')' stmt                            {
                 | IF '(' expr ')' stmt ELSE stmt                {
                                                                     PrintParsing("ifstmt", "IF ( expr ) stmt ELSE stmt");
                                                                     Object* obj = new Object();
-                                                                    obj->Set(AST_TAG_TYPE_KEY, Value(AST_TAG_IF));
+                                                                    obj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_IF)));
                                                                     obj->Set(AST_TAG_EXPR, *$3);
                                                                     obj->Set(AST_TAG_IF_STMT, *$5);
                                                                     obj->Set(AST_TAG_ELSE_STMT, *$7);
@@ -478,7 +485,7 @@ whilestmt:      WHILE '(' expr ')' stmt                         {
 forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {
                                                                     PrintParsing("forstmt", "FOR ( elist ; expr ; elist ) stmt");
                                                                     Object* obj = new Object();
-                                                                    obj->Set(AST_TAG_TYPE_KEY, Value(AST_TAG_FOR));
+                                                                    obj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_FOR)));
                                                                     obj->Set(AST_TAG_INIT, *$3);
                                                                     obj->Set(AST_TAG_EXPR, *$5);
                                                                     obj->Set(AST_TAG_FORCOND, *$7);
