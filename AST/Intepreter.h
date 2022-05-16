@@ -124,11 +124,13 @@ private:
         {
             // eval the lvalue and then incr/decr
             std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
-            if (operatorStr == "notlvalue"){
+            if (operatorStr == "notlvalue")
+            {
                 Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
                 return !lvalue;
             }
-            else if(operatorStr == "lvalue++"){
+            else if (operatorStr == "lvalue++")
+            {
                 Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), false));
                 Value originalValue = lvalue;
                 lvalue = lvalue + Value(1.0);
@@ -140,7 +142,8 @@ private:
                 lvalue = lvalue + Value(1.0);
                 return lvalue;
             }
-            else if(operatorStr == "lvalue--"){
+            else if (operatorStr == "lvalue--")
+            {
                 Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), false));
                 Value originalValue = lvalue;
                 lvalue = lvalue - Value(1.0);
@@ -166,7 +169,7 @@ private:
         // TODO: differentiate between lvalue and rvalue evals by explicite calls.
         Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
-        lvalue = expr; // Do you believe in god son?
+        lvalue = expr;                                              // Do you believe in god son?
         GetCurrentScope().Debug_PrintChildren();
     }
     const Value EvalPrimary(Object &node)
@@ -303,14 +306,17 @@ private:
     const Value EvalIdlist(Object &node)
     {
     }
-    const Value EvalBreak(Object &node) { throw BreakException(); }
+    const Value EvalBreak(Object &node)
+    {
+        throw BreakException();
+    }
     const Value EvalContinue(Object &node) { throw ContinueException(); }
     const Value EvalWhile(Object &node)
     {
-        while (dispatcher->Eval(*node[AST_TAG_WHILE_COND]->ToObject_NoConst()))
+        while (Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()))
             try
             {
-                dispatcher->Eval(*node[AST_TAG_WHILE_STMT]->ToObject_NoConst());
+                Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
             }
             catch (const BreakException &)
             {
@@ -327,10 +333,14 @@ private:
     }
     const Value EvalIf(Object &node)
     {
+        node.Debug_PrintChildren();
         if (dispatcher->Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()))
             dispatcher->Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
         else if (auto *elseStmt = node[AST_TAG_ELSE_STMT])
+        {
             dispatcher->Eval(*elseStmt->ToObject_NoConst());
+        }
+
         return _NIL_;
     }
     const Value EvalReturn(Object &node)
@@ -364,7 +374,7 @@ private:
                     std::cout << "Lookup Lvalue: found " << lookup->Stringify() << std::endl;
                     return *lookup;
                 }
-                else if(allowDefinition)
+                else if (allowDefinition)
                 {
                     std::cout << "Lookup Lvalue: not_found" << std::endl;
                     auto &scope = GetCurrentScope();
@@ -515,13 +525,6 @@ private:
                             { return EvalElist(node); });
         dispatcher->Install(AST_TAG_INDEXED, [this](Object &node)
                             { return EvalIndexed(node); });
-
-        dispatcher->Install(AST_TAG_IF, [this](Object &node)
-                            { return EvalIf(node); });
-        dispatcher->Install(std::string(AST_TAG_WHILE_COND), [this](Object &node)
-                            { return EvalExpr(node); });
-        dispatcher->Install(std::string(AST_TAG_WHILE_STMT), [this](Object &node)
-                            { return EvalStmt(node); });
 
         // ... all the rest ../
     }
