@@ -227,9 +227,9 @@ private:
     }
     void AcceptWhile(const Object &node)
     {
-        Accept(*node[AST_TAG_EXPR]->ToObject());
-        if (node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
-            Accept(*node[AST_TAG_STMT]->ToObject());
+        Accept(*node[AST_TAG_WHILE_COND]->ToObject());
+        if (node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
+            Accept(*node[AST_TAG_WHILE_STMT]->ToObject());
         visitor->VisitWhile(node);
     }
     void AcceptForstmt(const Object &node)

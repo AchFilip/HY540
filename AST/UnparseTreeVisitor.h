@@ -661,34 +661,45 @@ public:
     virtual void VisitNumber(const Object &node) override{} //?
     
     virtual void VisitIdlist(const Object &node) override{
-        
-        if(false) return; //Check for nil
-        
-        if(node.children.count(AST_TAG_ID))
+        std::cout << "     " << node[AST_TAG_ID]->Stringify(); 
+        if(node[AST_TAG_IDLIST]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType){
+            std::cout << "SDADSADASDASDASDS";
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIdlist(
-                    GetUnparsed(node[AST_TAG_IDLIST]),
-                    GetUnparsed(node[AST_TAG_ID])
-                )
-            );
-        else
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseIdlist(
+                    node[AST_TAG_ID]->Stringify(),
                     GetUnparsed(node[AST_TAG_IDLIST])
                 )
             );
+        }
+        else if(node[AST_TAG_IDLIST]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseIdlist(
+                    node[AST_TAG_ID]->Stringify()
+                )
+            );
+        node.Debug_PrintChildren();
     }
 
     virtual void VisitWhile(const Object &node) override{ //den bike kan
-        const_cast<Object&>(node).Set(
-            UNPARSE_VALUE,
-            UnparseWhile(
-                GetUnparsed(node[AST_TAG_EXPR]),
-                GetUnparsed(node[AST_TAG_STMT])
-            )
-        );
+        if(node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType){
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseWhile(
+                    GetUnparsed(node[AST_TAG_WHILE_COND]),
+                    GetUnparsed(node[AST_TAG_WHILE_STMT])
+                )
+            );
+        }
+        else if (node[AST_TAG_WHILE_STMT]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseWhile(
+                    GetUnparsed(node[AST_TAG_WHILE_COND]),
+                    ";"
+                )
+            );
     }
 
     virtual void VisitFor(const Object &node) override{ //crashed
