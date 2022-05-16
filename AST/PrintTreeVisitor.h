@@ -511,7 +511,6 @@ public:
     }
     virtual void VisitReturn(const Object &node)
     {
-        std::cout << "dajsdh;as" << std::endl;
         const_cast<Object &>(node).Set(PRINT_VALUE, PrintReturn(GetPrint(node[AST_TAG_EXPR])));
     }
 

@@ -16,16 +16,16 @@ private:
 
     void Accept(const Object &node)
     {
-        acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
         std::cout << "type: " << node[AST_TAG_TYPE_KEY]->ToString() << std::endl;
+        acceptors[node[AST_TAG_TYPE_KEY]->ToString()](node);
     }
 
     void AcceptStmt(const Object &node)
     {
         if (node[AST_TAG_EXPR] != nullptr)
             Accept(*node[AST_TAG_EXPR]->ToObject());
-        else if (node[AST_TAG_IF_STMT] != nullptr)
-            Accept(*node[AST_TAG_IF_STMT]->ToObject());
+        else if (node[AST_TAG_IF] != nullptr)
+            Accept(*node[AST_TAG_IF]->ToObject());
         else if (node[AST_TAG_WHILE] != nullptr)
             Accept(*node[AST_TAG_WHILE]->ToObject());
         else if (node[AST_TAG_FOR] != nullptr)
