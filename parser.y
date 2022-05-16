@@ -517,9 +517,9 @@ int main(int argc, char** argv){
     // Step 1: Create AST
     yyparse();  
 
-    TreeHost *treeHost = new TreeHost();
-    treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject());
-    std::cout << "AST: " << (*ast->ToObject())[PRINT_VALUE]->ToString() << std::endl;
+        /* TreeHost *treeHost = new TreeHost();
+        treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject());
+        std::cout << "AST: " << (*ast->ToObject())[PRINT_VALUE]->ToString() << std::endl; */
 
     //~~~~~~
     // Test Interpreter functions

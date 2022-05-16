@@ -36,12 +36,14 @@ public:
     // read and remove access: special purpose
     Value GetAndRemove(const std::string &key)
     {
-        if (children.find(key) != children.end()){
+        if (children.find(key) != children.end())
+        {
             Value returnVal = children[key];
             children.erase(key);
             return returnVal;
         }
-        else{
+        else
+        {
             return Value(_NIL_);
         }
     }
@@ -73,11 +75,12 @@ public:
     {
         std::cout << "~~~~" << std::endl;
         for (auto iter = children.begin(); iter != children.end(); ++iter)
-        {   
+        {
             std::cout << "[" << iter->first << ","
-                 << iter->second.Stringify() << "]" << std::endl;
+                      << iter->second.Stringify() << "]" << std::endl;
         }
     }
+
     /* COMMENTED OUT METHODS FOR PRINTING
 
         void RecursivePrint(int tabs)

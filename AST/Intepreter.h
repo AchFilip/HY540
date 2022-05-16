@@ -26,7 +26,7 @@ private:
     }
     const Value EvalStmts(Object &node)
     {
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
         {
             Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
@@ -39,7 +39,7 @@ private:
     }
     const Value EvalStmt(Object &node)
     {
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
         std::string stmtType;
         if (node[AST_TAG_EXPR])
             stmtType = AST_TAG_EXPR;
@@ -64,34 +64,45 @@ private:
     }
     const Value EvalExpr(Object &node)
     {
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
 
-        if(node[AST_TAG_ASSIGNEXPR])
+        if (node[AST_TAG_ASSIGNEXPR])
             return Eval(*node[AST_TAG_ASSIGNEXPR]->ToObject_NoConst());
-        else if(node[AST_TAG_TERM])
+        else if (node[AST_TAG_TERM])
             return Eval(*node[AST_TAG_TERM]->ToObject_NoConst());
         else if (node[AST_TAG_EXPR_LEFT] && node[AST_TAG_EXPR_RIGHT])
         {
-            // Evaluate left and right expr
+            // Evaluate left and right expr. Explicitly use EvalExpr() instead of Eval().
             Value leftExpr = EvalExpr(*node[AST_TAG_EXPR_LEFT]->ToObject_NoConst());
             Value rightExpr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
+
+            // In case either of the above expr are objects, get their value.
+            if (leftExpr.GetType() == Value::ObjectType)
+                leftExpr = EvalObjGet(*leftExpr.ToObject_NoConst());
+            if (rightExpr.GetType() == Value::ObjectType)
+                rightExpr = EvalObjGet(*rightExpr.ToObject_NoConst());
+
             // Do operation based on disambiguation
             std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
             if (operatorStr == "+")
                 return leftExpr + rightExpr;
-            else if(operatorStr == "-")
+            else if (operatorStr == "-")
                 return leftExpr - rightExpr;
-            else if(operatorStr == "*")
+            else if (operatorStr == "*")
                 return leftExpr * rightExpr;
-            else if(operatorStr == "/")
+            else if (operatorStr == "/")
                 return leftExpr / rightExpr;
+            else if (operatorStr == "%")
+                return leftExpr % rightExpr;
+            else if (operatorStr == "==")
+                return leftExpr == rightExpr;
             else
                 assert(false && "This kind of operator has not been supported yet");
         }
     }
     const Value EvalTerm(Object &node)
     {
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
 
         std::string termType;
         if (node[AST_TAG_PRIMARY])
@@ -103,33 +114,46 @@ private:
     }
     const Value EvalAssignexpr(Object &node)
     {
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
 
-        Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
-        Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
-
+        // Eval left and right part of assignment
+        // TODO: differentiate between lvalue and rvalue evals by explicite calls.
+        Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst()); // Lvalue eval
+        Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());     // Rvalue eval
         assert(lvalue.ToObject_NoConst() != nullptr && "This should not be possible");
-        EvalObjSetWithValue(*lvalue.ToObject_NoConst(), expr);
+
+        // In case  expr is object, get it's value.
+        if (expr.GetType() == Value::ObjectType)
+            expr = EvalObjGet(*expr.ToObject_NoConst());
+
+        // Assign the value to the node
+        Object &lvalueObj = *lvalue.ToObject_NoConst();
+        lvalueObj.GetAndRemove("$value");
+        lvalueObj.Set("$value", expr);
+        std::cout << "lvalueObj Set (" << expr.Stringify() << ")" << std::endl;
     }
     const Value EvalPrimary(Object &node)
     {
-        // node.Debug_PrintChildren();
-        std::string primaryType;
+        node.Debug_PrintChildren();
+
         if (node[AST_TAG_LVALUE])
-            primaryType = AST_TAG_LVALUE;
+        {
+            return Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+        }
         else if (node[AST_TAG_CONST])
         {
-            primaryType = AST_TAG_CONST;
             return *node[AST_TAG_CONST];
+        }
+        else if (node[AST_TAG_OBJECTDEF])
+        {
+            return Eval(*node[AST_TAG_OBJECTDEF]->ToObject_NoConst());
         }
         else
             assert(false && "Not implmeneted yet for other types");
-
-        return Eval(*node[primaryType]->ToObject_NoConst());
     }
     const Value EvalLvalue(Object &node)
     {
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
 
         if (node[AST_TAG_ID])
         {
@@ -148,7 +172,6 @@ private:
                 else
                 {
                     std::cout << "Lookup result: not_found" << std::endl;
-                    ;
                     auto &scope = GetCurrentScope();
                     scope.Set(id, *(new Value(*(new Object()))));
                     return *(scope[id]);
@@ -191,6 +214,19 @@ private:
     }
     const Value EvalObjectDef(Object &node)
     {
+        node.Debug_PrintChildren();
+
+        // TODO: use returned values of eval to create the object;
+        if (node[AST_TAG_ELIST])
+        {
+            return Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
+        }
+        else if (node[AST_TAG_INDEXED])
+        {
+            return Eval(*(node[AST_TAG_INDEXED]->ToObject_NoConst()));
+        }
+        else
+            assert(false && "Invalid ObjectDef node");
     }
     const Value EvalIndexed(Object &node)
     {
@@ -267,15 +303,13 @@ private:
     }
     const Value EvalObjGet(Object &node)
     {
+        return *node["$value"];
     }
     const Value EvalObjSet(Object &node)
     {
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
-        node.GetAndRemove("$value");
-        node.Set("$value", value);
-        std::cout << "Node Set (" << value.ToNumber() << ")" << std::endl;
     }
 
     // Environment Handling Methods
@@ -395,6 +429,12 @@ private:
                             { return EvalPrimary(node); });
         dispatcher->Install(AST_TAG_CONST, [this](Object &node)
                             { return EvalConst(node); });
+        dispatcher->Install(AST_TAG_OBJECTDEF, [this](Object &node)
+                            { return EvalObjectDef(node); });
+        dispatcher->Install(AST_TAG_ELIST, [this](Object &node)
+                            { return EvalElist(node); });
+        dispatcher->Install(AST_TAG_INDEXED, [this](Object &node)
+                            { return EvalIndexed(node); });
 
         dispatcher->Install(AST_TAG_IF, [this](Object &node)
                             { return EvalIf(node); });
@@ -414,7 +454,7 @@ public:
         envStack = new ValueStack();
         PushScopeSpace();
         PushNewScope();
-        // envStack->Debug_Print();
+        envStack->Debug_Print();
 
         Install();
     }

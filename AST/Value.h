@@ -183,6 +183,9 @@ public:
     void FromString(const std::string &);
     void FromNativePtr(void *ptr, const std::string &type);
     void FromNativePtr(const NativePtr &); // alt style
+    Value *Clone(void) const;
+
+    // Cast overloading
     operator bool() const
     { // true test
         // TODO: Implement code for bool type checking
@@ -196,37 +199,117 @@ public:
         case StringType:
             return data.strVal != nullptr; // Maybe not?!
         default:
-            return true;
+            assert(false && "Not implemented yet");
         }
     }
-    Value *Clone(void) const;
-    const Value operator=(const Value &);
+    operator double() const
+    {
+        switch (GetType())
+        {
+        case NilType:
+            return 0;
+        case UndefType:
+            return 0;
+        case NumberType:
+            return data.numVal;
+        case StringType:
+            return std::stod(data.strVal); // Maybe not?!
+        default:
+            assert(false && "Not implemented yet");
+        }
+    }
+    operator std::string() const
+    {
+        switch (GetType())
+        {
+        case NilType:
+            return "\0";
+        case UndefType:
+            return "\0";
+        case NumberType:
+            return std::to_string(data.numVal);
+        case StringType:
+            return data.strVal;
+        default:
+            assert(false && "Not implemented yet");
+        }
+    }
+
+    // Operator overloading. Use overloaded casting operators to save repeatable code
+    const Value operator=(const Value &right)
+    {
+        this->type = right.type;
+        this->data = right.data; // NOTE: Maybe copy the value in case of pointers?
+        return *this;
+    };
     const Value operator+(const Value &right)
     {
-        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        switch (right.GetType())
         {
-            return this->data.numVal + right.data.numVal;
+        case NumberType:
+            return (double)(*this) + (double)right;
+        case StringType:
+            return (std::string)(*this) + (std::string)right;
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
         }
     }
     const Value operator-(const Value &right)
     {
-        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        switch (right.GetType())
         {
-            return this->data.numVal - right.data.numVal;
+        case NumberType:
+            return (double)(*this) - right.ToNumber();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
         }
     }
     const Value operator*(const Value &right)
     {
-        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        switch (right.GetType())
         {
-            return this->data.numVal * right.data.numVal;
+        case NumberType:
+            return (double)(*this) * right.ToNumber();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
         }
     }
     const Value operator/(const Value &right)
     {
-        if (this->GetType() == NumberType && right.GetType() == NumberType)
+        switch (right.GetType())
         {
-            return this->data.numVal / right.data.numVal;
+        case NumberType:
+            return (double)(*this) / right.ToNumber();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator%(const Value &right)
+    {
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)((int)(double)(*this) % (int)right.ToNumber());
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
+        }
+    }
+    const Value operator==(const Value &right)
+    {
+        switch (right.GetType())
+        {
+        case NumberType:
+            return (double)(*this) == right.ToNumber();
+        case BooleanType:
+            return (bool)(*this) == right.ToBool();
+        default:
+            // Maybe throw exception?
+            assert(false && "Not implemented yet");
         }
     }
 
