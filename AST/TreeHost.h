@@ -240,15 +240,19 @@ private:
     }
     void AcceptForstmt(const Object &node)
     {
+        std::cout << "\033[1;35m 1 \033[0m\n" << std::endl;
         if (node[AST_TAG_INIT]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_INIT]->ToObject());
-
-        Accept(*node[AST_TAG_EXPR]->ToObject());
-
+        std::cout << "\033[1;35m 2 \033[0m\n" << std::endl;
+        if(node[AST_TAG_EXPR]->GetType() != Value::NilType)
+            Accept(*node[AST_TAG_EXPR]->ToObject());
+        std::cout << "\033[1;35m 3 \033[0m\n" << std::endl;
         if (node[AST_TAG_FORCOND]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_FORCOND]->ToObject());
-        if (node[AST_TAG_STMT]->GetType() != Value::NilType)
-            Accept(*node[AST_TAG_STMT]->ToObject());
+        std::cout << "\033[1;35m 4 \033[0m\n" << std::endl;
+        if (node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
+            Accept(*node[AST_TAG_FORSTMT]->ToObject());
+        std::cout << "\033[1;35m 5 \033[0m\n" << std::endl;
         visitor->VisitFor(node);
     }
     void AcceptReturn(const Object &node)

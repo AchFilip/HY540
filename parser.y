@@ -489,7 +489,7 @@ forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {
                                                                     obj->Set(AST_TAG_INIT, *$3);
                                                                     obj->Set(AST_TAG_EXPR, *$5);
                                                                     obj->Set(AST_TAG_FORCOND, *$7);
-                                                                    obj->Set(AST_TAG_STMT, $9);
+                                                                    obj->Set(AST_TAG_FORSTMT, $9);
                                                                     $$ = new Value(*obj);
                                                                 }
                 ;

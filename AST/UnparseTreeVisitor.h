@@ -377,7 +377,14 @@ public:
         }
         else if (node[AST_TAG_FOR] != nullptr)
         {
-            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt(GetUnparsed(node[AST_TAG_FOR]), false));
+            node.Debug_PrintChildren();
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseStmt(
+                    GetUnparsed(node[AST_TAG_FOR]),
+                    false
+                )
+            );
         }
         else if (node[AST_TAG_RETURNSTMT] != nullptr)
        {
@@ -611,8 +618,7 @@ public:
     } 
 
     virtual void VisitElist(const Object &node) override{ //not tested
-        if(false) return; //check gia nill
-
+        std::cout << "\033[1;35m EDW XALAEI \033[0m\n" << std::endl;
 
         if(node.children.count(AST_TAG_ELIST))
             const_cast<Object&>(node).Set(
@@ -721,9 +727,7 @@ public:
     virtual void VisitNumber(const Object &node) override{} //?
     
     virtual void VisitIdlist(const Object &node) override{
-        std::cout << "     " << node[AST_TAG_ID]->Stringify(); 
         if(node[AST_TAG_IDLIST]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType){
-            std::cout << "SDADSADASDASDASDS";
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIdlist(
@@ -762,13 +766,14 @@ public:
     }
 
     virtual void VisitFor(const Object &node) override{ //crashed
+        node.Debug_PrintChildren();
         const_cast<Object&>(node).Set(
             UNPARSE_VALUE,
             UnparseForStmt(
                 GetUnparsed(node[AST_TAG_INIT]),
                 GetUnparsed(node[AST_TAG_EXPR]),
                 GetUnparsed(node[AST_TAG_FORCOND]),
-                GetUnparsed(node[AST_TAG_STMT])
+                GetUnparsed(node[AST_TAG_FORSTMT])
             )
         );
     }
