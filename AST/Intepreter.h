@@ -165,12 +165,12 @@ private:
     {
         node.Debug_PrintChildren();
 
-        // Eval left and right part of assignment
-        // TODO: differentiate between lvalue and rvalue evals by explicite calls.
         Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
-        lvalue = expr;                                              // Do you believe in god son?
+        lvalue = expr;
+
         GetCurrentScope().Debug_PrintChildren();
+
         return lvalue;
     }
     const Value EvalPrimary(Object &node)
@@ -230,11 +230,33 @@ private:
                 // TODO
             }
         }
+        else if (node[AST_TAG_MEMBER])
+        {
+            return Eval(*node[AST_TAG_MEMBER]->ToObject_NoConst());
+        }
         else
             assert(false && "Not implemented yet");
     }
     const Value EvalMember(Object &node)
     {
+        std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
+        if (node[AST_TAG_LVALUE])
+        {
+            auto temp = EvalObjGet(node);
+            return temp;
+        }
+        else if (node[AST_TAG_CALL])
+        {
+            const Value call = Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
+            if (disambiguate == ".id")
+            {
+            }
+            else if (disambiguate == "[expr]")
+            {
+            }
+            else
+                assert(false && "Impossible");
+        }
     }
     const Value EvalCall(Object &node)
     {
@@ -255,9 +277,12 @@ private:
             Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
             node.GetAndRemove(AST_TAG_EXPR);
             node.Set(AST_TAG_EXPR, expr);
-            GetCurrentScope().Debug_PrintChildren();
 
-            return Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+            Value elist = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+            node.GetAndRemove(AST_TAG_ELIST);
+            node.Set(AST_TAG_ELIST, elist);
+
+            return node;
         }
         else if (node[AST_TAG_EXPR])
         {
@@ -276,7 +301,9 @@ private:
         // TODO: use returned values of eval to create the object;
         if (node[AST_TAG_ELIST])
         {
-            return Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
+            const Value elist = Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
+            const Value elistPacked = EvalElistToObject(*elist.ToObject_NoConst()); // killme. yES.
+            return elistPacked;
         }
         else if (node[AST_TAG_INDEXED])
         {
@@ -292,7 +319,6 @@ private:
             Value expr = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
             node.GetAndRemove(AST_TAG_INDEXEDELEM);
             node.Set(AST_TAG_INDEXEDELEM, expr);
-            GetCurrentScope().Debug_PrintChildren();
 
             return Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
         }
@@ -387,7 +413,19 @@ private:
     }
     const Value EvalObjGet(Object &node)
     {
-        return *node["$value"];
+        node.Debug_PrintChildren();
+        std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
+        const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+        std::string index;
+        if (disambiguate == ".id")
+            index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
+        else if (disambiguate == "[expr]"){
+            index = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()).Stringify();
+        }
+        else
+            assert(false && "Impossible");
+
+        return *(*lvalue.ToObject_NoConst())[index];
     }
     const Value EvalObjSet(Object &node)
     {
@@ -441,8 +479,43 @@ private:
             assert(false && "Not implemented yet");
     }
 
+    const Value EvalElistToObject(Object &node) // node must be elist
+    {
+        // Elist is parsed in reverse order
+        // So first store values in a stack
+        // and the add them to an object
+
+        Object &iterator = node;
+        ValueStack stack;
+        while (iterator[AST_TAG_ELIST])
+        {
+            stack.Push(Value(*iterator[AST_TAG_EXPR]));
+            if (iterator[AST_TAG_ELIST]->GetType() == Value::ObjectType)
+            {
+                iterator[AST_TAG_ELIST]->ToObject_NoConst()->Debug_PrintChildren();
+                iterator = *iterator[AST_TAG_ELIST]->ToObject_NoConst();
+            }
+            else
+            {
+                stack.Push(Value(*iterator[AST_TAG_ELIST]));
+                break;
+            }
+        }
+
+        int index = 0;
+        Object *obj = new Object();
+        while (stack.IsEmpty() == false)
+        {
+            obj->Set(index++, stack.Top());
+            stack.Pop();
+        }
+
+        return Value(*obj);
+    }
+
     // Environment Handling Methods
-    Object &GetCurrentScope()
+    Object &
+    GetCurrentScope()
     {
         return *envStack->Top().ToObject_NoConst()->children[TAIL_SCOPE_KEY].ToObject_NoConst();
     }
@@ -570,6 +643,8 @@ private:
                             { return EvalId(node); });
         dispatcher->Install(AST_TAG_IDLIST, [this](Object &node)
                             { return EvalIdlist(node); });
+        dispatcher->Install(AST_TAG_MEMBER, [this](Object &node)
+                            { return EvalMember(node); });
     }
 
 public:

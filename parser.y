@@ -299,19 +299,19 @@ lvalue:         id                                              {
 
 member:         lvalue '.' id                                   {
                                                                     PrintParsing("member","lvalue . ID");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_LVALUE, AST_TAG_ID, "", *$1, *$3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_LVALUE, AST_TAG_ID, ".id", *$1, *$3);
                                                                 }
                 | lvalue '[' expr ']'                           {
                                                                     PrintParsing("member","lvalue [ expr ]");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_LVALUE, AST_TAG_EXPR, "", *$1, *$3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_LVALUE, AST_TAG_EXPR, "[expr]", *$1, *$3);
                                                                 }
                 | call '.' id                                   {
                                                                     PrintParsing("member","call . ID");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_CALL, AST_TAG_ID, "", *$1, *$3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_CALL, AST_TAG_ID, ".id", *$1, *$3);
                                                                 }
                 | call '[' expr ']'                             {
                                                                     PrintParsing("member","call [ expr ]");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_CALL, AST_TAG_EXPR, "", *$1, *$3);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_MEMBER, AST_TAG_CALL, AST_TAG_EXPR, "[expr]", *$1, *$3);
                                                                 }
                 ;
 
