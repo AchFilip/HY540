@@ -171,6 +171,7 @@ private:
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
         lvalue = expr;                                              // Do you believe in god son?
         GetCurrentScope().Debug_PrintChildren();
+        return lvalue;
     }
     const Value EvalPrimary(Object &node)
     {
@@ -249,6 +250,24 @@ private:
     }
     const Value EvalElist(Object &node)
     {
+        if (node[AST_TAG_ELIST])
+        {
+            Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
+            node.GetAndRemove(AST_TAG_EXPR);
+            node.Set(AST_TAG_EXPR, expr);
+            GetCurrentScope().Debug_PrintChildren();
+
+            return Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_EXPR])
+        {
+            return Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
+        }
+        else
+        {
+            // empty elist
+            return _NIL_;
+        }
     }
     const Value EvalObjectDef(Object &node)
     {
@@ -268,9 +287,29 @@ private:
     }
     const Value EvalIndexed(Object &node)
     {
+        if (node[AST_TAG_INDEXED])
+        {
+            Value expr = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
+            node.GetAndRemove(AST_TAG_INDEXEDELEM);
+            node.Set(AST_TAG_INDEXEDELEM, expr);
+            GetCurrentScope().Debug_PrintChildren();
+
+            return Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_INDEXEDELEM])
+        {
+            return Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
+        }
     }
     const Value EvalIndexedElem(Object &node)
     {
+        Value r_expr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
+        Value l_expr = EvalExpr(*node[AST_TAG_EXPR_LEFT]->ToObject_NoConst());
+        node.GetAndRemove(AST_TAG_EXPR_LEFT);
+        node.GetAndRemove(AST_TAG_EXPR_RIGHT);
+        node.Set(AST_TAG_EXPR_LEFT, l_expr);
+        node.Set(AST_TAG_EXPR_RIGHT, r_expr);
+        return _NIL_;
     }
     const Value EvalBlock(Object &node)
     {
@@ -525,8 +564,12 @@ private:
                             { return EvalElist(node); });
         dispatcher->Install(AST_TAG_INDEXED, [this](Object &node)
                             { return EvalIndexed(node); });
-
-        // ... all the rest ../
+        dispatcher->Install(AST_TAG_INDEXEDELEM, [this](Object &node)
+                            { return EvalIndexedElem(node); });
+        dispatcher->Install(AST_TAG_ID, [this](Object &node)
+                            { return EvalId(node); });
+        dispatcher->Install(AST_TAG_IDLIST, [this](Object &node)
+                            { return EvalIdlist(node); });
     }
 
 public:
