@@ -478,7 +478,7 @@ ifstmt:         IF '(' expr ')' stmt                            {
 
 whilestmt:      WHILE '(' expr ')' stmt                         {
                                                                     PrintParsing("whilestmt", "WHILE ( expr ) stmt");
-                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_WHILE, AST_TAG_EXPR, AST_TAG_STMT, "", *$3, *$5);
+                                                                    $$ = CreateAstNodeTwoChildren(AST_TAG_WHILE, AST_TAG_WHILE_COND, AST_TAG_WHILE_STMT, "", *$3, *$5);
                                                                 }
                 ;
 
@@ -524,16 +524,16 @@ int main(int argc, char** argv){
     // Step 1: Create AST
     yyparse();  
 
-    /* TreeHost *treeHost = new TreeHost(); */
-    /* treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); */
+     TreeHost *treeHost = new TreeHost(); 
+     treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
     //std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl; 
 
     //~~~~~~
     // Test Interpreter functions
 
-    Interpreter* interpreter = new Interpreter();
-    interpreter->StartProgram(*ast->ToObject_NoConst());
-    delete interpreter;
+    //Interpreter* interpreter = new Interpreter();
+    //interpreter->StartProgram(*ast->ToObject_NoConst());
+    //delete interpreter;
 
     //~~~~~~
     std::cout << "Its Over =)";
