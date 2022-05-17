@@ -95,8 +95,14 @@ private:
     {
         if (node[AST_TAG_ID] != nullptr)
             ;
-        else if (node[AST_TAG_EXPR] != nullptr)
+        if (node[AST_TAG_EXPR] != nullptr)
             Accept(*node[AST_TAG_EXPR]->ToObject());
+        if(node[AST_TAG_LVALUE] != nullptr)
+            Accept(*node[AST_TAG_LVALUE]->ToObject());
+        if(node[AST_TAG_EXPR] != nullptr)
+            Accept(*node[AST_TAG_EXPR]->ToObject());
+        if(node[AST_TAG_CALL] != nullptr)
+            Accept(*node[AST_TAG_CALL]->ToObject());
         visitor->VisitMember(node);
     }
     void AcceptCall(const Object &node)
