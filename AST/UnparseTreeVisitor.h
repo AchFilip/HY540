@@ -194,6 +194,12 @@ private:
         return str;
     }
 
+    const std::string UnparseCallSuffix(const std::string &input)
+    {
+        std::string str = input;
+        PrintTheUnparsedString(str);
+        return str;
+    }
     const std::string UnparseNormCall(const std::string &elist)
     {
         std::string str("( " + elist + " )");
@@ -598,13 +604,31 @@ public:
             );
     } 
     
+    virtual void VisitCallSuffix(const Object &node) override{ //not tested
+        if(node[AST_TAG_NORMCALL] != nullptr)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseCallSuffix(
+                    GetUnparsed(node[AST_TAG_NORMCALL])
+                )
+            );    
+        else if(node[AST_TAG_METHODCALL] != nullptr)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseCallSuffix(
+                    GetUnparsed(node[AST_TAG_METHODCALL])
+                )
+            ); 
+    }
+
     virtual void VisitNormCall(const Object &node) override{ //not tested
-        const_cast<Object&>(node).Set(
-            UNPARSE_VALUE,
-            UnparseNormCall(
-                GetUnparsed(node[AST_TAG_ELIST])
-            )
-        );    
+        if(node[AST_TAG_ELIST] != nullptr)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseNormCall(
+                    GetUnparsed(node[AST_TAG_ELIST])
+                )
+            );    
     }
 
     virtual void VisitMethodCall(const Object &node) override{ //not tested
