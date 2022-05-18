@@ -620,7 +620,7 @@ public:
     virtual void VisitElist(const Object &node) override{ //not tested
         std::cout << "\033[1;35m EDW XALAEI \033[0m\n" << std::endl;
 
-        if(node.children.count(AST_TAG_ELIST))
+        if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseElist(
@@ -628,21 +628,34 @@ public:
                     GetUnparsed(node[AST_TAG_ELIST])
                 )
             );
-        else
+        else if(node[AST_TAG_EXPR] != nullptr)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseElist(
                     GetUnparsed(node[AST_TAG_EXPR])
                 )
             );
+        else
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                ""
+            );
+            
     } 
 
     virtual void VisitObjectDef(const Object &node) override{ //not tested
-        if(node.children.count(AST_TAG_ELIST))
+        if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseObjectDef(
                     GetUnparsed(node[AST_TAG_ELIST])
+                )
+            );
+        else if(node[AST_TAG_ELIST]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseObjectDef(
+                    ""
                 )
             );
         else if(node.children.count(AST_TAG_INDEXED))

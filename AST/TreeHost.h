@@ -148,6 +148,7 @@ private:
     }
     void AcceptElist(const Object &node)
     {
+
         if (node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_ELIST]->ToObject());
         Accept(*node[AST_TAG_EXPR]->ToObject());
@@ -155,6 +156,7 @@ private:
     }
     void AcceptObjectDef(const Object &node)
     {
+        node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_ELIST]->ToObject());
         else if (node[AST_TAG_INDEXED] != nullptr)

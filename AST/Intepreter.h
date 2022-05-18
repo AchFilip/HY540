@@ -212,7 +212,7 @@ private:
                 }
                 else
                 {
-                    assert(false && "Nevermind this point, we will deal with it later");
+                    assert(false && "Lookup didn't find anything");
                     return Value();
                 }
             }
@@ -301,9 +301,14 @@ private:
         // TODO: use returned values of eval to create the object;
         if (node[AST_TAG_ELIST])
         {
-            const Value elist = Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
-            const Value elistPacked = EvalElistToObject(*elist.ToObject_NoConst()); // killme. yES.
-            return elistPacked;
+            if((node[AST_TAG_ELIST]->GetType() != Value::NilType)){
+                const Value elist = Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
+                const Value elistPacked = EvalElistToObject(*elist.ToObject_NoConst()); // killme. yES.
+                return elistPacked;
+            }    
+            else     
+                return *(new Value(*(new Object())));
+            assert(false);
         }
         else if (node[AST_TAG_INDEXED])
         {
@@ -378,10 +383,12 @@ private:
     const Value EvalContinue(Object &node) { throw ContinueException(); }
     const Value EvalWhile(Object &node)
     {
-        while (Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()))
+        PushNested();
+        while (Eval(*node[AST_TAG_WHILE_COND]->ToObject_NoConst()))
             try
             {
-                Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
+                if(node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
+                    Eval(*node[AST_TAG_WHILE_STMT]->ToObject_NoConst());
             }
             catch (const BreakException &)
             {
@@ -391,21 +398,26 @@ private:
             {
                 continue;
             } // redundant
+        PopScope();
         return _NIL_;
     }
     const Value EvalFor(Object &node)
     {
+        PushNested();
+        
+        PopScope();
     }
     const Value EvalIf(Object &node)
     {
         node.Debug_PrintChildren();
-        if (dispatcher->Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()))
+        PushNested();
+        if (dispatcher->Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()) && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
             dispatcher->Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
         else if (auto *elseStmt = node[AST_TAG_ELSE_STMT])
         {
             dispatcher->Eval(*elseStmt->ToObject_NoConst());
         }
-
+        PopScope();
         return _NIL_;
     }
     const Value EvalReturn(Object &node)
