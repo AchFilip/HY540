@@ -85,6 +85,12 @@ public:
         type = ObjectType;
         data.objVal = &obj;
     };
+    Value(Object& ast, Object* closure)
+    {
+        type = ProgramFunctionType;
+        data.progFuncVal.ast = &ast;
+        data.progFuncVal.closure = closure;
+    };
     // Value(const Value &);
     Value(void)
     {
@@ -168,8 +174,12 @@ public:
     {
         return data.objVal;
     };
-    const Object *ToProgramFunctionAST(void) const;
-    const Object *ToProgramFunctionClosure(void) const;
+    const Object *ToProgramFunctionAST(void) const{
+        return data.progFuncVal.ast;
+    };
+    const Object *ToProgramFunctionClosure(void) const{
+        return data.progFuncVal.closure;
+    };
     Object *ToObject_NoConst(void) const
     {
         return const_cast<Object *>(data.objVal);

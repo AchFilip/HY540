@@ -46,6 +46,8 @@ public:
 		for(auto it = valueStack.begin(); it != valueStack.end(); ++it){
 			if(it->GetType() == Value::ObjectType)
 				it->ToObject()->Debug_PrintChildren();
+			else
+				std::cout << it->Stringify() << std::endl;
 		}
 		std::cout << "~~~~~~~~~~~~~~" << std::endl;
 	}
