@@ -332,7 +332,15 @@ private:
         }
         else if (node[AST_TAG_INDEXED])
         {
-            return Eval(*(node[AST_TAG_INDEXED]->ToObject_NoConst()));
+            if ((node[AST_TAG_INDEXED]->GetType() != Value::NilType))
+            {
+                const Value indexed = Eval(*(node[AST_TAG_INDEXED]->ToObject_NoConst()));
+                const Value indexedPacked = EvalIndexedToObject(*indexed.ToObject_NoConst()); // killme. yES.
+                return indexedPacked;
+            }
+            else
+                return *(new Value(*(new Object())));
+            assert(false);
         }
         else
             assert(false && "Invalid ObjectDef node");
@@ -341,11 +349,15 @@ private:
     {
         if (node[AST_TAG_INDEXED])
         {
-            Value expr = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
+            Value indexedelem = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
             node.GetAndRemove(AST_TAG_INDEXEDELEM);
-            node.Set(AST_TAG_INDEXEDELEM, expr);
+            node.Set(AST_TAG_INDEXEDELEM, indexedelem);
 
-            return Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
+            Value indexed = Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
+            node.GetAndRemove(AST_TAG_INDEXED);
+            node.Set(AST_TAG_INDEXED, indexed);
+
+            return node;
         }
         else if (node[AST_TAG_INDEXEDELEM])
         {
@@ -360,7 +372,7 @@ private:
         node.GetAndRemove(AST_TAG_EXPR_RIGHT);
         node.Set(AST_TAG_EXPR_LEFT, l_expr);
         node.Set(AST_TAG_EXPR_RIGHT, r_expr);
-        return _NIL_;
+        return node;
     }
     const Value EvalBlock(Object &node)
     {
@@ -490,7 +502,8 @@ private:
         std::string index;
         if (disambiguate == ".id")
             index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
-        else if (disambiguate == "[expr]"){
+        else if (disambiguate == "[expr]")
+        {
             index = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()).Stringify();
         }
         else
@@ -581,6 +594,37 @@ private:
             stack.Pop();
         }
         obj->Debug_PrintChildren();
+        return Value(*obj);
+    }
+    const Value EvalIndexedToObject(Object &node)
+    {
+        Object &iterator = node;
+        ValueStack stack;
+        while (iterator[AST_TAG_INDEXED])
+        {
+            stack.Push(Value(*iterator[AST_TAG_INDEXEDELEM]));
+            if (iterator[AST_TAG_INDEXED]->GetType() == Value::ObjectType)
+            {
+                // iterator[AST_TAG_INDEXED]->ToObject_NoConst()->Debug_PrintChildren();
+                iterator = *iterator[AST_TAG_INDEXED]->ToObject_NoConst();
+            }
+            else
+            {
+                stack.Push(Value(*iterator[AST_TAG_INDEXED]));
+                break;
+            }
+        }
+        stack.Push(Value(iterator));
+
+        // int index = 0;
+        Object *obj = new Object();
+        while (stack.IsEmpty() == false)
+        {
+            Object *key = stack.Top().ToObject_NoConst();
+            obj->Set((*key)[AST_TAG_EXPR_LEFT]->Stringify(), (*key)[AST_TAG_EXPR_RIGHT]);
+            stack.Pop();
+        }
+        // obj->Debug_PrintChildren();
         return Value(*obj);
     }
 
