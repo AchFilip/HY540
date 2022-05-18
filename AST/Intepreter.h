@@ -27,14 +27,22 @@ private:
     const Value EvalStmts(Object &node)
     {
         node.Debug_PrintChildren();
-        if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+        if(node[AST_TAG_STMTS]->GetType() != Value::NilType && node[AST_TAG_STMT]->GetType() != Value::NilType)
         {
             Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
             Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
         }
-        else
+        else if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+        {
+            Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_STMT]->GetType() != Value::NilType)
         {
             Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
+        }
+        else
+        {
+            return _NIL_;
         }
     }
     const Value EvalStmt(Object &node)
@@ -111,7 +119,6 @@ private:
     const Value EvalTerm(Object &node)
     {
         node.Debug_PrintChildren();
-
         std::string termType;
         if (node[AST_TAG_PRIMARY])
             termType = AST_TAG_PRIMARY;
@@ -179,6 +186,7 @@ private:
 
         if (node[AST_TAG_LVALUE])
         {
+            
             return Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
         }
         else if (node[AST_TAG_CONST])
@@ -270,18 +278,18 @@ private:
     const Value EvalMethodCall(Object &node)
     {
     }
-    const Value EvalElist(Object &node)
-    {
+    const Value EvalTreeElist(Object &node){
+        node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST])
         {
             Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
             node.GetAndRemove(AST_TAG_EXPR);
             node.Set(AST_TAG_EXPR, expr);
 
-            Value elist = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+            Value elist = EvalTreeElist(*node[AST_TAG_ELIST]->ToObject_NoConst());
             node.GetAndRemove(AST_TAG_ELIST);
             node.Set(AST_TAG_ELIST, elist);
-
+            
             return node;
         }
         else if (node[AST_TAG_EXPR])
@@ -294,17 +302,29 @@ private:
             return _NIL_;
         }
     }
+    const Value EvalElist(Object &node)
+    {
+        if(node[AST_TAG_ELIST] == nullptr && node[AST_TAG_EXPR] != nullptr){
+            Object* elist = new Object();
+            elist->Set(0,Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()));
+            return Value(*elist);
+        }
+        const Value treeElist = EvalTreeElist(node);
+     
+        if(treeElist.GetType() == Value::ObjectType)
+            return EvalElistToObject(*treeElist.ToObject_NoConst());
+        else{
+            return _NIL_;
+        } 
+            
+    }
     const Value EvalObjectDef(Object &node)
     {
-        node.Debug_PrintChildren();
-
         // TODO: use returned values of eval to create the object;
         if (node[AST_TAG_ELIST])
         {
             if((node[AST_TAG_ELIST]->GetType() != Value::NilType)){
-                const Value elist = Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
-                const Value elistPacked = EvalElistToObject(*elist.ToObject_NoConst()); // killme. yES.
-                return elistPacked;
+                return Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));;
             }    
             else     
                 return *(new Value(*(new Object())));
@@ -344,24 +364,29 @@ private:
     }
     const Value EvalBlock(Object &node)
     {
-        // Push new nested scope
-        PushNested();
-        // Eval code inside of block
-        Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
-        // Make sure that scopes have been restored
-        auto &currScope = GetCurrentScope();
-        bool shouldSliceOuter = currScope[PREVIOUS_SCOPE_KEY] != nullptr;
-        if (shouldSliceOuter)
-            while ((*PopScope())[PREVIOUS_SCOPE_KEY]) // Cringe fast code
+        if(node[AST_TAG_STMTS]->GetType() != Value::NilType){
+            // Push new nested scope
+            PushNested();
+            // Eval code inside of block
+            const Value val = Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
+            // Make sure that scopes have been restored
+            auto &currScope = GetCurrentScope();
+            bool shouldSliceOuter = currScope[PREVIOUS_SCOPE_KEY] != nullptr;
+            if (shouldSliceOuter)
+                while ((*PopScope())[PREVIOUS_SCOPE_KEY]) // Cringe fast code
+                {
+                    // no-op (intentionally empty)
+                }
+            assert(GetCurrentScope()[OUTER_SCOPE_KEY] != nullptr);
+            PopScope();
+            if (shouldSliceOuter)
             {
-                // no-op (intentionally empty)
+                PushSlice();
             }
-        assert(GetCurrentScope()[OUTER_SCOPE_KEY] != nullptr);
-        PopScope();
-        if (shouldSliceOuter)
-        {
-            PushSlice();
+            return val;
         }
+        else return _NIL_;
+        
     }
     const Value EvalId(Object &node)
     {
@@ -384,11 +409,21 @@ private:
     const Value EvalWhile(Object &node)
     {
         PushNested();
+        //Get stmts from stmt -> block -> '{' stmts '}' in whilenode of parser 
+        Object* whilestmts;
+        if(node[AST_TAG_WHILE_STMT]->GetType() == Value::ObjectType && (*node[AST_TAG_WHILE_STMT]->ToObject_NoConst())[AST_TAG_BLOCK] != nullptr)
+            if((*node[AST_TAG_WHILE_STMT]->ToObject_NoConst())[AST_TAG_BLOCK]->GetType() != Value::NilType){
+                whilestmts = (*((*node[AST_TAG_WHILE_STMT]->ToObject_NoConst())[AST_TAG_BLOCK]->ToObject_NoConst()))[AST_TAG_STMTS]->ToObject_NoConst();
+            }                
+        else
+            whilestmts = node[AST_TAG_WHILE_STMT]->ToObject_NoConst();
+        
+        //Execute while
         while (Eval(*node[AST_TAG_WHILE_COND]->ToObject_NoConst()))
             try
             {
-                if(node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
-                    Eval(*node[AST_TAG_WHILE_STMT]->ToObject_NoConst());
+                if(whilestmts && node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
+                    EvalStmts(*whilestmts); 
             }
             catch (const BreakException &)
             {
@@ -404,7 +439,31 @@ private:
     const Value EvalFor(Object &node)
     {
         PushNested();
-        
+        //Get stmts from stmt -> block -> '{' stmts '}' in fornode of parser
+        Object* forstmts;        
+        if(node[AST_TAG_FORSTMT]->GetType() == Value::ObjectType && (*node[AST_TAG_FORSTMT]->ToObject_NoConst())[AST_TAG_BLOCK] != nullptr)
+            if((*node[AST_TAG_FORSTMT]->ToObject_NoConst())[AST_TAG_BLOCK]->GetType() != Value::NilType){
+                forstmts = (*((*node[AST_TAG_FORSTMT]->ToObject_NoConst())[AST_TAG_BLOCK]->ToObject_NoConst()))[AST_TAG_STMTS]->ToObject_NoConst();
+            }                
+        else
+            forstmts = node[AST_TAG_FORSTMT]->ToObject_NoConst();
+
+        //Execute for
+        if(node[AST_TAG_INIT]->GetType() != Value::NilType)
+            EvalElist(*node[AST_TAG_INIT]->ToObject_NoConst());
+
+        for(
+            ;
+            Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());             
+        )
+        {
+            forstmts->Debug_PrintChildren();
+            if(forstmts && node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
+                EvalStmts(*forstmts);    
+
+            if(node[AST_TAG_FORCOND]->GetType() != Value::NilType)
+                EvalElist(*node[AST_TAG_FORCOND]->ToObject_NoConst());                    
+        }
         PopScope();
     }
     const Value EvalIf(Object &node)
@@ -521,13 +580,12 @@ private:
             obj->Set(index++, stack.Top());
             stack.Pop();
         }
-
+        obj->Debug_PrintChildren();
         return Value(*obj);
     }
 
     // Environment Handling Methods
-    Object &
-    GetCurrentScope()
+    Object &GetCurrentScope()
     {
         return *envStack->Top().ToObject_NoConst()->children[TAIL_SCOPE_KEY].ToObject_NoConst();
     }
