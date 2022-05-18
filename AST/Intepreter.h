@@ -301,18 +301,27 @@ private:
         // TODO: use returned values of eval to create the object;
         if (node[AST_TAG_ELIST])
         {
-            if((node[AST_TAG_ELIST]->GetType() != Value::NilType)){
+            if ((node[AST_TAG_ELIST]->GetType() != Value::NilType))
+            {
                 const Value elist = Eval(*(node[AST_TAG_ELIST]->ToObject_NoConst()));
                 const Value elistPacked = EvalElistToObject(*elist.ToObject_NoConst()); // killme. yES.
                 return elistPacked;
-            }    
-            else     
+            }
+            else
                 return *(new Value(*(new Object())));
             assert(false);
         }
         else if (node[AST_TAG_INDEXED])
         {
-            return Eval(*(node[AST_TAG_INDEXED]->ToObject_NoConst()));
+            if ((node[AST_TAG_INDEXED]->GetType() != Value::NilType))
+            {
+                const Value indexed = Eval(*(node[AST_TAG_INDEXED]->ToObject_NoConst()));
+                const Value indexedPacked = EvalIndexedToObject(*indexed.ToObject_NoConst()); // killme. yES.
+                return indexedPacked;
+            }
+            else
+                return *(new Value(*(new Object())));
+            assert(false);
         }
         else
             assert(false && "Invalid ObjectDef node");
@@ -321,11 +330,15 @@ private:
     {
         if (node[AST_TAG_INDEXED])
         {
-            Value expr = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
+            Value indexedelem = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
             node.GetAndRemove(AST_TAG_INDEXEDELEM);
-            node.Set(AST_TAG_INDEXEDELEM, expr);
+            node.Set(AST_TAG_INDEXEDELEM, indexedelem);
 
-            return Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
+            Value indexed = Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
+            node.GetAndRemove(AST_TAG_INDEXED);
+            node.Set(AST_TAG_INDEXED, indexed);
+
+            return node;
         }
         else if (node[AST_TAG_INDEXEDELEM])
         {
@@ -340,7 +353,7 @@ private:
         node.GetAndRemove(AST_TAG_EXPR_RIGHT);
         node.Set(AST_TAG_EXPR_LEFT, l_expr);
         node.Set(AST_TAG_EXPR_RIGHT, r_expr);
-        return _NIL_;
+        return node;
     }
     const Value EvalBlock(Object &node)
     {
@@ -387,7 +400,7 @@ private:
         while (Eval(*node[AST_TAG_WHILE_COND]->ToObject_NoConst()))
             try
             {
-                if(node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
+                if (node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
                     Eval(*node[AST_TAG_WHILE_STMT]->ToObject_NoConst());
             }
             catch (const BreakException &)
@@ -404,7 +417,7 @@ private:
     const Value EvalFor(Object &node)
     {
         PushNested();
-        
+
         PopScope();
     }
     const Value EvalIf(Object &node)
@@ -431,7 +444,8 @@ private:
         std::string index;
         if (disambiguate == ".id")
             index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
-        else if (disambiguate == "[expr]"){
+        else if (disambiguate == "[expr]")
+        {
             index = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()).Stringify();
         }
         else
@@ -522,6 +536,37 @@ private:
             stack.Pop();
         }
 
+        return Value(*obj);
+    }
+    const Value EvalIndexedToObject(Object &node)
+    {
+        Object &iterator = node;
+        ValueStack stack;
+        while (iterator[AST_TAG_INDEXED])
+        {
+            stack.Push(Value(*iterator[AST_TAG_INDEXEDELEM]));
+            if (iterator[AST_TAG_INDEXED]->GetType() == Value::ObjectType)
+            {
+                // iterator[AST_TAG_INDEXED]->ToObject_NoConst()->Debug_PrintChildren();
+                iterator = *iterator[AST_TAG_INDEXED]->ToObject_NoConst();
+            }
+            else
+            {
+                stack.Push(Value(*iterator[AST_TAG_INDEXED]));
+                break;
+            }
+        }
+        stack.Push(Value(iterator));
+
+        // int index = 0;
+        Object *obj = new Object();
+        while (stack.IsEmpty() == false)
+        {
+            Object *key = stack.Top().ToObject_NoConst();
+            obj->Set((*key)[AST_TAG_EXPR_LEFT]->Stringify(), (*key)[AST_TAG_EXPR_RIGHT]);
+            stack.Pop();
+        }
+        // obj->Debug_PrintChildren();
         return Value(*obj);
     }
 

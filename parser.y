@@ -523,16 +523,16 @@ int main(int argc, char** argv){
     // Step 1: Create AST
     yyparse();  
 
-    TreeHost *treeHost = new TreeHost(); 
-    treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
-    std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl; 
+    //TreeHost *treeHost = new TreeHost(); 
+    //treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
+    //std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl; 
 
     //~~~~~~
     // Test Interpreter functions
 
-    // Interpreter* interpreter = new Interpreter();
-    // interpreter->StartProgram(*ast->ToObject_NoConst());
-    // delete interpreter;
+    Interpreter* interpreter = new Interpreter();
+    interpreter->StartProgram(*ast->ToObject_NoConst());
+    delete interpreter;
 
     //~~~~~~
     std::cout << "Its Over =)";
