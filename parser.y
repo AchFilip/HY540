@@ -285,11 +285,11 @@ lvalue:         id                                              {
                                                                 }
                 | LOCAL id                                      {
                                                                     PrintParsing("lvalue","local ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "local_id", *$2);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "local id", *$2);
                                                                 }
-                | DOUBLEDOTS id                                 {
-                                                                    PrintParsing("lvalue","DOUBLEDOTS ID");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "doubledots_id", *$2);
+                | DOUBLECOLON id                                 {
+                                                                    PrintParsing("lvalue","DOUBLE_COLON ID");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_ID, "doubledots id", *$2);
                                                                 }
                 | member                                        {
                                                                     PrintParsing("lvalue","member");
