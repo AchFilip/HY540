@@ -1,0 +1,7 @@
+x = false;
+if(x)
+    x = 1;
+else
+    if(x == false)
+        x = 3;
+y = x;

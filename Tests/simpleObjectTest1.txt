@@ -1,0 +1,3 @@
+table = [];
+table.x = 1;
+i = table["x"];
