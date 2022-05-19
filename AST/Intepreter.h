@@ -6,6 +6,7 @@
 #include "./ValueStack.h"
 #include "./EvalDispatcher.h"
 #include <iostream>
+#define PRINT_BLUE_LINE(to_print) std::cout << "\033[1;36m" << std::string(to_print) << "\033[0m\n";
 
 class Interpreter
 {
@@ -281,15 +282,30 @@ private:
     }
     const Value EvalCall(Object &node)
     {
-        return _NIL_;
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_LVALUE] != nullptr){
+            PushScopeSpace(&GetCurrentScope());
+            PushNewScope();
+        }
     }
     const Value EvalCallSuffix(Object &node)
     {
-        return _NIL_;
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_NORMCALL] != nullptr)
+            if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+                return Eval(*node[AST_TAG_NORMCALL]->ToObject_NoConst());
+            else
+                return _NIL_;
+        else if(node[AST_TAG_METHODCALL] != nullptr)
+            assert(false && "Methodcall not implemented yet");
     }
     const Value EvalNormCall(Object &node)
     {
-        return _NIL_;
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+            return Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+        else 
+            return _NIL_;
     }
     const Value EvalMethodCall(Object &node)
     {
@@ -429,6 +445,24 @@ private:
     }
     const Value EvalFuncDef(Object &node)
     {
+        //Create closure
+        Object* closure = &GetCurrentScope();
+        //Get argument names (Maybe add it in ProgramFunctionValue?)
+        Value idlist = _NIL_;        
+        if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)                                                                 
+            idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst()); 
+        //Get Function Name
+        std::string id = "$anonymous";
+        if(node[AST_TAG_ID] != nullptr)
+            std::string id = node[AST_TAG_ID]->ToString();
+        //Create Function Value
+        Value* functionVal = new Value(*node[AST_TAG_BLOCK]->ToObject_NoConst(),closure);
+        //Add function value to current scope
+        auto& scope = GetCurrentScope();
+        scope.Set(id, *functionVal);
+        //Slice
+        PushSlice();
+        
         return _NIL_;
     }
     const Value EvalConst(Object &node)
@@ -438,6 +472,28 @@ private:
     }
     const Value EvalIdlist(Object &node)
     {
+        Object* idlist = new Object();
+        int num = 0;
+        FillIdList(node, *idlist, num);
+        idlist->Debug_PrintChildren();
+        if(num > 0)
+            return Value(*idlist);
+        else 
+            return _NIL_;
+    }
+    void FillIdList(Object &node, Object& idlist, int& number)
+    {
+        if((node[AST_TAG_IDLIST] == nullptr || node[AST_TAG_IDLIST]->GetType() == Value::NilType) && node[AST_TAG_ID] == nullptr)
+            return;
+        else if(node[AST_TAG_IDLIST] == nullptr || node[AST_TAG_IDLIST]->GetType() == Value::NilType){
+            idlist.Set(number++, node[AST_TAG_ID]->ToString());
+            return;
+        }
+        else{
+            FillIdList(*node[AST_TAG_IDLIST]->ToObject_NoConst(), idlist, number);
+            idlist.Set(number++, node[AST_TAG_ID]->ToString());
+            return;
+        }
     }
     const Value EvalBreak(Object &node)
     {
@@ -565,7 +621,10 @@ private:
         else
             assert(false && "Impossible");
 
-        // std::cout << index << " " << (*lvalue.ToObject_NoConst())[index]->Stringify() << std::endl;
+        std::cout << (*lvalue.ToObject_NoConst())[index] << std::endl;
+        if((*lvalue.ToObject_NoConst())[index] == nullptr)
+            lvalue.ToObject_NoConst()->Set(index,Value(_NIL_));
+
         return *(*lvalue.ToObject_NoConst())[index];
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)

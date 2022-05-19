@@ -416,6 +416,7 @@ funcdef:        FUNCTION '('  idlist ')' block                  {
                 | FUNCTION id '(' idlist ')' block              {
                                                                     PrintParsing("funcdef", "FUNCTION ID (idlist) block");
                                                                     Object* obj = new Object();
+                                                                    obj->Set(AST_TAG_TYPE_KEY, AST_TAG_FUNCDEF);
                                                                     obj->Set(AST_TAG_ID, *$2);
                                                                     obj->Set(AST_TAG_IDLIST, *$4);
                                                                     obj->Set(AST_TAG_BLOCK, *$6);
@@ -524,21 +525,21 @@ int main(int argc, char** argv){
 
     //~~~~
     //Unparsing the code
-    TreeHost *treeHost = new TreeHost(); 
-    treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
-    std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
-    std::ofstream MyFile("code.alpha");
-    MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
-    MyFile.close();
+    // TreeHost *treeHost = new TreeHost(); 
+    // treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
+    // std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
+    // std::ofstream MyFile("code.alpha");
+    // MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
+    // MyFile.close();
     //End
     //~~~~
 
     //~~~~~~
     // Test Interpreter functions
 
-    //Interpreter* interpreter = new Interpreter();
-    //interpreter->StartProgram(*ast->ToObject_NoConst());
-    //delete interpreter;
+    Interpreter* interpreter = new Interpreter();
+    interpreter->StartProgram(*ast->ToObject_NoConst());
+    delete interpreter;
 
     //~~~~~~
     std::cout << "Its Over =)";

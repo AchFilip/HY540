@@ -148,6 +148,8 @@ public:
             return "Nill";
         else if (this->GetType() == ObjectType)
             return "Object";
+        else if (this->GetType() == ProgramFunctionType)
+            return "ProgramFunction";
         else
             assert(false);
         return "";
@@ -186,8 +188,12 @@ public:
     {
         return const_cast<Object *>(data.objVal);
     }
-    Object *ToProgramFunctionAST_NoConst(void) const;
-    Object *ToProgramFunctionClosure_NoConst(void) const;
+    Object *ToProgramFunctionAST_NoConst(void) const{
+        return const_cast<Object *>(data.progFuncVal.ast);
+    }
+    Object *ToProgramFunctionClosure_NoConst(void) const{
+        return const_cast<Object *>(data.progFuncVal.closure);
+    }
     LibraryFunc ToLibraryFunction(void) const;
     void *ToNativePtr(void) const;
     const char *ToNativeTypeId(void) const;
