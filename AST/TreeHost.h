@@ -33,9 +33,9 @@ private:
         else if (node[AST_TAG_RETURNSTMT] != nullptr && node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_RETURNSTMT]->ToObject());
         else if (node[AST_TAG_BREAK] != nullptr && node[AST_TAG_BREAK]->GetType() != Value::NilType)
-            Accept(*node[AST_TAG_BREAK]->ToObject());
+            ;//Accept(*node[AST_TAG_BREAK]->ToObject());
         else if (node[AST_TAG_CONTINUE] != nullptr && node[AST_TAG_CONTINUE]->GetType() != Value::NilType){
-            Accept(*node[AST_TAG_CONTINUE]->ToObject());
+            ;//Accept(*node[AST_TAG_CONTINUE]->ToObject());
         }else if (node[AST_TAG_BLOCK] != nullptr)
             Accept(*node[AST_TAG_BLOCK]->ToObject());
         else if (node[AST_TAG_FUNCDEF] != nullptr)

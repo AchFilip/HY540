@@ -123,7 +123,6 @@ stmt:           expr ';'                                                {
                                                                             $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_BREAK, "", *breakValue);
                                                                         }
                 | CONTINUE ';'                                          {
-                                                                            Object *breakObj = new Object();
                                                                             PrintParsing("stmt","continue ;");                                                                            
                                                                             Object *continueObj = new Object();
                                                                             continueObj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_CONTINUE)));

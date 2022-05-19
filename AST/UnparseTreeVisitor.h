@@ -365,7 +365,6 @@ public:
 
     virtual void VisitStmt(const Object &node) override
     {
-        node.Debug_PrintChildren();
         if (node[AST_TAG_EXPR] != nullptr)
         {
             const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt(GetUnparsed(node[AST_TAG_EXPR]), true));
@@ -415,14 +414,10 @@ public:
         }
         else if (node[AST_TAG_BREAK] != nullptr)
         {
-            if(node[AST_TAG_BREAK]->GetType() != Value::NilType)
-                const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt(GetUnparsed(node[AST_TAG_BREAK]), false));
-            else
-                const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("break", true));
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("break", true));        
         }
         else if (node[AST_TAG_CONTINUE] != nullptr)
         {
-            std::cout<<"ASDASD";
             const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("continue", true));        
         }
         else if (node[AST_TAG_BLOCK] != nullptr)
