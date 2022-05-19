@@ -123,7 +123,6 @@ stmt:           expr ';'                                                {
                                                                             $$ = CreateAstNodeOneChild(AST_TAG_STMT, AST_TAG_BREAK, "", *breakValue);
                                                                         }
                 | CONTINUE ';'                                          {
-                    Object *breakObj = new Object();
                                                                             PrintParsing("stmt","continue ;");                                                                            
                                                                             Object *continueObj = new Object();
                                                                             continueObj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_CONTINUE)));
@@ -523,16 +522,23 @@ int main(int argc, char** argv){
     // Step 1: Create AST
     yyparse();  
 
-    // TreeHost *treeHost = new TreeHost(); 
-    // treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
-    // std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl; 
+    //~~~~
+    //Unparsing the code
+    TreeHost *treeHost = new TreeHost(); 
+    treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
+    std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
+    std::ofstream MyFile("code.alpha");
+    MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
+    MyFile.close();
+    //End
+    //~~~~
 
     //~~~~~~
     // Test Interpreter functions
 
-    Interpreter* interpreter = new Interpreter();
-    interpreter->StartProgram(*ast->ToObject_NoConst());
-    delete interpreter;
+    //Interpreter* interpreter = new Interpreter();
+    //interpreter->StartProgram(*ast->ToObject_NoConst());
+    //delete interpreter;
 
     //~~~~~~
     std::cout << "Its Over =)";

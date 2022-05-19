@@ -32,11 +32,11 @@ private:
             Accept(*node[AST_TAG_FOR]->ToObject());
         else if (node[AST_TAG_RETURNSTMT] != nullptr && node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_RETURNSTMT]->ToObject());
-        else if (node[AST_TAG_BREAK] != nullptr)
-            Accept(*node[AST_TAG_BREAK]->ToObject());
-        else if (node[AST_TAG_CONTINUE] != nullptr)
-            Accept(*node[AST_TAG_CONTINUE]->ToObject());
-        else if (node[AST_TAG_BLOCK] != nullptr)
+        else if (node[AST_TAG_BREAK] != nullptr && node[AST_TAG_BREAK]->GetType() != Value::NilType)
+            ;//Accept(*node[AST_TAG_BREAK]->ToObject());
+        else if (node[AST_TAG_CONTINUE] != nullptr && node[AST_TAG_CONTINUE]->GetType() != Value::NilType){
+            ;//Accept(*node[AST_TAG_CONTINUE]->ToObject());
+        }else if (node[AST_TAG_BLOCK] != nullptr)
             Accept(*node[AST_TAG_BLOCK]->ToObject());
         else if (node[AST_TAG_FUNCDEF] != nullptr)
             Accept(*node[AST_TAG_FUNCDEF]->ToObject());
@@ -156,7 +156,7 @@ private:
     }
     void AcceptObjectDef(const Object &node)
     {
-        node.Debug_PrintChildren();
+        //node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_ELIST]->ToObject());
         else if (node[AST_TAG_INDEXED] != nullptr)
@@ -165,9 +165,11 @@ private:
     }
     void AcceptIndexed(const Object &node)
     {
-        if (node[AST_TAG_INDEXED] != nullptr)
-        {
+        //node.Debug_PrintChildren();
+        if (node[AST_TAG_INDEXED] != nullptr){
+            std::cout << "          0";
             Accept(*node[AST_TAG_INDEXED]->ToObject());
+            std::cout << "          1";
             Accept(*node[AST_TAG_INDEXEDELEM]->ToObject());
         }
         else
@@ -176,6 +178,7 @@ private:
     }
     void AcceptIndexedElem(const Object &node)
     {
+        node.Debug_PrintChildren();
         Accept(*node[AST_TAG_EXPR_LEFT]->ToObject());
         Accept(*node[AST_TAG_EXPR_RIGHT]->ToObject());
         visitor->VisitIndexedElem(node);
