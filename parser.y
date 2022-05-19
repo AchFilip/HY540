@@ -293,7 +293,7 @@ lvalue:         id                                              {
                                                                 }
                 | member                                        {
                                                                     PrintParsing("lvalue","member");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_MEMBER, "", *$1);
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_LVALUE, AST_TAG_MEMBER, "member", *$1);
                                                                 }
                 ;
 

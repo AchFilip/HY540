@@ -171,10 +171,12 @@ private:
     const Value EvalAssignexpr(Object &node)
     {
         node.Debug_PrintChildren();
-
         Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
+
+        // lvalue.ToObject_NoConst()->Debug_PrintChildren();
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
         lvalue = expr;
+        std::cout << lvalue.Stringify() << std::endl;
 
         GetCurrentScope().Debug_PrintChildren();
 
@@ -261,8 +263,7 @@ private:
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         if (node[AST_TAG_LVALUE])
         {
-            auto temp = EvalObjGet(node);
-            return temp;
+            return EvalObjGet(node);
         }
         else if (node[AST_TAG_CALL])
         {
@@ -276,18 +277,23 @@ private:
             else
                 assert(false && "Impossible");
         }
+        return _NIL_;
     }
     const Value EvalCall(Object &node)
     {
+        return _NIL_;
     }
     const Value EvalCallSuffix(Object &node)
     {
+        return _NIL_;
     }
     const Value EvalNormCall(Object &node)
     {
+        return _NIL_;
     }
     const Value EvalMethodCall(Object &node)
     {
+        return _NIL_;
     }
     const Value EvalTreeElist(Object &node)
     {
@@ -381,12 +387,14 @@ private:
     }
     const Value EvalIndexedElem(Object &node)
     {
-        Value r_expr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
         Value l_expr = EvalExpr(*node[AST_TAG_EXPR_LEFT]->ToObject_NoConst());
         node.GetAndRemove(AST_TAG_EXPR_LEFT);
-        node.GetAndRemove(AST_TAG_EXPR_RIGHT);
         node.Set(AST_TAG_EXPR_LEFT, l_expr);
+
+        Value r_expr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
+        node.GetAndRemove(AST_TAG_EXPR_RIGHT);
         node.Set(AST_TAG_EXPR_RIGHT, r_expr);
+
         return node;
     }
     const Value EvalBlock(Object &node)
@@ -421,10 +429,12 @@ private:
     }
     const Value EvalFuncDef(Object &node)
     {
+        return _NIL_;
     }
     const Value EvalConst(Object &node)
     {
         assert(false && "Const shouldnt be evaluated, because you cant pass an object as a Const param. All consts are Values");
+        return _NIL_;
     }
     const Value EvalIdlist(Object &node)
     {
@@ -432,6 +442,7 @@ private:
     const Value EvalBreak(Object &node)
     {
         throw BreakException();
+        return _NIL_;
     }
     const Value EvalContinue(Object &node) { throw ContinueException(); }
     const Value EvalWhile(Object &node)
@@ -513,12 +524,17 @@ private:
     }
     const Value EvalObjGet(Object &node)
     {
+        // FIX when call is done
         node.Debug_PrintChildren();
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
         std::string index;
         if (disambiguate == ".id")
-            index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
+        {
+            // index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
+            index = node[AST_TAG_ID]->Stringify();
+            index = "\"" + index + "\"";
+        }
         else if (disambiguate == "[expr]")
         {
             index = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()).Stringify();
@@ -526,10 +542,31 @@ private:
         else
             assert(false && "Impossible");
 
+        std::cout << index << " " << (*lvalue.ToObject_NoConst())[index]->Stringify() << std::endl;
         return *(*lvalue.ToObject_NoConst())[index];
     }
-    const Value EvalObjSet(Object &node)
+    const Value &EvalObjSet(Object &node)
     {
+        // Same as ObjGet but returns ref to be changed in assignexpr
+        node.Debug_PrintChildren();
+        std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
+        const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+        std::string index;
+        if (disambiguate == ".id")
+        {
+            // index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
+            index = node[AST_TAG_ID]->Stringify();
+            index = "\"" + index + "\"";
+        }
+        else if (disambiguate == "[expr]")
+        {
+            index = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()).Stringify();
+        }
+        else
+            assert(false && "Impossible");
+
+        // std::cout << index << " " << (*lvalue.ToObject_NoConst())[index]->Stringify() << std::endl;
+        return *(*lvalue.ToObject_NoConst())[index];
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
@@ -600,6 +637,10 @@ private:
                 }
             }
         }
+        else if (node[AST_TAG_MEMBER])
+        {
+            return EvalObjSet(*(node[AST_TAG_MEMBER]->ToObject_NoConst()));
+        }
         else
             assert(false && "Not implemented yet");
     }
@@ -662,7 +703,7 @@ private:
         while (stack.IsEmpty() == false)
         {
             Object *key = stack.Top().ToObject_NoConst();
-            obj->Set((*key)[AST_TAG_EXPR_LEFT]->Stringify(), (*key)[AST_TAG_EXPR_RIGHT]);
+            obj->Set((*key)[AST_TAG_EXPR_LEFT]->Stringify(), *(*key)[AST_TAG_EXPR_RIGHT]);
             stack.Pop();
         }
         // obj->Debug_PrintChildren();
