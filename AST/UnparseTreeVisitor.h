@@ -141,10 +141,10 @@ private:
         std::string str;
         if (indicator == "id" || indicator.empty())
             str = input;
-        else if (indicator == "local_id")
-            str = "local " + str;
-        else if (indicator == "doubledots_id")
-            str = ":: " + str;
+        else if (indicator == "local id")
+            str = "local " + input;
+        else if (indicator == "doubledots id")
+            str = "::" + input;
         else
             assert(false);
         PrintTheUnparsedString(str);
@@ -529,7 +529,7 @@ public:
     {
         if (node[AST_TAG_ID] != nullptr)
         {
-            std::cout<<"id: " << node[AST_TAG_ID]->Stringify() << "   disamb: " << node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
+            //std::cout<<"id: " << node[AST_TAG_ID]->Stringify() << "   disamb: " << node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE, 
                 UnparseLvalue(
@@ -546,7 +546,8 @@ public:
                     GetUnparsed(node[AST_TAG_MEMBER])
                 )
             );
-        }else
+        }
+        else
             assert(false);
     }
     
@@ -660,7 +661,7 @@ public:
 
     virtual void VisitElist(const Object &node) override{ //not tested
         //std::cout << "\033[1;35m EDW XALAEI \033[0m\n" << std::endl;
-
+        node.Debug_PrintChildren();
         if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
