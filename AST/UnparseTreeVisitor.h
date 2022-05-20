@@ -2,7 +2,6 @@
 #include "./Object.h"
 #include "./TreeVisitor.h"
 #include "./ValueStack.h"
-#include <fstream>
 #include <iostream>
 
 
@@ -824,15 +823,60 @@ public:
     }
 
     virtual void VisitFor(const Object &node) override{ //crashed
-        const_cast<Object&>(node).Set(
-            UNPARSE_VALUE,
-            UnparseForStmt(
-                GetUnparsed(node[AST_TAG_INIT]),
-                GetUnparsed(node[AST_TAG_EXPR]),
-                GetUnparsed(node[AST_TAG_FORCOND]),
-                GetUnparsed(node[AST_TAG_FORSTMT])
-            )
-        );
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_FORCOND]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseForStmt(
+                    GetUnparsed(node[AST_TAG_INIT]),
+                    GetUnparsed(node[AST_TAG_EXPR]),
+                    "",
+                    GetUnparsed(node[AST_TAG_FORSTMT])
+                )
+            );
+        else if(node[AST_TAG_INIT]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseForStmt(
+                    "",
+                    GetUnparsed(node[AST_TAG_EXPR]),
+                    GetUnparsed(node[AST_TAG_FORCOND]),
+                    GetUnparsed(node[AST_TAG_FORSTMT])
+                )
+            );
+        else if(node[AST_TAG_INIT]->GetType() == Value::NilType &&
+                node[AST_TAG_FORCOND]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseForStmt(
+                    "",
+                    GetUnparsed(node[AST_TAG_EXPR]),
+                    "",
+                    GetUnparsed(node[AST_TAG_FORSTMT])
+                )
+            );
+        else if(node[AST_TAG_INIT]->GetType() == Value::NilType &&
+                node[AST_TAG_FORCOND]->GetType() == Value::NilType &&
+                node[AST_TAG_FORSTMT]->GetType() == Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseForStmt(
+                    "",
+                    GetUnparsed(node[AST_TAG_EXPR]),
+                    "",
+                    ""
+                )
+            );
+        else
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseForStmt(
+                    GetUnparsed(node[AST_TAG_INIT]),
+                    GetUnparsed(node[AST_TAG_EXPR]),
+                    GetUnparsed(node[AST_TAG_FORCOND]),
+                    GetUnparsed(node[AST_TAG_FORSTMT])
+                )
+            );
     }
     
     virtual void VisitReturn(const Object &node) override
