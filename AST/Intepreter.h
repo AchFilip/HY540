@@ -66,8 +66,9 @@ private:
             stmtType = AST_TAG_CONTINUE;
         else if (node[AST_TAG_BLOCK])
             stmtType = AST_TAG_BLOCK;
-        else if (node[AST_TAG_FUNCDEF])
+        else if (node[AST_TAG_FUNCDEF]){
             stmtType = AST_TAG_FUNCDEF;
+        }
 
         return Eval(*node[stmtType]->ToObject_NoConst());
     }
@@ -200,6 +201,9 @@ private:
         {
             return Eval(*node[AST_TAG_OBJECTDEF]->ToObject_NoConst());
         }
+        else if(node[AST_TAG_CALL]){
+            return Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
+        }
         else
             assert(false && "Not implmeneted yet for other types");
     }
@@ -283,7 +287,12 @@ private:
     const Value EvalCall(Object &node)
     {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_LVALUE] != nullptr){
+        if(node[AST_TAG_LVALUE]){
+            // Search for lvalue 
+            Value rvalueId = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+            // Get args of callsufix
+            Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
+
             PushScopeSpace(&GetCurrentScope());
             PushNewScope();
         }
@@ -291,12 +300,14 @@ private:
     const Value EvalCallSuffix(Object &node)
     {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_NORMCALL] != nullptr)
+        if(node[AST_TAG_NORMCALL]){
+            node[AST_TAG_NORMCALL]->ToObject_NoConst()->Debug_PrintChildren();
             if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
                 return Eval(*node[AST_TAG_NORMCALL]->ToObject_NoConst());
             else
                 return _NIL_;
-        else if(node[AST_TAG_METHODCALL] != nullptr)
+        }
+        else if(node[AST_TAG_METHODCALL])
             assert(false && "Methodcall not implemented yet");
     }
     const Value EvalNormCall(Object &node)
@@ -445,24 +456,31 @@ private:
     }
     const Value EvalFuncDef(Object &node)
     {
+        node.Debug_PrintChildren();
+
         //Create closure
         Object* closure = &GetCurrentScope();
         //Get argument names (Maybe add it in ProgramFunctionValue?)
         Value idlist = _NIL_;        
-        if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)                                                                 
+        if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
             idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst()); 
         //Get Function Name
         std::string id = "$anonymous";
         if(node[AST_TAG_ID] != nullptr)
-            std::string id = node[AST_TAG_ID]->ToString();
+            id = node[AST_TAG_ID]->ToString();
+            
+        //Set argument list as child of ast
+        Object &ast = *node[AST_TAG_BLOCK]->ToObject_NoConst();
+        ast.Set(AST_TAG_ARGUMENT_LIST, idlist);
         //Create Function Value
-        Value* functionVal = new Value(*node[AST_TAG_BLOCK]->ToObject_NoConst(),closure);
+        Value* functionVal = new Value(ast, closure);
         //Add function value to current scope
         auto& scope = GetCurrentScope();
         scope.Set(id, *functionVal);
+        scope.Debug_PrintChildren();
         //Slice
         PushSlice();
-        
+
         return _NIL_;
     }
     const Value EvalConst(Object &node)
@@ -692,7 +710,6 @@ private:
                 {
                     curr_scope->Set(id, *(new Value()));
                     return *((*curr_scope)[id]);
-                    return Value();
                 }
             }
         }
@@ -876,6 +893,10 @@ private:
                             { return EvalBlock(node); });
         dispatcher->Install(AST_TAG_FUNCDEF, [this](Object &node)
                             { return EvalFuncDef(node); });
+        dispatcher->Install(AST_TAG_CALL, [this](Object &node)
+                            { return EvalCall(node); });
+        dispatcher->Install(AST_TAG_CALLSUFFIX, [this](Object &node)
+                            { return EvalCallSuffix(node); });
         dispatcher->Install(AST_TAG_ASSIGNEXPR, [this](Object &node)
                             { return EvalAssignexpr(node); });
         dispatcher->Install(AST_TAG_LVALUE, [this](Object &node)
@@ -900,6 +921,8 @@ private:
                             { return EvalIdlist(node); });
         dispatcher->Install(AST_TAG_MEMBER, [this](Object &node)
                             { return EvalMember(node); });
+
+                            
     }
 
 public:

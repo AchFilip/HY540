@@ -416,7 +416,7 @@ funcdef:        FUNCTION '('  idlist ')' block                  {
                 | FUNCTION id '(' idlist ')' block              {
                                                                     PrintParsing("funcdef", "FUNCTION ID (idlist) block");
                                                                     Object* obj = new Object();
-                                                                    obj->Set(AST_TAG_TYPE_KEY, AST_TAG_FUNCDEF);
+                                                                    obj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_FUNCDEF)));
                                                                     obj->Set(AST_TAG_ID, *$2);
                                                                     obj->Set(AST_TAG_IDLIST, *$4);
                                                                     obj->Set(AST_TAG_BLOCK, *$6);

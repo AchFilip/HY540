@@ -31,6 +31,7 @@
 #define AST_TAG_INDEXEDELEM "$indexed_elem"
 #define AST_TAG_BLOCK "$block"
 #define AST_TAG_FUNCDEF "$funcdef"
+#define AST_TAG_ARGUMENT_LIST "$argumentList"
 #define AST_TAG_CONST "$const"
 #define AST_TAG_NUMBER "$number"
 #define AST_TAG_IDLIST "$idlist"
