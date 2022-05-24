@@ -66,7 +66,8 @@ private:
             stmtType = AST_TAG_CONTINUE;
         else if (node[AST_TAG_BLOCK])
             stmtType = AST_TAG_BLOCK;
-        else if (node[AST_TAG_FUNCDEF]){
+        else if (node[AST_TAG_FUNCDEF])
+        {
             stmtType = AST_TAG_FUNCDEF;
         }
 
@@ -88,6 +89,7 @@ private:
 
             // Do operation based on disambiguation
             std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
+            std::cout << leftExpr.Stringify() << " " << operatorStr << " " << rightExpr.Stringify() << std::endl;
             if (operatorStr == "+")
                 return leftExpr + rightExpr;
             else if (operatorStr == "-")
@@ -178,7 +180,7 @@ private:
         // lvalue.ToObject_NoConst()->Debug_PrintChildren();
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
         lvalue = expr;
-        std::cout << lvalue.Stringify() << std::endl;
+        std::cout << "LVALUE: " << lvalue.Stringify() << std::endl;
 
         GetCurrentScope().Debug_PrintChildren();
 
@@ -201,7 +203,8 @@ private:
         {
             return Eval(*node[AST_TAG_OBJECTDEF]->ToObject_NoConst());
         }
-        else if(node[AST_TAG_CALL]){
+        else if (node[AST_TAG_CALL])
+        {
             return Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
         }
         else
@@ -287,8 +290,9 @@ private:
     const Value EvalCall(Object &node)
     {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_LVALUE]){
-            // Search for lvalue 
+        if (node[AST_TAG_LVALUE])
+        {
+            // Search for lvalue
             Value rvalueId = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
             // Get args of callsufix
             Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
@@ -300,22 +304,23 @@ private:
     const Value EvalCallSuffix(Object &node)
     {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_NORMCALL]){
+        if (node[AST_TAG_NORMCALL])
+        {
             node[AST_TAG_NORMCALL]->ToObject_NoConst()->Debug_PrintChildren();
-            if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+            if (node[AST_TAG_ELIST]->GetType() != Value::NilType)
                 return Eval(*node[AST_TAG_NORMCALL]->ToObject_NoConst());
             else
                 return _NIL_;
         }
-        else if(node[AST_TAG_METHODCALL])
+        else if (node[AST_TAG_METHODCALL])
             assert(false && "Methodcall not implemented yet");
     }
     const Value EvalNormCall(Object &node)
     {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+        if (node[AST_TAG_ELIST]->GetType() != Value::NilType)
             return Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
-        else 
+        else
             return _NIL_;
     }
     const Value EvalMethodCall(Object &node)
@@ -458,27 +463,27 @@ private:
     {
         node.Debug_PrintChildren();
 
-        //Create closure
-        Object* closure = &GetCurrentScope();
-        //Get argument names (Maybe add it in ProgramFunctionValue?)
-        Value idlist = _NIL_;        
-        if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
-            idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst()); 
-        //Get Function Name
+        // Create closure
+        Object *closure = &GetCurrentScope();
+        // Get argument names (Maybe add it in ProgramFunctionValue?)
+        Value idlist = _NIL_;
+        if (node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
+            idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst());
+        // Get Function Name
         std::string id = "$anonymous";
-        if(node[AST_TAG_ID] != nullptr)
+        if (node[AST_TAG_ID] != nullptr)
             id = node[AST_TAG_ID]->ToString();
-            
-        //Set argument list as child of ast
+
+        // Set argument list as child of ast
         Object &ast = *node[AST_TAG_BLOCK]->ToObject_NoConst();
         ast.Set(AST_TAG_ARGUMENT_LIST, idlist);
-        //Create Function Value
-        Value* functionVal = new Value(ast, closure);
-        //Add function value to current scope
-        auto& scope = GetCurrentScope();
+        // Create Function Value
+        Value *functionVal = new Value(ast, closure);
+        // Add function value to current scope
+        auto &scope = GetCurrentScope();
         scope.Set(id, *functionVal);
         scope.Debug_PrintChildren();
-        //Slice
+        // Slice
         PushSlice();
 
         return _NIL_;
@@ -490,24 +495,26 @@ private:
     }
     const Value EvalIdlist(Object &node)
     {
-        Object* idlist = new Object();
+        Object *idlist = new Object();
         int num = 0;
         FillIdList(node, *idlist, num);
         idlist->Debug_PrintChildren();
-        if(num > 0)
+        if (num > 0)
             return Value(*idlist);
-        else 
+        else
             return _NIL_;
     }
-    void FillIdList(Object &node, Object& idlist, int& number)
+    void FillIdList(Object &node, Object &idlist, int &number)
     {
-        if((node[AST_TAG_IDLIST] == nullptr || node[AST_TAG_IDLIST]->GetType() == Value::NilType) && node[AST_TAG_ID] == nullptr)
+        if ((node[AST_TAG_IDLIST] == nullptr || node[AST_TAG_IDLIST]->GetType() == Value::NilType) && node[AST_TAG_ID] == nullptr)
             return;
-        else if(node[AST_TAG_IDLIST] == nullptr || node[AST_TAG_IDLIST]->GetType() == Value::NilType){
+        else if (node[AST_TAG_IDLIST] == nullptr || node[AST_TAG_IDLIST]->GetType() == Value::NilType)
+        {
             idlist.Set(number++, node[AST_TAG_ID]->ToString());
             return;
         }
-        else{
+        else
+        {
             FillIdList(*node[AST_TAG_IDLIST]->ToObject_NoConst(), idlist, number);
             idlist.Set(number++, node[AST_TAG_ID]->ToString());
             return;
@@ -537,7 +544,11 @@ private:
             try
             {
                 if (whilestmts && node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
-                    EvalStmts(*whilestmts);
+                {
+                    Eval(*node[AST_TAG_WHILE_STMT]->ToObject_NoConst());
+
+                    // EvalStmts(*whilestmts);
+                }
             }
             catch (const BreakException &)
             {
@@ -567,13 +578,14 @@ private:
         if (node[AST_TAG_INIT]->GetType() != Value::NilType)
             EvalElist(*node[AST_TAG_INIT]->ToObject_NoConst());
 
-        for (
-            ;
-            Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());)
+        for (; Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());)
         {
-            forstmts->Debug_PrintChildren();
+            // forstmts->Debug_PrintChildren();
             if (forstmts && node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
-                EvalStmts(*forstmts);
+            {
+                // EvalStmts(*forstmts);
+                Eval(*node[AST_TAG_FORSTMT]->ToObject_NoConst());
+            }
 
             if (node[AST_TAG_FORCOND]->GetType() != Value::NilType)
                 EvalElist(*node[AST_TAG_FORCOND]->ToObject_NoConst());
@@ -640,8 +652,8 @@ private:
             assert(false && "Impossible");
 
         std::cout << (*lvalue.ToObject_NoConst())[index] << std::endl;
-        if((*lvalue.ToObject_NoConst())[index] == nullptr)
-            lvalue.ToObject_NoConst()->Set(index,Value(_NIL_));
+        if ((*lvalue.ToObject_NoConst())[index] == nullptr)
+            lvalue.ToObject_NoConst()->Set(index, Value(_NIL_));
 
         return *(*lvalue.ToObject_NoConst())[index];
     }
@@ -921,8 +933,6 @@ private:
                             { return EvalIdlist(node); });
         dispatcher->Install(AST_TAG_MEMBER, [this](Object &node)
                             { return EvalMember(node); });
-
-                            
     }
 
 public:
