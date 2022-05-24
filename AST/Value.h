@@ -193,10 +193,12 @@ public:
     {
         return const_cast<Object *>(data.objVal);
     }
-    Object *ToProgramFunctionAST_NoConst(void) const{
+    Object *ToProgramFunctionAST_NoConst(void) const
+    {
         return const_cast<Object *>(data.progFuncVal.ast);
     }
-    Object *ToProgramFunctionClosure_NoConst(void) const{
+    Object *ToProgramFunctionClosure_NoConst(void) const
+    {
         return const_cast<Object *>(data.progFuncVal.closure);
     }
     LibraryFunc ToLibraryFunction(void) const{
@@ -239,6 +241,8 @@ public:
             return 0;
         case NumberType:
             return data.numVal;
+        case BooleanType:
+            return data.boolVal;
         case StringType:
             return std::stod(data.strVal); // Maybe not?!
         default:
@@ -255,6 +259,8 @@ public:
             return "\0";
         case NumberType:
             return std::to_string(data.numVal);
+        case BooleanType:
+            return std::to_string(data.boolVal); // Check this
         case StringType:
             return data.strVal;
         default:
@@ -396,8 +402,8 @@ public:
     }
     const Value operator<(const Value &right)
     {
-        if (right.GetType() != type) // should not allow different types in relational expr
-            assert(false && "Not implemented yet");
+        // if (right.GetType() != type) // should not allow different types in relational expr
+        //     assert(false && "Not implemented yet");
         switch (right.GetType())
         {
         case NumberType:
@@ -429,11 +435,11 @@ public:
     }
     const Value operator&&(const Value &right)
     {
-        return *this && right;
+        return bool(*this) && bool(right);
     }
     const Value operator||(const Value &right)
     {
-        return *this || right;
+        return bool(*this) || bool(right);
     }
 
     const Value operator++()
