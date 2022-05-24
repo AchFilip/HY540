@@ -30,7 +30,10 @@ public:
     }
     const Value *operator[](double key) const
     {
-        return &(children.at(std::to_string(key)));
+        if (children.find(std::to_string(key)) != children.end())
+            return &(children.at(std::to_string(key)));
+        else
+            return nullptr;    
     }
 
     // read and remove access: special purpose

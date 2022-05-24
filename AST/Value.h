@@ -41,7 +41,7 @@ private:
         double numVal;
         bool boolVal;
         char *strVal;
-        char *libFuncVal;
+        LibraryFunc libFuncVal;
         const Object *objVal;
         struct
         {
@@ -70,7 +70,10 @@ public:
         type = NumberType;
         data.numVal = number;
     };
-    Value(LibraryFunc);
+    Value(LibraryFunc f){
+        type = LibraryFunctionType;
+        data.libFuncVal = f;
+    };
     Value(enum NIL)
     {
         type = NilType;
@@ -150,6 +153,8 @@ public:
             return "Object";
         else if (this->GetType() == ProgramFunctionType)
             return "ProgramFunction";
+        else if (this->GetType() == LibraryFunctionType)
+            return "LibFunction";
         else
             assert(false);
         return "";
@@ -194,7 +199,9 @@ public:
     Object *ToProgramFunctionClosure_NoConst(void) const{
         return const_cast<Object *>(data.progFuncVal.closure);
     }
-    LibraryFunc ToLibraryFunction(void) const;
+    LibraryFunc ToLibraryFunction(void) const{
+        return data.libFuncVal;
+    };
     void *ToNativePtr(void) const;
     const char *ToNativeTypeId(void) const;
     void FromNil(void);

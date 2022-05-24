@@ -288,22 +288,62 @@ private:
     {
         node.Debug_PrintChildren();
         if(node[AST_TAG_LVALUE]){
-            // Search for lvalue 
-            Value rvalueId = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
-            // Get args of callsufix
+
+            Value functionValue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
             Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
 
-            PushScopeSpace(&GetCurrentScope());
-            PushNewScope();
+            if(functionValue.GetType() == Value::ProgramFunctionType){                                      
+                //Adjust Scopes
+                PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
+                PushNested();
+                //Push arguments
+                Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
+                if(ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
+                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
+                //Make call
+                Eval(ast);
+            }
+            else if(functionValue.GetType() == Value::LibraryFunctionType){
+                //Adjust Scopes
+                PushScopeSpace();
+                PushNewScope();
+                //Push Arguments
+                if(args.GetType() != Value::NilType)
+                    PushLibraryFunctionArgumentsToScope(*args.ToObject_NoConst());
+                //MakeCall
+                functionValue.ToLibraryFunction()(GetCurrentScope());
+            }
+
+            //Func Exit
+            PopScope();
+            PopScopeSpace();
         }
+    }
+    void PushProgramFunctionArgumentsToScope(Object& elist, Object& idlist){
+        auto& scope = GetCurrentScope();
+        for(auto elist_it = elist.children.begin(), idlist_it = idlist.children.begin(); 
+            elist_it != elist.children.end() && idlist_it != idlist.children.end(); 
+            ++elist_it, ++idlist_it
+        )
+            scope.Set((idlist_it->second).Stringify(), elist_it->second);
+        return;
+    }
+    void PushLibraryFunctionArgumentsToScope(Object& elist){
+        auto& scope = GetCurrentScope();
+        int i = 0;
+        for(auto elist_it = elist.children.begin(); 
+            elist_it != elist.children.end(); 
+            ++elist_it, i++
+        )
+            scope.Set(i, elist_it->second);;
     }
     const Value EvalCallSuffix(Object &node)
     {
         node.Debug_PrintChildren();
         if(node[AST_TAG_NORMCALL]){
-            node[AST_TAG_NORMCALL]->ToObject_NoConst()->Debug_PrintChildren();
-            if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+            if(node[AST_TAG_NORMCALL]->GetType() != Value::NilType){
                 return Eval(*node[AST_TAG_NORMCALL]->ToObject_NoConst());
+            }        
             else
                 return _NIL_;
         }
@@ -457,13 +497,13 @@ private:
     const Value EvalFuncDef(Object &node)
     {
         node.Debug_PrintChildren();
-
         //Create closure
         Object* closure = &GetCurrentScope();
-        //Get argument names (Maybe add it in ProgramFunctionValue?)
+        //Get argument names
         Value idlist = _NIL_;        
         if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
             idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst()); 
+        
         //Get Function Name
         std::string id = "$anonymous";
         if(node[AST_TAG_ID] != nullptr)
@@ -833,7 +873,7 @@ private:
     void PushScopeSpace(Object *closure)
     {
         PushScopeSpace();
-        SetCurrentScope(new Value(closure));
+        SetCurrentScope(new Value(*closure));
         envStack->Top().ToObject_NoConst()->GetAndRemove(CLOSURE_SCOPE_KEY);
         envStack->Top().ToObject_NoConst()->Set(CLOSURE_SCOPE_KEY, new Value(closure));
     }
@@ -848,6 +888,7 @@ private:
     };
     const Value *ScopeLookup(const Object &scope, const std::string &id)
     {
+        scope.Debug_PrintChildren();
         if (auto *val = scope[id])
             return val;
         else if (val = ScopeLookup(scope, LOCAL_SCOPE_KEY, id))
@@ -897,6 +938,8 @@ private:
                             { return EvalCall(node); });
         dispatcher->Install(AST_TAG_CALLSUFFIX, [this](Object &node)
                             { return EvalCallSuffix(node); });
+        dispatcher->Install(AST_TAG_NORMCALL, [this](Object &node)
+                            {return EvalNormCall(node);});
         dispatcher->Install(AST_TAG_ASSIGNEXPR, [this](Object &node)
                             { return EvalAssignexpr(node); });
         dispatcher->Install(AST_TAG_LVALUE, [this](Object &node)
@@ -925,6 +968,23 @@ private:
                             
     }
 
+    const Value* GetArgument(Object& env, unsigned argNo, const std::string& optArgName){
+        auto* arg = env[optArgName];
+        if(!arg)
+            arg = env[argNo];
+        return arg;
+    }
+
+    //Library Functions
+    static void Print_LibFunc(Object& env){
+        int i = 0;
+        while(env[i]){
+            PRINT_BLUE_LINE(env[i]->Stringify());
+            i++;
+        }
+            
+    }
+
 public:
     Interpreter()
     {
@@ -932,7 +992,8 @@ public:
 
         envStack = new ValueStack();
         PushScopeSpace();
-        PushNewScope();
+        PushNewScope();  
+        GetCurrentScope().Set("print", *(new Value((LibraryFunc)&this->Print_LibFunc)));
         envStack->Debug_Print();
 
         Install();
