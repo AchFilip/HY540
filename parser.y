@@ -495,7 +495,7 @@ forstmt:        FOR '(' elist ';' expr ';' elist ')' stmt       {
 
 returnstmt:     RETURN ';'                                      {
                                                                     PrintParsing("returnstmt", " RETURN ;");
-                                                                    $$ = new Value(_NIL_);
+                                                                    $$ = new Value();
                                                                 }
                 | RETURN expr ';'                               {
                                                                     PrintParsing("returnstmt", " RETURN expr ;");     

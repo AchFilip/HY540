@@ -58,3 +58,7 @@
 #define LOCAL_SCOPE_KEY "$local"
 #define TAIL_SCOPE_KEY "$tail"
 #define CLOSURE_SCOPE_KEY "$closure"
+
+#define RETVAL_RESERVED_FIELD 	"$retval"
+#define RETVAL_SET(_v) 	        if (true) GetCurrentScopeSpace().Set(RETVAL_RESERVED_FIELD, Value(_v)); else
+#define RETVAL_GET()	    	(GetCurrentScopeSpace()[RETVAL_RESERVED_FIELD] != nullptr) ? (*(GetCurrentScopeSpace()[RETVAL_RESERVED_FIELD])) : Value()

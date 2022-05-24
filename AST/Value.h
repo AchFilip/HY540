@@ -94,7 +94,10 @@ public:
         data.progFuncVal.ast = &ast;
         data.progFuncVal.closure = closure;
     };
-    // Value(const Value &);
+    Value(const Value &value){
+        type = value.GetType();
+        data = value.data;
+    };
     Value(void)
     {
         type = UndefType;
