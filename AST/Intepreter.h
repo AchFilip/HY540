@@ -612,7 +612,7 @@ private:
         while (Eval(*node[AST_TAG_WHILE_COND]->ToObject_NoConst()))
             try
             {
-                if (whilestmts && node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
+                if (node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
                 {
                     Eval(*node[AST_TAG_WHILE_STMT]->ToObject_NoConst());
 
