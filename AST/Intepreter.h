@@ -7,45 +7,50 @@
 #include "./EvalDispatcher.h"
 #include "./DebugAST.h"
 #include <iostream>
-#define PRINT_BLUE_LINE(to_print)   std::cout << "\033[1;36m" << to_print << "\033[0m\n"
+#define PRINT_BLUE_LINE(to_print) std::cout << "\033[1;36m" << to_print << "\033[0m\n"
 #define PRINT_YELLOW_LINE(to_print) std::cout << "\033[1;33m" << to_print << "\033[0m\n"
-#define NORMAL_PRINT_LINE(to_print) std::cout <<  to_print << "\n"
+#define NORMAL_PRINT_LINE(to_print) std::cout << to_print << "\n"
 
-const Value* GetArgument(Object& env, unsigned argNo, const std::string& optArgName){
-        auto* arg = env[optArgName];
-        if(!arg)
-            arg = env[argNo];
-        return arg;
+const Value *GetArgument(Object &env, unsigned argNo, const std::string &optArgName)
+{
+    auto *arg = env[optArgName];
+    if (!arg)
+        arg = env[argNo];
+    return arg;
 }
 
-std::string ObjectToString(Object* obj, std::string toPrint, std::string startingTab){      
-    if(obj->children.begin() == obj->children.end())
-        return startingTab + "Object { }";   
-    
-    toPrint += startingTab + "Object {\n" ;
+std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
+{
+    if (obj->children.begin() == obj->children.end())
+        return startingTab + "Object { }";
+
+    toPrint += startingTab + "Object {\n";
     startingTab += "\t";
 
-    for(auto it = obj->children.begin(); it != obj->children.end(); ){  
-        if(it->second.GetType() != Value::ObjectType){
+    for (auto it = obj->children.begin(); it != obj->children.end();)
+    {
+        if (it->second.GetType() != Value::ObjectType)
+        {
             std::string id = it->first;
-            if(id.size() > 2 && id.substr(2,id.size()) == "000000")
-                id = id.substr(0,1);
+            if (id.size() > 2 && id.substr(2, id.size()) == "000000")
+                id = id.substr(0, 1);
             toPrint += startingTab + id + ": " + it->second.Stringify() + "\n";
         }
-            
-        else if(it->second.GetType() == Value::ObjectType){
+
+        else if (it->second.GetType() == Value::ObjectType)
+        {
             std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
             objString = objString.substr(startingTab.size(), objString.size());
 
             std::string id = it->first;
-            if(id.substr(2,id.size()) == "000000")
-                id = id.substr(0,1);
+            if (id.substr(2, id.size()) == "000000")
+                id = id.substr(0, 1);
 
             toPrint += startingTab + id + ": " + objString + "\n";
-        }            
-        it++;                         
+        }
+        it++;
     }
-    toPrint += startingTab.substr(0,startingTab.size()-1) + "}";
+    toPrint += startingTab.substr(0, startingTab.size() - 1) + "}";
     return toPrint;
 }
 
@@ -56,9 +61,15 @@ private:
     ValueStack *envStack;
     DebugAST debug;
 
-    struct BreakException{};
-    struct ContinueException{};
-    struct ReturnException{};
+    struct BreakException
+    {
+    };
+    struct ContinueException
+    {
+    };
+    struct ReturnException
+    {
+    };
 
     const Value Eval(Object &node)
     {
@@ -109,7 +120,7 @@ private:
         else if (node[AST_TAG_FUNCDEF])
             stmtType = AST_TAG_FUNCDEF;
 
-        if(node[stmtType]->GetType() == Value::ObjectType) // Retval can be nil
+        if (node[stmtType]->GetType() == Value::ObjectType) // Retval can be nil
             return Eval(*node[stmtType]->ToObject_NoConst());
         else
             return *node[stmtType];
@@ -214,9 +225,11 @@ private:
     {
         Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
-        
-        if(lvalue.GetType() == Value::ProgramFunctionType){
-            if(expr.GetType() == Value::ObjectType){
+
+        if (lvalue.GetType() == Value::ProgramFunctionType)
+        {
+            if (expr.GetType() == Value::ObjectType)
+            {
                 lvalue.SetClosure(expr.ToObject_NoConst());
                 // lvalue = *(new Value(*lvalue.ToProgramFunctionAST_NoConst(), expr.ToObject_NoConst()));
                 debug.ObjectPrintChildren(*(lvalue.ToProgramFunctionClosure_NoConst()));
@@ -249,7 +262,8 @@ private:
         {
             return Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
         }
-        else if (node[AST_TAG_FUNCDEF]){
+        else if (node[AST_TAG_FUNCDEF])
+        {
             return Eval(*node[AST_TAG_FUNCDEF]->ToObject_NoConst());
         }
         else
@@ -336,81 +350,104 @@ private:
     const Value EvalCall(Object &node)
     {
 
-        try{
-            if(node[AST_TAG_LVALUE]){
+        try
+        {
+            if (node[AST_TAG_LVALUE])
+            {
 
                 Value functionValue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
                 Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
 
-                if(functionValue.GetType() == Value::ProgramFunctionType){
-                    //Adjust Scopes
+                if (functionValue.GetType() == Value::ProgramFunctionType)
+                {
+                    // Adjust Scopes
                     PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
-                    //Push arguments
-                    Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
-                    //Make call
+                    // Push arguments
+                    Object &ast = *functionValue.ToProgramFunctionAST_NoConst();
+                    // Make call
                     EvalFunctionBlock(ast, args);
                 }
-                else if(functionValue.GetType() == Value::LibraryFunctionType){
-                    //Adjust Scopes
+                else if (functionValue.GetType() == Value::LibraryFunctionType)
+                {
+                    // Adjust Scopes
                     PushScopeSpace();
                     PushNested();
-                    //Push Arguments
-                    if(args.GetType() != Value::NilType)
+                    // Push Arguments
+                    if (args.GetType() != Value::NilType)
                         PushLibraryFunctionArgumentsToScope(*args.ToObject_NoConst());
-                    //MakeCall
+                    // MakeCall
                     functionValue.ToLibraryFunction()(GetCurrentScope());
+                    if (GetCurrentScope()[RETVAL_RESERVED_FIELD])
+                    {
+                        // std::cout << "RETVAL: " << GetCurrentScope()[RETVAL_RESERVED_FIELD]->Stringify() << std::endl;
+                        // GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst()->Debug_PrintChildren();
+                        if (GetCurrentScope()[RETVAL_RESERVED_FIELD]->GetType() == Value::ObjectType)
+                        {
+                            RETVAL_SET(*GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst());
+                        }
+                        else
+                        {
+                            RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->Stringify());
+                        }
+                    }
                 }
             }
-            else if(node[AST_TAG_FUNCDEF] || node[AST_TAG_CALL]){ // Anonymous function
+            else if (node[AST_TAG_FUNCDEF] || node[AST_TAG_CALL])
+            { // Anonymous function
                 Value functionValue = Eval(node[AST_TAG_CALL] ? *node[AST_TAG_CALL]->ToObject_NoConst() : *node[AST_TAG_FUNCDEF]->ToObject_NoConst());
                 Value args = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
 
-                //Adjust Scopes
+                // Adjust Scopes
                 PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
                 PushNested();
-                //Push arguments
-                Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
-                if(ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
-                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
-                //Make call
+                // Push arguments
+                Object &ast = *functionValue.ToProgramFunctionAST_NoConst();
+                if (ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
+                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());
+                // Make call
+                std::cout << "kanoniko call --------------" << std::endl;
                 Eval(ast);
             }
         }
-        catch(const ReturnException &){}
+
+        catch (const ReturnException &)
+        {
+        }
         // Get retval from ret register
         debug.ObjectPrintChildren(GetCurrentScope());
         Value retval = RETVAL_GET();
-
-        //Func Exit
+        // Func Exit
         PopScope();
         PopScopeSpace();
 
         return retval;
     }
-    void PushProgramFunctionArgumentsToScope(Object& elist, Object& idlist){
-        auto& scope = GetCurrentScope();
-        for(auto elist_it = elist.children.begin(), idlist_it = idlist.children.begin(); 
-            elist_it != elist.children.end() && idlist_it != idlist.children.end(); 
-            ++elist_it, ++idlist_it
-        )
+    void PushProgramFunctionArgumentsToScope(Object &elist, Object &idlist)
+    {
+        auto &scope = GetCurrentScope();
+        for (auto elist_it = elist.children.begin(), idlist_it = idlist.children.begin();
+             elist_it != elist.children.end() && idlist_it != idlist.children.end();
+             ++elist_it, ++idlist_it)
             scope.Set((idlist_it->second).Stringify(), elist_it->second);
         return;
     }
-    void PushLibraryFunctionArgumentsToScope(Object& elist){
-        auto& scope = GetCurrentScope();
+    void PushLibraryFunctionArgumentsToScope(Object &elist)
+    {
+        auto &scope = GetCurrentScope();
         int i = 0;
-        for(auto elist_it = elist.children.begin(); 
-            elist_it != elist.children.end(); 
-            ++elist_it, i++
-        )
+        for (auto elist_it = elist.children.begin();
+             elist_it != elist.children.end();
+             ++elist_it, i++)
             scope.Set(i, elist_it->second);
     }
     const Value EvalCallSuffix(Object &node)
     {
-        if(node[AST_TAG_NORMCALL]){
-            if(node[AST_TAG_NORMCALL]->GetType() != Value::NilType){
+        if (node[AST_TAG_NORMCALL])
+        {
+            if (node[AST_TAG_NORMCALL]->GetType() != Value::NilType)
+            {
                 return Eval(*node[AST_TAG_NORMCALL]->ToObject_NoConst());
-            }        
+            }
             else
                 return _NIL_;
         }
@@ -420,7 +457,8 @@ private:
     }
     const Value EvalNormCall(Object &node)
     {
-        if (node[AST_TAG_ELIST]->GetType() != Value::NilType){
+        if (node[AST_TAG_ELIST]->GetType() != Value::NilType)
+        {
             return Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
         }
         else
@@ -435,16 +473,17 @@ private:
         if (node[AST_TAG_ELIST])
         {
             Value expr;
-            if(node[AST_TAG_EXPR]->GetType() == Value::ObjectType)
+            if (node[AST_TAG_EXPR]->GetType() == Value::ObjectType)
                 expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
             else
                 expr = *node[AST_TAG_EXPR];
             evaluatedElist.Set(counter, expr);
 
             Value elist;
-            if(node[AST_TAG_ELIST]->GetType() == Value::ObjectType)
+            if (node[AST_TAG_ELIST]->GetType() == Value::ObjectType)
                 elist = EvalTreeElist(*node[AST_TAG_ELIST]->ToObject_NoConst(), evaluatedElist, ++counter);
-            else{
+            else
+            {
                 elist = *node[AST_TAG_ELIST];
             }
             evaluatedElist.Set(counter, elist);
@@ -452,7 +491,7 @@ private:
         }
         else if (node[AST_TAG_EXPR])
         {
-            if(node[AST_TAG_EXPR]->GetType() == Value::ObjectType)
+            if (node[AST_TAG_EXPR]->GetType() == Value::ObjectType)
                 return Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
             else
                 return *node[AST_TAG_EXPR];
@@ -471,18 +510,19 @@ private:
             elist->Set(0, Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()));
             return Value(*elist);
         }
-        else if(node[AST_TAG_ELIST] != nullptr)
+        else if (node[AST_TAG_ELIST] != nullptr)
         {
             int counter = 0; // Counter is passed with reference, so it has to be a var
-            EvalTreeElist(node, *elist, counter); 
+            EvalTreeElist(node, *elist, counter);
 
             // Reverse the order of the elist elements
             ValueStack stack;
-            for(int i = 0; elist->children.size(); i++)
+            for (int i = 0; elist->children.size(); i++)
             {
                 stack.Push(elist->GetAndRemove(i));
             }
-            for(int i = 0 ; stack.IsEmpty() == false; i++){
+            for (int i = 0; stack.IsEmpty() == false; i++)
+            {
                 elist->Set(i, stack.Top());
                 stack.Pop();
             }
@@ -520,7 +560,8 @@ private:
         else
             assert(false && "Invalid ObjectDef node");
     }
-    const Value EvalTreeIndexed(Object &node, Object &evaluatedIndexed){
+    const Value EvalTreeIndexed(Object &node, Object &evaluatedIndexed)
+    {
         if (node[AST_TAG_INDEXED])
         {
             Value indexedelem = EvalIndexedElem(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
@@ -529,7 +570,7 @@ private:
 
             Value indexed = EvalTreeIndexed(*node[AST_TAG_INDEXED]->ToObject_NoConst(), evaluatedIndexed);
             Object &indexedObj = *indexed.ToObject_NoConst();
-            if(indexedObj[AST_TAG_EXPR_LEFT])
+            if (indexedObj[AST_TAG_EXPR_LEFT])
                 evaluatedIndexed.Set(indexedObj[AST_TAG_EXPR_LEFT]->Stringify(), *indexedObj[AST_TAG_EXPR_RIGHT]);
 
             return evaluatedIndexed;
@@ -554,17 +595,19 @@ private:
     const Value EvalIndexed(Object &node)
     {
         Object *indexed;
-        if(node[AST_TAG_INDEXED]){
+        if (node[AST_TAG_INDEXED])
+        {
             indexed = new Object();
             std::cout << "before eval tree elist" << std::endl;
             EvalTreeIndexed(node, *indexed);
             std::cout << "after eval tree elist" << std::endl;
         }
-        else if(node[AST_TAG_INDEXEDELEM]){ 
+        else if (node[AST_TAG_INDEXEDELEM])
+        {
             indexed = EvalIndexedElem(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst()).ToObject_NoConst();
             std::cout << "mark" << std::endl;
         }
-        else 
+        else
             assert(false && "Impossible to have other types in EvalIndexed");
 
         indexed->Debug_PrintChildren();
@@ -586,7 +629,7 @@ private:
                 while (true) // Cringe fast code
                 {
                     auto &scope = GetCurrentScope();
-                    if(scope[PREVIOUS_SCOPE_KEY] == nullptr)
+                    if (scope[PREVIOUS_SCOPE_KEY] == nullptr)
                         break;
                     else
                         PopScope();
@@ -608,8 +651,8 @@ private:
         {
             // Push new nested scope
             PushNested();
-            if(node[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
-                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *node[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
+            if (node[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
+                PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *node[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());
             // Eval code inside of block
             const Value val = Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
             // Make sure that scopes have been restored
@@ -619,7 +662,7 @@ private:
                 while (true) // Cringe fast code
                 {
                     auto &scope = GetCurrentScope();
-                    if(scope[PREVIOUS_SCOPE_KEY] == nullptr)
+                    if (scope[PREVIOUS_SCOPE_KEY] == nullptr)
                         break;
                     else
                         PopScope();
@@ -641,14 +684,14 @@ private:
     }
     const Value EvalFuncDef(Object &node)
     {
-        //Create closure
-        Object* closure = &GetCurrentScope();
-        //Get argument names
-        Value idlist = _NIL_;        
-        if(node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
-            idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst()); 
-        
-        //Get Function Name
+        // Create closure
+        Object *closure = &GetCurrentScope();
+        // Get argument names
+        Value idlist = _NIL_;
+        if (node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
+            idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst());
+
+        // Get Function Name
         std::string id = "$anonymous";
         if (node[AST_TAG_ID] != nullptr)
             id = node[AST_TAG_ID]->ToString();
@@ -704,7 +747,9 @@ private:
         throw BreakException();
         return _NIL_;
     }
-    const Value EvalContinue(Object &node) { throw ContinueException(); 
+    const Value EvalContinue(Object &node)
+    {
+        throw ContinueException();
     }
     const Value EvalWhile(Object &node)
     {
@@ -760,7 +805,8 @@ private:
 
         for (; Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());)
         {
-            try{
+            try
+            {
                 if (node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
                 {
                     // EvalStmts(*forstmts);
@@ -775,7 +821,6 @@ private:
             {
                 continue;
             } // redundant
-            
 
             if (node[AST_TAG_FORCOND]->GetType() != Value::NilType)
                 EvalElist(*node[AST_TAG_FORCOND]->ToObject_NoConst());
@@ -797,10 +842,11 @@ private:
     }
     const Value EvalReturn(Object &node)
     {
-        if(node[AST_TAG_EXPR] != nullptr){
+        if (node[AST_TAG_EXPR] != nullptr)
+        {
             RETVAL_SET(Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()));
         }
-        else if(node[AST_TAG_EXPR] == nullptr)
+        else if (node[AST_TAG_EXPR] == nullptr)
             RETVAL_SET(_NIL_);
         else
             assert(false && "Not supported type of return");
@@ -810,7 +856,7 @@ private:
     const Value EvalObjGet(Object &node)
     {
         // FIX when call is done
-        debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify()), node[AST_TAG_TYPE_KEY]->Stringify(); 
+        debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify()), node[AST_TAG_TYPE_KEY]->Stringify();
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
 
@@ -827,13 +873,15 @@ private:
         else
             assert(false && "Impossible");
 
-        if(lvalue.GetType() == Value::ProgramFunctionType){
-            if(index != "$closure")
+        if (lvalue.GetType() == Value::ProgramFunctionType)
+        {
+            if (index != "$closure")
                 assert(false && "Only $closure is accepted on functions");
             debug.ObjectPrintChildren((*lvalue.ToProgramFunctionClosure_NoConst()));
             return Value(*lvalue.ToProgramFunctionClosure_NoConst());
         }
-        else{
+        else
+        {
             return *(*lvalue.ToObject_NoConst())[index];
         }
     }
@@ -855,19 +903,20 @@ private:
         else
             assert(false && "Impossible");
 
-        if(lvalue.GetType() == Value::ProgramFunctionType){
-            if(index != "$closure")
+        if (lvalue.GetType() == Value::ProgramFunctionType)
+        {
+            if (index != "$closure")
                 assert(false && "Only $closure is accepted on functions");
 
             return lvalue;
         }
-        else{
+        else
+        {
             if ((*lvalue.ToObject_NoConst())[index] == nullptr)
                 lvalue.ToObject_NoConst()->Set(index, Value(_NIL_));
 
             return *(*lvalue.ToObject_NoConst())[index];
         }
-
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
@@ -1001,7 +1050,8 @@ private:
     {
         envStack->Pop();
     }
-    Object &GetCurrentScopeSpace(){
+    Object &GetCurrentScopeSpace()
+    {
         return *envStack->Top().ToObject_NoConst();
     }
 
@@ -1061,7 +1111,7 @@ private:
         dispatcher->Install(AST_TAG_CALLSUFFIX, [this](Object &node)
                             { return EvalCallSuffix(node); });
         dispatcher->Install(AST_TAG_NORMCALL, [this](Object &node)
-                            {return EvalNormCall(node);});
+                            { return EvalNormCall(node); });
         dispatcher->Install(AST_TAG_ASSIGNEXPR, [this](Object &node)
                             { return EvalAssignexpr(node); });
         dispatcher->Install(AST_TAG_LVALUE, [this](Object &node)
@@ -1087,24 +1137,72 @@ private:
         dispatcher->Install(AST_TAG_MEMBER, [this](Object &node)
                             { return EvalMember(node); });
     }
+    void InstallLibraryFuncs(void)
+    {
+        GetCurrentScope().Set("print", *(new Value((LibraryFunc) & this->Print_LibFunc)));
+        GetCurrentScope().Set("typeof", *(new Value((LibraryFunc) & this->Typeof_Libfunc)));
+        GetCurrentScope().Set("object_keys", *(new Value((LibraryFunc) & this->ObjectKeys_Libfunc)));
+        GetCurrentScope().Set("object_size", *(new Value((LibraryFunc) & this->ObjectSize_Libfunc)));
+    }
 
-
-    //Library Functions
-    static void Print_LibFunc(Object& env){
+    // Library Functions
+    static void Print_LibFunc(Object &env)
+    {
         int i = 0;
-        while(env[i]){
-            if(env[i]->GetType() == Value::ObjectType){
-                // PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
-                NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); //If colors bug the terminal
+        while (env[i])
+        {
+            if (env[i]->GetType() == Value::ObjectType)
+            {
+                PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
+                // NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); // If colors bug the terminal
             }
-                
-            else{
-                // PRINT_BLUE_LINE(env[i]->Stringify());
-                NORMAL_PRINT_LINE(env[i]->Stringify()); //If colors bug the terminal
+
+            else
+            {
+                PRINT_BLUE_LINE(env[i]->Stringify());
+                // NORMAL_PRINT_LINE(env[i]->Stringify()); // If colors bug the terminal
             }
-                
+
             i++;
-        }       
+        }
+    }
+    static void Typeof_Libfunc(Object &env)
+    {
+        // obj.Debug_PrintChildren();
+        std::string retval = "";
+        if (env[0]->GetType() == Value::UndefType)
+            retval = "Undefined";
+        else if (env[0]->GetType() == Value::NumberType)
+            retval = "Number";
+        else if (env[0]->GetType() == Value::BooleanType)
+            retval = "Boolean";
+        else if (env[0]->GetType() == Value::StringType)
+            retval = "String";
+        else if (env[0]->GetType() == Value::NilType)
+            retval = "Nill";
+        else if (env[0]->GetType() == Value::ObjectType)
+            retval = "Object";
+        else if (env[0]->GetType() == Value::ProgramFunctionType)
+            retval = "ProgramFunction";
+        else if (env[0]->GetType() == Value::LibraryFunctionType)
+            retval = "LibFunction";
+        else
+            assert(false);
+        env.Set(RETVAL_RESERVED_FIELD, Value(retval));
+    }
+    static void ObjectKeys_Libfunc(Object &env)
+    {
+        Object *keys = new Object();
+        int i = 0;
+        for (auto iter = env[0]->ToObject_NoConst()->children.begin(); iter != env[0]->ToObject_NoConst()->children.end(); ++iter)
+        {
+            keys->Set(i++, Value(iter->first));
+        }
+        env.Set(RETVAL_RESERVED_FIELD, Value(*keys));
+    }
+    static void ObjectSize_Libfunc(Object &env)
+    {
+        env.Set(RETVAL_RESERVED_FIELD, Value((double)env[0]->ToObject_NoConst()->children.size()));
     }
 
 public:
@@ -1115,10 +1213,10 @@ public:
 
         envStack = new ValueStack();
         PushScopeSpace();
-        PushNewScope();  
-        GetCurrentScope().Set("print", *(new Value((LibraryFunc)&this->Print_LibFunc)));
+        PushNewScope();
         debug.ValueStackDebugPrint(envStack);
         Install();
+        InstallLibraryFuncs();
     }
     ~Interpreter()
     {
