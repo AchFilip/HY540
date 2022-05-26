@@ -369,7 +369,7 @@ objectdef:      '['elist']'                                     {
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_OBJECTDEF, AST_TAG_ELIST, "", *$2);
                                                                 }
                 |'['indexed']'                                  {
-                                                                    PrintParsing("indexed","indexed , indexedelem");
+                                                                    PrintParsing("objectdef","indexed");
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_OBJECTDEF, AST_TAG_INDEXED, "", *$2);
                                                                 }
                 ;
@@ -525,21 +525,21 @@ int main(int argc, char** argv){
 
     //~~~~
     //Unparsing the code
-    // TreeHost *treeHost = new TreeHost(); 
-    // treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
-    // std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
-    // std::ofstream MyFile("code.alpha");
-    // MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
-    // MyFile.close();
+    TreeHost *treeHost = new TreeHost(); 
+    treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
+    //std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
+    std::ofstream MyFile("code.alpha");
+    MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
+    MyFile.close();
     //End
     //~~~~
 
     //~~~~~~
     // Test Interpreter functions
 
-    Interpreter* interpreter = new Interpreter();
+    /* Interpreter* interpreter = new Interpreter();
     interpreter->StartProgram(*ast->ToObject_NoConst());
-    delete interpreter;
+    delete interpreter; */
 
     //~~~~~~
     std::cout << "Its Over =)";
