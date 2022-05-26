@@ -26,8 +26,8 @@ std::string ObjectToString(Object* obj, std::string toPrint, std::string startin
 
     for(auto it = obj->children.begin(); it != obj->children.end(); ){  
         if(it->second.GetType() != Value::ObjectType){
-            std::string id = it->first;            
-            if(id.substr(2,id.size()) == "000000")
+            std::string id = it->first;
+            if(id.size() > 2 && id.substr(2,id.size()) == "000000")
                 id = id.substr(0,1);
             toPrint += startingTab + id + ": " + it->second.Stringify() + "\n";
         }
@@ -1113,13 +1113,13 @@ private:
         int i = 0;
         while(env[i]){
             if(env[i]->GetType() == Value::ObjectType){
-                PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
-                //NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); //If colors bug the terminal
+                // PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
+                NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); //If colors bug the terminal
             }
                 
             else{
-                PRINT_BLUE_LINE(env[i]->Stringify());
-                //NORMAL_PRINT_LINE(env[i]->Stringify()); //If colors bug the terminal
+                // PRINT_BLUE_LINE(env[i]->Stringify());
+                NORMAL_PRINT_LINE(env[i]->Stringify()); //If colors bug the terminal
             }
                 
             i++;
