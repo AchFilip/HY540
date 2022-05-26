@@ -56,6 +56,7 @@ private:
 
     struct BreakException{};
     struct ContinueException{};
+    struct ReturnException{};
 
     const Value Eval(Object &node)
     {
@@ -338,45 +339,48 @@ private:
     const Value EvalCall(Object &node)
     {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_LVALUE]){
 
-            Value functionValue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
-            Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
+        try{
+            if(node[AST_TAG_LVALUE]){
 
-            if(functionValue.GetType() == Value::ProgramFunctionType){
+                Value functionValue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+                Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
+
+                if(functionValue.GetType() == Value::ProgramFunctionType){
+                    //Adjust Scopes
+                    PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
+                    //Push arguments
+                    Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
+                    //Make call
+                    EvalFunctionBlock(ast, args);
+                }
+                else if(functionValue.GetType() == Value::LibraryFunctionType){
+                    //Adjust Scopes
+                    PushScopeSpace();
+                    PushNested();
+                    //Push Arguments
+                    if(args.GetType() != Value::NilType)
+                        PushLibraryFunctionArgumentsToScope(*args.ToObject_NoConst());
+                    //MakeCall
+                    functionValue.ToLibraryFunction()(GetCurrentScope());
+                }
+            }
+            else if(node[AST_TAG_FUNCDEF] || node[AST_TAG_CALL]){ // Anonymous function
+                Value functionValue = Eval(node[AST_TAG_CALL] ? *node[AST_TAG_CALL]->ToObject_NoConst() : *node[AST_TAG_FUNCDEF]->ToObject_NoConst());
+                Value args = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+
                 //Adjust Scopes
                 PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
+                PushNested();
                 //Push arguments
                 Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
+                if(ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
+                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
                 //Make call
-                EvalFunctionBlock(ast, args);
-            }
-            else if(functionValue.GetType() == Value::LibraryFunctionType){
-                //Adjust Scopes
-                PushScopeSpace();
-                PushNested();
-                //Push Arguments
-                if(args.GetType() != Value::NilType)
-                    PushLibraryFunctionArgumentsToScope(*args.ToObject_NoConst());
-                //MakeCall
-                functionValue.ToLibraryFunction()(GetCurrentScope());
+                Eval(ast);
             }
         }
-        else if(node[AST_TAG_FUNCDEF] || node[AST_TAG_CALL]){ // Anonymous function
-            Value functionValue = Eval(node[AST_TAG_CALL] ? *node[AST_TAG_CALL]->ToObject_NoConst() : *node[AST_TAG_FUNCDEF]->ToObject_NoConst());
-            Value args = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
-
-            //Adjust Scopes
-            PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
-            PushNested();
-            //Push arguments
-            Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
-            if(ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
-                PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
-            //Make call
-            Eval(ast);
-        }
-
+        catch(const ReturnException &){}
         // Get retval from ret register
         GetCurrentScope().Debug_PrintChildren();
         Value retval = RETVAL_GET();
@@ -793,6 +797,8 @@ private:
             RETVAL_SET(_NIL_);
         else
             assert(false && "Not supported type of return");
+
+        throw ReturnException();
     }
     const Value EvalObjGet(Object &node)
     {
