@@ -409,16 +409,9 @@ private:
     {
         return _NIL_;
     }
-    const Value EvalTreeElist(Object &node)
+    const Value EvalTreeElist(Object &node, Object &evaluatedElist, int &counter)
     {
-        // TODO: big problemo: we rewrite the AST tree while
-        // evaluating this function. Sto when a function is called
-        // multiple times it has lost its actual original ast code.
-        // The problem is mostly with GetAndRemove. Maybe copy the entire node
-        // when evaluating?
-
-
-        // node.Debug_PrintChildren();
+        node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST])
         {
             Value expr;
@@ -426,17 +419,15 @@ private:
                 expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
             else
                 expr = *node[AST_TAG_EXPR];
-            node.GetAndRemove(AST_TAG_EXPR);
-            node.Set(AST_TAG_EXPR, expr);
+            evaluatedElist.Set(counter, expr);
 
             Value elist;
             if(node[AST_TAG_ELIST]->GetType() == Value::ObjectType)
-                elist = EvalTreeElist(*node[AST_TAG_ELIST]->ToObject_NoConst());
+                elist = EvalTreeElist(*node[AST_TAG_ELIST]->ToObject_NoConst(), evaluatedElist, ++counter);
             else{
                 elist = *node[AST_TAG_ELIST];
             }
-            node.GetAndRemove(AST_TAG_ELIST);
-            node.Set(AST_TAG_ELIST, elist);
+            evaluatedElist.Set(counter, elist);
             return node;
         }
         else if (node[AST_TAG_EXPR])
@@ -454,25 +445,32 @@ private:
     }
     const Value EvalElist(Object &node)
     {
+        Object *elist = new Object();
         if (node[AST_TAG_ELIST] == nullptr && node[AST_TAG_EXPR] != nullptr)
         {
-            Object *elist = new Object();
             elist->Set(0, Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()));
             return Value(*elist);
         }
+        else if(node[AST_TAG_ELIST] != nullptr)
+        {
+            int counter = 0; // Counter is passed with reference, so it has to be a var
+            EvalTreeElist(node, *elist, counter); 
 
-        Object *evaluatedElist = new Object();
-        if(node[AST_TAG_ELIST])
-            evaluatedElist->Set(AST_TAG_ELIST, *node[AST_TAG_ELIST]);
+            // Reverse the order of the elist elements
+            ValueStack stack;
+            for(int i = 0; elist->children.size(); i++)
+            {
+                stack.Push(elist->GetAndRemove(i));
+            }
+            for(int i = 0 ; stack.IsEmpty() == false; i++){
+                elist->Set(i, stack.Top());
+                stack.Pop();
+            }
 
-        const Value treeElist = EvalTreeElist(node);
-        if (treeElist.GetType() == Value::ObjectType){
-            return EvalElistToObject(*treeElist.ToObject_NoConst());
+            return Value(*elist);
         }
         else
-        {
             return _NIL_;
-        }
     }
     const Value EvalObjectDef(Object &node)
     {
@@ -854,40 +852,6 @@ private:
         }
         else
             assert(false && "Not implemented yet");
-    }
-
-    const Value EvalElistToObject(Object &node) // node must be elist
-    {
-        // Elist is parsed in reverse order
-        // So first store values in a stack
-        // and the add them to an object
-
-        Object &iterator = node;
-        ValueStack stack;
-        while (iterator[AST_TAG_ELIST])
-        {
-            stack.Push(Value(*iterator[AST_TAG_EXPR]));
-            if (iterator[AST_TAG_ELIST]->GetType() == Value::ObjectType)
-            {
-                iterator[AST_TAG_ELIST]->ToObject_NoConst()->Debug_PrintChildren();
-                iterator = *iterator[AST_TAG_ELIST]->ToObject_NoConst();
-            }
-            else
-            {
-                stack.Push(Value(*iterator[AST_TAG_ELIST]));
-                break;
-            }
-        }
-
-        int index = 0;
-        Object *obj = new Object();
-        while (stack.IsEmpty() == false)
-        {
-            obj->Set(index++, stack.Top());
-            stack.Pop();
-        }
-        obj->Debug_PrintChildren();
-        return Value(*obj);
     }
     const Value EvalIndexedToObject(Object &node)
     {
