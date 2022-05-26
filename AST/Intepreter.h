@@ -519,8 +519,8 @@ private:
             if ((node[AST_TAG_INDEXED]->GetType() != Value::NilType))
             {
                 const Value indexed = Eval(*(node[AST_TAG_INDEXED]->ToObject_NoConst()));
-                const Value indexedPacked = EvalIndexedToObject(*indexed.ToObject_NoConst()); // killme. yES.
-                return indexedPacked;
+                std::cout << "mark" << std::endl;
+                return indexed;
             }
             else
                 return *(new Value(*(new Object())));
@@ -529,19 +529,19 @@ private:
         else
             assert(false && "Invalid ObjectDef node");
     }
-    const Value EvalIndexed(Object &node)
-    {
+    const Value EvalTreeIndexed(Object &node, Object &evaluatedIndexed){
         if (node[AST_TAG_INDEXED])
         {
-            Value indexedelem = Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
-            node.GetAndRemove(AST_TAG_INDEXEDELEM);
-            node.Set(AST_TAG_INDEXEDELEM, indexedelem);
+            Value indexedelem = EvalIndexedElem(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
+            Object &indexedelemObj = *indexedelem.ToObject_NoConst();
+            evaluatedIndexed.Set(indexedelemObj[AST_TAG_EXPR_LEFT]->Stringify(), *indexedelemObj[AST_TAG_EXPR_RIGHT]);
 
-            Value indexed = Eval(*node[AST_TAG_INDEXED]->ToObject_NoConst());
-            node.GetAndRemove(AST_TAG_INDEXED);
-            node.Set(AST_TAG_INDEXED, indexed);
+            Value indexed = EvalTreeIndexed(*node[AST_TAG_INDEXED]->ToObject_NoConst(), evaluatedIndexed);
+            Object &indexedObj = *indexed.ToObject_NoConst();
+            if(indexedObj[AST_TAG_EXPR_LEFT])
+                evaluatedIndexed.Set(indexedObj[AST_TAG_EXPR_LEFT]->Stringify(), *indexedObj[AST_TAG_EXPR_RIGHT]);
 
-            return node;
+            return evaluatedIndexed;
         }
         else if (node[AST_TAG_INDEXEDELEM])
         {
@@ -550,15 +550,35 @@ private:
     }
     const Value EvalIndexedElem(Object &node)
     {
+        Object *evaluatedElem = new Object();
+
         Value l_expr = EvalExpr(*node[AST_TAG_EXPR_LEFT]->ToObject_NoConst());
-        node.GetAndRemove(AST_TAG_EXPR_LEFT);
-        node.Set(AST_TAG_EXPR_LEFT, l_expr);
+        evaluatedElem->Set(AST_TAG_EXPR_LEFT, l_expr);
 
         Value r_expr = EvalExpr(*node[AST_TAG_EXPR_RIGHT]->ToObject_NoConst());
-        node.GetAndRemove(AST_TAG_EXPR_RIGHT);
-        node.Set(AST_TAG_EXPR_RIGHT, r_expr);
+        evaluatedElem->Set(AST_TAG_EXPR_RIGHT, r_expr);
 
-        return node;
+        return *evaluatedElem;
+    }
+    const Value EvalIndexed(Object &node)
+    {
+        Object *indexed;
+        if(node[AST_TAG_INDEXED]){
+            indexed = new Object();
+            std::cout << "before eval tree elist" << std::endl;
+            EvalTreeIndexed(node, *indexed);
+            std::cout << "after eval tree elist" << std::endl;
+        }
+        else if(node[AST_TAG_INDEXEDELEM]){ 
+            indexed = EvalIndexedElem(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst()).ToObject_NoConst();
+            std::cout << "mark" << std::endl;
+        }
+        else 
+            assert(false && "Impossible to have other types in EvalIndexed");
+
+        indexed->Debug_PrintChildren();
+        std::cout << "end of eval indexed" << std::endl;
+        return *indexed;
     }
     const Value EvalBlock(Object &node)
     {
@@ -938,37 +958,6 @@ private:
         }
         else
             assert(false && "Not implemented yet");
-    }
-    const Value EvalIndexedToObject(Object &node)
-    {
-        Object &iterator = node;
-        ValueStack stack;
-        while (iterator[AST_TAG_INDEXED])
-        {
-            stack.Push(Value(*iterator[AST_TAG_INDEXEDELEM]));
-            if (iterator[AST_TAG_INDEXED]->GetType() == Value::ObjectType)
-            {
-                // iterator[AST_TAG_INDEXED]->ToObject_NoConst()->Debug_PrintChildren();
-                iterator = *iterator[AST_TAG_INDEXED]->ToObject_NoConst();
-            }
-            else
-            {
-                stack.Push(Value(*iterator[AST_TAG_INDEXED]));
-                break;
-            }
-        }
-        stack.Push(Value(iterator));
-
-        // int index = 0;
-        Object *obj = new Object();
-        while (stack.IsEmpty() == false)
-        {
-            Object *key = stack.Top().ToObject_NoConst();
-            obj->Set((*key)[AST_TAG_EXPR_LEFT]->Stringify(), *(*key)[AST_TAG_EXPR_RIGHT]);
-            stack.Pop();
-        }
-        // obj->Debug_PrintChildren();
-        return Value(*obj);
     }
 
     // Environment Handling Methods

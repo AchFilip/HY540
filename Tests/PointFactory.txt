@@ -14,7 +14,7 @@
             {"y" : y},
             {"Move" : Move},
             {"Print" : Print},
-            {"print" : print}
+            {"$outer" : $outer}
         ];
 
         pt.Move.$closure = pt;
@@ -23,6 +23,11 @@
     }
 
     pt1 = Point(10, 2);
-    pt1.Move(1, 1);
-    pt1.Print();
+    pt2 = Point(1, 1);
+
+    pt1.Move(2, 2);
+    pt2.Move(1, 1);
+
+    print(pt1);
+    print(pt2);
 }
