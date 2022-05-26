@@ -1,0 +1,28 @@
+{
+    function Move(dx, dy){
+        x = x + dx;
+        y = y + dy;
+    }
+    function Print(){
+        print(x);
+        print(y);
+    }
+
+    function Point(x, y){
+        local pt = [
+            {"x" : x},
+            {"y" : y},
+            {"Move" : Move},
+            {"Print" : Print},
+            {"print" : print}
+        ];
+
+        pt.Move.$closure = pt;
+        pt.Print.$closure = pt;
+        return pt;
+    }
+
+    pt1 = Point(10, 2);
+    pt1.Move(1, 1);
+    pt1.Print();
+}

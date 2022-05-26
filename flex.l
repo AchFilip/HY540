@@ -4,6 +4,7 @@
 #include "parser.hpp"
 #include <iostream>
 #include <vector>
+#include <string>
 
 struct aplha_token_t{
     int numLine;
@@ -93,7 +94,7 @@ INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 NUMBER                  {INTEGER_CONST}|{REAL_CONST}
 
-ID                      [a-zA-Z][a-zA-Z_0-9]*
+ID                      [$]?[a-zA-Z][a-zA-Z_0-9]*
 
 STRING                  \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
 
@@ -163,9 +164,10 @@ WHITESPACE              [\t\r' '\n]
                                 findAndReplaceAll(s,"\\t","\t");
                                 findAndReplaceAll(s,"\\\"","\"");
                                 findAndReplaceAll(s,"\\\\","\\");
+                                s = s.substr(1, s.size() - 2);
 
                                 //parsing it with ""    
-                                yylval.strVal = new std::string(strdup(yytext));
+                                yylval.strVal = new std::string(s);
 
                                 return STRING;
                             }

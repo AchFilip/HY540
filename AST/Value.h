@@ -271,6 +271,11 @@ public:
         }
     }
 
+    void SetClosure(Object *closure){
+        assert(GetType() == ProgramFunctionType);
+        data.progFuncVal.closure = closure;
+    }
+
     // Operator overloading. Use overloaded casting operators to save repeatable code
     const Value operator=(const Value &right)
     {

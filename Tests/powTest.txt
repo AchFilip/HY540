@@ -1,0 +1,8 @@
+function pow(base, a){
+    if(a > 0)
+        return base * pow(base, --a);
+    else
+        return 1;
+}
+
+print(pow(2, 30));

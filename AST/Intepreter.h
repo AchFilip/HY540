@@ -32,6 +32,7 @@ private:
         {
             Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
             Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
+            return _NIL_;
         }
         else if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
         {
@@ -76,7 +77,6 @@ private:
     }
     const Value EvalExpr(Object &node)
     {
-        std::cout << "EVAL EXPR" << std::endl;
         node.Debug_PrintChildren();
 
         if (node[AST_TAG_ASSIGNEXPR])
@@ -179,10 +179,18 @@ private:
         node.Debug_PrintChildren();
         Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
-        lvalue = expr;
-        std::cout << "LVALUE: " << lvalue.Stringify() << std::endl;
-
-        GetCurrentScope().Debug_PrintChildren();
+        
+        if(lvalue.GetType() == Value::ProgramFunctionType){
+            if(expr.GetType() == Value::ObjectType){
+                lvalue.SetClosure(expr.ToObject_NoConst());
+                // lvalue = *(new Value(*lvalue.ToProgramFunctionAST_NoConst(), expr.ToObject_NoConst()));
+                lvalue.ToProgramFunctionClosure_NoConst()->Debug_PrintChildren();
+            }
+            else
+                assert(false && "function.$closure == expr. Expr can only be an object");
+        }
+        else
+            lvalue = expr;
 
         return lvalue;
     }
@@ -207,6 +215,9 @@ private:
         {
             return Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
         }
+        else if (node[AST_TAG_FUNCDEF]){
+            return Eval(*node[AST_TAG_FUNCDEF]->ToObject_NoConst());
+        }
         else
             assert(false && "Not implmeneted yet for other types");
     }
@@ -230,6 +241,7 @@ private:
                 }
                 else
                 {
+                    std::cout << "Lookup of \"" << id << "\" Rvalue: not_found " << std::endl;
                     assert(false && "Lookup didn't find anything");
                     return Value();
                 }
@@ -298,13 +310,10 @@ private:
             if(functionValue.GetType() == Value::ProgramFunctionType){
                 //Adjust Scopes
                 PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
-                PushNested();
                 //Push arguments
                 Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
-                if(ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
-                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
                 //Make call
-                Eval(ast);
+                EvalFunctionBlock(ast, args);
             }
             else if(functionValue.GetType() == Value::LibraryFunctionType){
                 //Adjust Scopes
@@ -316,17 +325,31 @@ private:
                 //MakeCall
                 functionValue.ToLibraryFunction()(GetCurrentScope());
             }
-
-            // Get retval from ret register
-            GetCurrentScope().Debug_PrintChildren();
-            Value retval = RETVAL_GET();
-
-            //Func Exit
-            PopScope();
-            PopScopeSpace();
-
-            return retval;
         }
+        else if(node[AST_TAG_FUNCDEF] || node[AST_TAG_CALL]){ // Anonymous function
+            Value functionValue = Eval(node[AST_TAG_CALL] ? *node[AST_TAG_CALL]->ToObject_NoConst() : *node[AST_TAG_FUNCDEF]->ToObject_NoConst());
+            Value args = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+
+            //Adjust Scopes
+            PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
+            PushNested();
+            //Push arguments
+            Object& ast = *functionValue.ToProgramFunctionAST_NoConst();  
+            if(ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
+                PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
+            //Make call
+            Eval(ast);
+        }
+
+        // Get retval from ret register
+        GetCurrentScope().Debug_PrintChildren();
+        Value retval = RETVAL_GET();
+
+        //Func Exit
+        PopScope();
+        PopScopeSpace();
+
+        return retval;
     }
     void PushProgramFunctionArgumentsToScope(Object& elist, Object& idlist){
         auto& scope = GetCurrentScope();
@@ -409,6 +432,7 @@ private:
     }
     const Value EvalElist(Object &node)
     {
+        node.Debug_PrintChildren();
         Object *elist = new Object();
         if (node[AST_TAG_ELIST] == nullptr && node[AST_TAG_EXPR] != nullptr)
         {
@@ -498,6 +522,7 @@ private:
     }
     const Value EvalBlock(Object &node)
     {
+        node.Debug_PrintChildren();
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
         {
             // Push new nested scope
@@ -508,9 +533,47 @@ private:
             auto &currScope = GetCurrentScope();
             bool shouldSliceOuter = currScope[PREVIOUS_SCOPE_KEY] != nullptr;
             if (shouldSliceOuter)
-                while ((*PopScope())[PREVIOUS_SCOPE_KEY]) // Cringe fast code
+                while (true) // Cringe fast code
                 {
-                    // no-op (intentionally empty)
+                    auto &scope = GetCurrentScope();
+                    if(scope[PREVIOUS_SCOPE_KEY] == nullptr)
+                        break;
+                    else
+                        PopScope();
+                }
+            assert(GetCurrentScope()[OUTER_SCOPE_KEY] != nullptr);
+            PopScope();
+            if (shouldSliceOuter)
+            {
+                PushSlice();
+            }
+            return val;
+        }
+        else
+            return _NIL_;
+    }
+    const Value EvalFunctionBlock(Object &node, Value &args)
+    {
+        node.Debug_PrintChildren();
+        if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+        {
+            // Push new nested scope
+            PushNested();
+            if(node[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
+                    PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *node[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());                
+            // Eval code inside of block
+            const Value val = Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
+            // Make sure that scopes have been restored
+            auto &currScope = GetCurrentScope();
+            bool shouldSliceOuter = currScope[PREVIOUS_SCOPE_KEY] != nullptr;
+            if (shouldSliceOuter)
+                while (true) // Cringe fast code
+                {
+                    auto &scope = GetCurrentScope();
+                    if(scope[PREVIOUS_SCOPE_KEY] == nullptr)
+                        break;
+                    else
+                        PopScope();
                 }
             assert(GetCurrentScope()[OUTER_SCOPE_KEY] != nullptr);
             PopScope();
@@ -553,7 +616,7 @@ private:
         // Slice
         PushSlice();
 
-        return _NIL_;
+        return *functionVal;
     }
     const Value EvalConst(Object &node)
     {
@@ -674,25 +737,27 @@ private:
     }
     const Value EvalReturn(Object &node)
     {
-        Value retval;
-        if(node[AST_TAG_EXPR]){
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_EXPR] != nullptr){
             RETVAL_SET(Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()));
         }
-        else
+        else if(node[AST_TAG_EXPR] == nullptr)
             RETVAL_SET(_NIL_);
+        else
+            assert(false && "Not supported type of return");
     }
     const Value EvalObjGet(Object &node)
     {
         // FIX when call is done
-        node.Debug_PrintChildren();
+        node.Debug_PrintChildren(); 
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+
         std::string index;
         if (disambiguate == ".id")
         {
             // index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
             index = node[AST_TAG_ID]->Stringify();
-            index = "\"" + index + "\"";
         }
         else if (disambiguate == "[expr]")
         {
@@ -701,21 +766,27 @@ private:
         else
             assert(false && "Impossible");
 
-        std::cout << index << " " << (*lvalue.ToObject_NoConst())[index]->Stringify() << std::endl;
-        return *(*lvalue.ToObject_NoConst())[index];
+        if(lvalue.GetType() == Value::ProgramFunctionType){
+            if(index != "$closure")
+                assert(false && "Only $closure is accepted on functions");
+            (*lvalue.ToProgramFunctionClosure_NoConst()).Debug_PrintChildren();
+            return Value(*lvalue.ToProgramFunctionClosure_NoConst());
+        }
+        else{
+            return *(*lvalue.ToObject_NoConst())[index];
+        }
     }
     const Value &EvalObjSet(Object &node)
     {
         // Same as ObjGet but returns ref to be changed in assignexpr
         node.Debug_PrintChildren();
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
-        const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+        const Value &lvalue = EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst());
         std::string index;
         if (disambiguate == ".id")
         {
             // index = Eval(*node[AST_TAG_ID]->ToObject_NoConst()).Stringify();
             index = node[AST_TAG_ID]->Stringify();
-            index = "\"" + index + "\"";
         }
         else if (disambiguate == "[expr]")
         {
@@ -725,10 +796,19 @@ private:
             assert(false && "Impossible");
 
         std::cout << (*lvalue.ToObject_NoConst())[index] << std::endl;
-        if ((*lvalue.ToObject_NoConst())[index] == nullptr)
-            lvalue.ToObject_NoConst()->Set(index, Value(_NIL_));
+        if(lvalue.GetType() == Value::ProgramFunctionType){
+            if(index != "$closure")
+                assert(false && "Only $closure is accepted on functions");
 
-        return *(*lvalue.ToObject_NoConst())[index];
+            return lvalue;
+        }
+        else{
+            if ((*lvalue.ToObject_NoConst())[index] == nullptr)
+                lvalue.ToObject_NoConst()->Set(index, Value(_NIL_));
+
+            return *(*lvalue.ToObject_NoConst())[index];
+        }
+
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
@@ -856,12 +936,12 @@ private:
     }
     Object *PopScope()
     {
-        // Assert something for antonis
         std::string parentKey = (GetCurrentScope().children.find(OUTER_SCOPE_KEY) != GetCurrentScope().children.end())
                                     ? OUTER_SCOPE_KEY
                                     : PREVIOUS_SCOPE_KEY;
+        Object *poped = &GetCurrentScope();
         SetCurrentScope(new Value(GetCurrentScope().children[parentKey]));
-        // Assert something for antonis
+        return poped;
     }
     void PushSlice()
     {
