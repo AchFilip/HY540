@@ -148,7 +148,6 @@ private:
     }
     void AcceptElist(const Object &node)
     {
-
         if (node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_ELIST]->ToObject());
         Accept(*node[AST_TAG_EXPR]->ToObject());
@@ -156,7 +155,6 @@ private:
     }
     void AcceptObjectDef(const Object &node)
     {
-        //node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_ELIST]->ToObject());
         else if (node[AST_TAG_INDEXED] != nullptr)
@@ -165,20 +163,17 @@ private:
     }
     void AcceptIndexed(const Object &node)
     {
-        //node.Debug_PrintChildren();
         if (node[AST_TAG_INDEXED] != nullptr){
-            std::cout << "          0";
             Accept(*node[AST_TAG_INDEXED]->ToObject());
-            std::cout << "          1";
             Accept(*node[AST_TAG_INDEXEDELEM]->ToObject());
         }
-        else
+        else{
             Accept(*node[AST_TAG_INDEXEDELEM]->ToObject());
+        }
         visitor->VisitIndexed(node);
     }
     void AcceptIndexedElem(const Object &node)
     {
-        node.Debug_PrintChildren();
         Accept(*node[AST_TAG_EXPR_LEFT]->ToObject());
         Accept(*node[AST_TAG_EXPR_RIGHT]->ToObject());
         visitor->VisitIndexedElem(node);
@@ -245,19 +240,14 @@ private:
     }
     void AcceptForstmt(const Object &node)
     {
-        std::cout << "\033[1;35m 1 \033[0m\n" << std::endl;
         if (node[AST_TAG_INIT]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_INIT]->ToObject());
-        std::cout << "\033[1;35m 2 \033[0m\n" << std::endl;
         if(node[AST_TAG_EXPR]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_EXPR]->ToObject());
-        std::cout << "\033[1;35m 3 \033[0m\n" << std::endl;
         if (node[AST_TAG_FORCOND]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_FORCOND]->ToObject());
-        std::cout << "\033[1;35m 4 \033[0m\n" << std::endl;
         if (node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_FORSTMT]->ToObject());
-        std::cout << "\033[1;35m 5 \033[0m\n" << std::endl;
         visitor->VisitFor(node);
     }
     void AcceptReturn(const Object &node)
@@ -303,6 +293,8 @@ private:
                         { AcceptObjectDef(node); });
         InstallAcceptor(AST_TAG_INDEXED, [this](const Object &node)
                         { AcceptIndexed(node); });
+        InstallAcceptor(AST_TAG_INDEXEDELEM, [this](const Object &node)
+                        { AcceptIndexedElem(node); });
         InstallAcceptor(AST_TAG_STMTS, [this](const Object &node)
                         { AcceptStmts(node); });
         InstallAcceptor(AST_TAG_BLOCK, [this](const Object &node)

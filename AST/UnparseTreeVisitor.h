@@ -263,7 +263,7 @@ private:
 
     const std::string UnparseFuncDef(const std::string& idlist,const std::string& block,const std::string& id = ""){
         std::string str;
-        id.empty() ? str = "function ( " + idlist + " ) " + block : "function " + id + " ( " + idlist + " ) " + block;
+        id.empty() ? str = "function ( " + idlist + " ) " + block : str = "function " + id + " ( " + idlist + " ) " + block;
         PrintTheUnparsedString(str);
         return str;
     }
@@ -457,6 +457,7 @@ public:
 
     virtual void VisitAssignexpr(const Object &node) override
     {
+        node.Debug_PrintChildren();
         const_cast<Object &>(node).Set(
             UNPARSE_VALUE,
             UnparseAssignExpr(
@@ -512,6 +513,7 @@ public:
         }
         else if (node[AST_TAG_OBJECTDEF] != nullptr)
         {
+            node.Debug_PrintChildren();
             const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(2, GetUnparsed(node[AST_TAG_OBJECTDEF])));
         }
         else if (node[AST_TAG_FUNCDEF] != nullptr)
@@ -528,7 +530,6 @@ public:
     {
         if (node[AST_TAG_ID] != nullptr)
         {
-            //std::cout<<"id: " << node[AST_TAG_ID]->Stringify() << "   disamb: " << node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE, 
                 UnparseLvalue(
@@ -660,7 +661,6 @@ public:
 
     virtual void VisitElist(const Object &node) override{ //not tested
         //std::cout << "\033[1;35m EDW XALAEI \033[0m\n" << std::endl;
-        node.Debug_PrintChildren();
         if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
@@ -685,7 +685,6 @@ public:
     } 
 
     virtual void VisitObjectDef(const Object &node) override{ //not tested
-        node.Debug_PrintChildren();
         if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
@@ -710,7 +709,8 @@ public:
     } 
     
     virtual void VisitIndexed(const Object &node) override{
-        if(node[AST_TAG_INDEXED]->GetType() != Value::NilType)
+        //node.Debug_PrintChildren();
+        if(node[AST_TAG_INDEXED] != nullptr)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIndexed(
@@ -718,18 +718,20 @@ public:
                     GetUnparsed(node[AST_TAG_INDEXED])
                 )
             );
-        else
+        else{
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIndexed(
                     GetUnparsed(node[AST_TAG_INDEXEDELEM])
                 )
             );
+        }
     }
 
-    virtual void VisitIndexedElem(const Object &node) override{ //not tested
-        node.Debug_PrintChildren();
-        if(node[AST_TAG_EXPR_LEFT] != nullptr && node[AST_TAG_EXPR_RIGHT]!= nullptr)
+    virtual void VisitIndexedElem(const Object &node) override{ 
+        //node.Debug_PrintChildren();
+        if(node[AST_TAG_EXPR_LEFT] != nullptr && node[AST_TAG_EXPR_RIGHT]!= nullptr){
+            //std:: cout << GetUnparsed(node[AST_TAG_EXPR_LEFT]) << "   " << GetUnparsed(node[AST_TAG_EXPR_RIGHT]);
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIndexedElem(
@@ -737,6 +739,7 @@ public:
                     GetUnparsed(node[AST_TAG_EXPR_RIGHT])
                 )
             );
+        }
     } 
 
     virtual void VisitBlock(const Object &node) override{
@@ -758,16 +761,16 @@ public:
     // }
 
     virtual void VisitFuncDef(const Object &node) override{ //not tested
-        if(node.children.count(AST_TAG_ID))
+        if(node[AST_TAG_ID] != nullptr){
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseFuncDef(
                     GetUnparsed(node[AST_TAG_IDLIST]),
                     GetUnparsed(node[AST_TAG_BLOCK]),
-                    GetUnparsed(node[AST_TAG_ID])
+                    node[AST_TAG_ID]->Stringify()
                 )
             );
-        else
+        }else
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseFuncDef(
@@ -784,7 +787,17 @@ public:
     virtual void VisitNumber(const Object &node) override{} //?
     
     virtual void VisitIdlist(const Object &node) override{
+        if(node[AST_TAG_IDLIST] == nullptr && node[AST_TAG_ID]->GetType() != Value::NilType){
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseIdlist(
+                    node[AST_TAG_ID]->Stringify()
+                )
+            );
+            return;
+        }
         if(node[AST_TAG_IDLIST]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType){
+            node.Debug_PrintChildren();
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIdlist(
@@ -793,13 +806,7 @@ public:
                 )
             );
         }
-        else if(node[AST_TAG_IDLIST]->GetType() == Value::NilType)
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseIdlist(
-                    node[AST_TAG_ID]->Stringify()
-                )
-            );
+
     }
 
     virtual void VisitWhile(const Object &node) override{ //den bike kan
@@ -823,7 +830,6 @@ public:
     }
 
     virtual void VisitFor(const Object &node) override{ //crashed
-        node.Debug_PrintChildren();
         if(node[AST_TAG_FORCOND]->GetType() == Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
@@ -881,8 +887,7 @@ public:
     
     virtual void VisitReturn(const Object &node) override
     {
-        node.Debug_PrintChildren();
-        if(node[AST_TAG_EXPR] == nullptr) //check if node is nil..?
+        if(node[AST_TAG_EXPR] == nullptr) 
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseReturn(
