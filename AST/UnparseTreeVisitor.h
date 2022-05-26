@@ -751,12 +751,21 @@ public:
     } 
 
     virtual void VisitBlock(const Object &node) override{
-        const_cast<Object&>(node).Set(
-            UNPARSE_VALUE,
-            UnparseBlock(
-                GetUnparsed(node[AST_TAG_STMTS])
-            )
-        ); 
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseBlock(
+                    GetUnparsed(node[AST_TAG_STMTS])
+                )
+            ); 
+        else
+            const_cast<Object&>(node).Set(
+                UNPARSE_VALUE,
+                UnparseBlock(
+                    ""
+                )
+            ); 
     }
 
     // virtual void VisitId(const Object &node) override{
@@ -770,14 +779,24 @@ public:
 
     virtual void VisitFuncDef(const Object &node) override{ //not tested
         if(node[AST_TAG_IDLIST]->GetType() == Value::NilType){
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseFuncDef(
-                    "",
-                    GetUnparsed(node[AST_TAG_BLOCK]),
-                    node[AST_TAG_ID]->Stringify()
-                )
-            );
+            if(node[AST_TAG_ID] != nullptr)
+                const_cast<Object&>(node).Set(
+                    UNPARSE_VALUE,
+                    UnparseFuncDef(
+                        "",
+                        GetUnparsed(node[AST_TAG_BLOCK]),
+                        node[AST_TAG_ID]->Stringify()
+                    )
+                );
+            else
+                const_cast<Object&>(node).Set(
+                    UNPARSE_VALUE,
+                    UnparseFuncDef(
+                        "",
+                        GetUnparsed(node[AST_TAG_BLOCK]),
+                        ""
+                    )
+                );
         }
         else if(node[AST_TAG_ID] != nullptr){
             const_cast<Object&>(node).Set(
@@ -847,7 +866,8 @@ public:
     }
 
     virtual void VisitFor(const Object &node) override{ //crashed
-        if(node[AST_TAG_FORCOND]->GetType() == Value::NilType)
+        node.Debug_PrintChildren();
+        if(node[AST_TAG_FORCOND]->GetType() == Value::NilType && node[AST_TAG_INIT]->GetType() != Value::NilType)
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
@@ -857,7 +877,7 @@ public:
                     GetUnparsed(node[AST_TAG_FORSTMT])
                 )
             );
-        else if(node[AST_TAG_INIT]->GetType() == Value::NilType)
+        else if(node[AST_TAG_INIT]->GetType() == Value::NilType && node[AST_TAG_FORCOND]->GetType() != Value::NilType) 
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
@@ -869,6 +889,7 @@ public:
             );
         else if(node[AST_TAG_INIT]->GetType() == Value::NilType &&
                 node[AST_TAG_FORCOND]->GetType() == Value::NilType)
+        {
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
@@ -878,6 +899,7 @@ public:
                     GetUnparsed(node[AST_TAG_FORSTMT])
                 )
             );
+        }
         else if(node[AST_TAG_INIT]->GetType() == Value::NilType &&
                 node[AST_TAG_FORCOND]->GetType() == Value::NilType &&
                 node[AST_TAG_FORSTMT]->GetType() == Value::NilType)
