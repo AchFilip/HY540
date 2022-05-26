@@ -328,6 +328,7 @@ public:
 
     virtual void VisitStmts(const Object &node) override
     {
+        node.Debug_PrintChildren();
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType && node[AST_TAG_STMT]->GetType() != Value::NilType)
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
@@ -394,7 +395,7 @@ public:
         }
         else if (node[AST_TAG_RETURNSTMT] != nullptr)
         {
-            if(node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType)
+            if(node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType && node[AST_TAG_RETURNSTMT]->GetType() != Value::UndefType)
                 const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseStmt(
@@ -778,6 +779,7 @@ public:
     // }
 
     virtual void VisitFuncDef(const Object &node) override{ //not tested
+        node.Debug_PrintChildren();
         if(node[AST_TAG_IDLIST]->GetType() == Value::NilType){
             if(node[AST_TAG_ID] != nullptr)
                 const_cast<Object&>(node).Set(
@@ -926,6 +928,7 @@ public:
     
     virtual void VisitReturn(const Object &node) override
     {
+        //node.Debug_PrintChildren();
         if(node[AST_TAG_EXPR] == nullptr) 
             const_cast<Object&>(node).Set(
                 UNPARSE_VALUE,

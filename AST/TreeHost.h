@@ -30,8 +30,12 @@ private:
             Accept(*node[AST_TAG_WHILE]->ToObject());
         else if (node[AST_TAG_FOR] != nullptr)
             Accept(*node[AST_TAG_FOR]->ToObject());
-        else if (node[AST_TAG_RETURNSTMT] != nullptr && node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType)
-            Accept(*node[AST_TAG_RETURNSTMT]->ToObject());
+        else if (node[AST_TAG_RETURNSTMT] != nullptr && node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType){
+            if(node[AST_TAG_RETURNSTMT]->GetType() == Value::UndefType)
+                ;
+            else
+                Accept(*node[AST_TAG_RETURNSTMT]->ToObject());
+        }
         else if (node[AST_TAG_BREAK] != nullptr && node[AST_TAG_BREAK]->GetType() != Value::NilType)
             ;//Accept(*node[AST_TAG_BREAK]->ToObject());
         else if (node[AST_TAG_CONTINUE] != nullptr && node[AST_TAG_CONTINUE]->GetType() != Value::NilType){
