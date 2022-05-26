@@ -76,11 +76,10 @@ public:
     }
     void Debug_PrintChildren() const
     {
-        std::cout << "~~~~" << std::endl;
+
         for (auto iter = children.begin(); iter != children.end(); ++iter)
         {
-            std::cout << "[" << iter->first << ","
-                      << iter->second.Stringify() << "]" << std::endl;
+            std::cout << "\t[" << iter->first << "," << iter->second.Stringify() << "]" << std::endl;
         }
     }
 

@@ -5,6 +5,7 @@
 #include "./Value.h"
 #include "./ValueStack.h"
 #include "./EvalDispatcher.h"
+#include "./DebugAST.h"
 #include <iostream>
 #define PRINT_BLUE_LINE(to_print)   std::cout << "\033[1;36m" << to_print << "\033[0m\n"
 #define PRINT_YELLOW_LINE(to_print) std::cout << "\033[1;33m" << to_print << "\033[0m\n"
@@ -53,6 +54,7 @@ class Interpreter
 private:
     EvalDispatcher *dispatcher;
     ValueStack *envStack;
+    DebugAST debug;
 
     struct BreakException{};
     struct ContinueException{};
@@ -60,11 +62,11 @@ private:
 
     const Value Eval(Object &node)
     {
+        debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
     const Value EvalStmts(Object &node)
     {
-        node.Debug_PrintChildren();
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType && node[AST_TAG_STMT]->GetType() != Value::NilType)
         {
             Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
@@ -83,10 +85,10 @@ private:
         {
             return _NIL_;
         }
+        return _NIL_;
     }
     const Value EvalStmt(Object &node)
     {
-        node.Debug_PrintChildren();
         std::string stmtType;
         if (node[AST_TAG_EXPR])
             stmtType = AST_TAG_EXPR;
@@ -114,8 +116,6 @@ private:
     }
     const Value EvalExpr(Object &node)
     {
-        node.Debug_PrintChildren();
-
         if (node[AST_TAG_ASSIGNEXPR])
             return Eval(*node[AST_TAG_ASSIGNEXPR]->ToObject_NoConst());
         else if (node[AST_TAG_TERM])
@@ -128,7 +128,6 @@ private:
 
             // Do operation based on disambiguation
             std::string operatorStr = node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString();
-            std::cout << leftExpr.Stringify() << " " << operatorStr << " " << rightExpr.Stringify() << std::endl;
             if (operatorStr == "+")
                 return leftExpr + rightExpr;
             else if (operatorStr == "-")
@@ -158,10 +157,10 @@ private:
             else
                 assert(false && "This kind of operator has not been supported yet");
         }
+        assert(false);
     }
     const Value EvalTerm(Object &node)
     {
-        node.Debug_PrintChildren();
         std::string termType;
         if (node[AST_TAG_PRIMARY])
             termType = AST_TAG_PRIMARY;
@@ -213,7 +212,6 @@ private:
     }
     const Value EvalAssignexpr(Object &node)
     {
-        node.Debug_PrintChildren();
         Value &lvalue = const_cast<Value &>(EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst(), true));
         Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()); // Rvalue eval
         
@@ -221,7 +219,7 @@ private:
             if(expr.GetType() == Value::ObjectType){
                 lvalue.SetClosure(expr.ToObject_NoConst());
                 // lvalue = *(new Value(*lvalue.ToProgramFunctionAST_NoConst(), expr.ToObject_NoConst()));
-                lvalue.ToProgramFunctionClosure_NoConst()->Debug_PrintChildren();
+                debug.ObjectPrintChildren(*(lvalue.ToProgramFunctionClosure_NoConst()));
             }
             else
                 assert(false && "function.$closure == expr. Expr can only be an object");
@@ -233,7 +231,6 @@ private:
     }
     const Value EvalPrimary(Object &node)
     {
-        node.Debug_PrintChildren();
 
         if (node[AST_TAG_LVALUE])
         {
@@ -260,7 +257,6 @@ private:
     }
     const Value EvalRvalue(Object &node)
     {
-        node.Debug_PrintChildren();
 
         if (node[AST_TAG_ID])
         {
@@ -273,12 +269,12 @@ private:
                 const Value *lookup = ScopeLookup(GetCurrentScope(), id);
                 if (lookup)
                 {
-                    std::cout << "Lookup of \"" << id << "\" Rvalue: found " << lookup->Stringify() << std::endl;
+                    debug.LookupPrint("Lookup of \"" + id + "\" Rvalue: found " + lookup->Stringify());
                     return *lookup;
                 }
                 else
                 {
-                    std::cout << "Lookup of \"" << id << "\" Rvalue: not_found " << std::endl;
+                    debug.LookupPrint("Lookup of \"" + id + "\" Rvalue: not_found ");
                     assert(false && "Lookup didn't find anything");
                     return Value();
                 }
@@ -298,7 +294,7 @@ private:
                 const Value *lookup = ScopeLookup(*curr_scope, id);
                 if (lookup)
                 {
-                    std::cout << "Lookup Rvalue: found " << lookup->Stringify() << std::endl;
+                    debug.LookupPrint("Lookup Rvalue: found " + lookup->Stringify());
                     return *lookup;
                 }
                 else
@@ -314,6 +310,7 @@ private:
         }
         else
             assert(false && "Not implemented yet");
+        assert(false);
     }
     const Value EvalMember(Object &node)
     {
@@ -338,7 +335,6 @@ private:
     }
     const Value EvalCall(Object &node)
     {
-        node.Debug_PrintChildren();
 
         try{
             if(node[AST_TAG_LVALUE]){
@@ -382,7 +378,7 @@ private:
         }
         catch(const ReturnException &){}
         // Get retval from ret register
-        GetCurrentScope().Debug_PrintChildren();
+        debug.ObjectPrintChildren(GetCurrentScope());
         Value retval = RETVAL_GET();
 
         //Func Exit
@@ -411,7 +407,6 @@ private:
     }
     const Value EvalCallSuffix(Object &node)
     {
-        node.Debug_PrintChildren();
         if(node[AST_TAG_NORMCALL]){
             if(node[AST_TAG_NORMCALL]->GetType() != Value::NilType){
                 return Eval(*node[AST_TAG_NORMCALL]->ToObject_NoConst());
@@ -421,12 +416,11 @@ private:
         }
         else if (node[AST_TAG_METHODCALL])
             assert(false && "Methodcall not implemented yet");
+        assert(false);
     }
     const Value EvalNormCall(Object &node)
     {
-        node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST]->GetType() != Value::NilType){
-            std::cout << "normcall/eval/elist" << std::endl;
             return Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
         }
         else
@@ -438,7 +432,6 @@ private:
     }
     const Value EvalTreeElist(Object &node, Object &evaluatedElist, int &counter)
     {
-        node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST])
         {
             Value expr;
@@ -472,7 +465,6 @@ private:
     }
     const Value EvalElist(Object &node)
     {
-        node.Debug_PrintChildren();
         Object *elist = new Object();
         if (node[AST_TAG_ELIST] == nullptr && node[AST_TAG_EXPR] != nullptr)
         {
@@ -503,7 +495,6 @@ private:
     const Value EvalObjectDef(Object &node)
     {
         // TODO: use returned values of eval to create the object;
-        node.Debug_PrintChildren();
         if (node[AST_TAG_ELIST])
         {
             if ((node[AST_TAG_ELIST]->GetType() != Value::NilType))
@@ -562,7 +553,6 @@ private:
     }
     const Value EvalBlock(Object &node)
     {
-        node.Debug_PrintChildren();
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
         {
             // Push new nested scope
@@ -594,7 +584,6 @@ private:
     }
     const Value EvalFunctionBlock(Object &node, Value &args)
     {
-        node.Debug_PrintChildren();
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
         {
             // Push new nested scope
@@ -628,10 +617,10 @@ private:
     }
     const Value EvalId(Object &node)
     {
+        return _NIL_;
     }
     const Value EvalFuncDef(Object &node)
     {
-        node.Debug_PrintChildren();
         //Create closure
         Object* closure = &GetCurrentScope();
         //Get argument names
@@ -652,7 +641,7 @@ private:
         // Add function value to current scope
         auto &scope = GetCurrentScope();
         scope.Set(id, *functionVal);
-        scope.Debug_PrintChildren();
+        debug.ObjectPrintChildren(scope);
         // Slice
         PushSlice();
 
@@ -668,7 +657,7 @@ private:
         Object *idlist = new Object();
         int num = 0;
         FillIdList(node, *idlist, num);
-        idlist->Debug_PrintChildren();
+        debug.ObjectPrintChildren(*idlist);
         if (num > 0)
             return Value(*idlist);
         else
@@ -752,7 +741,6 @@ private:
         for (; Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());)
         {
             try{
-                // forstmts->Debug_PrintChildren();
                 if (node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
                 {
                     // EvalStmts(*forstmts);
@@ -773,10 +761,10 @@ private:
                 EvalElist(*node[AST_TAG_FORCOND]->ToObject_NoConst());
         }
         PopScope();
+        return _NIL_;
     }
     const Value EvalIf(Object &node)
     {
-        node.Debug_PrintChildren();
         PushNested();
         if (dispatcher->Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()) && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
             dispatcher->Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
@@ -789,7 +777,6 @@ private:
     }
     const Value EvalReturn(Object &node)
     {
-        node.Debug_PrintChildren();
         if(node[AST_TAG_EXPR] != nullptr){
             RETVAL_SET(Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()));
         }
@@ -803,7 +790,7 @@ private:
     const Value EvalObjGet(Object &node)
     {
         // FIX when call is done
-        node.Debug_PrintChildren(); 
+        debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify()), node[AST_TAG_TYPE_KEY]->Stringify(); 
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         const Value lvalue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
 
@@ -823,7 +810,7 @@ private:
         if(lvalue.GetType() == Value::ProgramFunctionType){
             if(index != "$closure")
                 assert(false && "Only $closure is accepted on functions");
-            (*lvalue.ToProgramFunctionClosure_NoConst()).Debug_PrintChildren();
+            debug.ObjectPrintChildren((*lvalue.ToProgramFunctionClosure_NoConst()));
             return Value(*lvalue.ToProgramFunctionClosure_NoConst());
         }
         else{
@@ -833,7 +820,6 @@ private:
     const Value &EvalObjSet(Object &node)
     {
         // Same as ObjGet but returns ref to be changed in assignexpr
-        node.Debug_PrintChildren();
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         const Value &lvalue = EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst());
         std::string index;
@@ -849,7 +835,6 @@ private:
         else
             assert(false && "Impossible");
 
-        std::cout << (*lvalue.ToObject_NoConst())[index] << std::endl;
         if(lvalue.GetType() == Value::ProgramFunctionType){
             if(index != "$closure")
                 assert(false && "Only $closure is accepted on functions");
@@ -866,10 +851,10 @@ private:
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
+        return _NIL_;
     }
     const Value &EvalLvalue(Object &node, bool allowDefinition = false)
     {
-        node.Debug_PrintChildren();
 
         if (node[AST_TAG_ID])
         {
@@ -882,14 +867,14 @@ private:
                 const Value *lookup = ScopeLookup(GetCurrentScope(), id);
                 if (lookup)
                 {
-                    std::cout << "Lookup Lvalue: found " << lookup->Stringify() << std::endl;
+                    debug.LookupPrint("Lookup Lvalue: found " + lookup->Stringify());
                     return *lookup;
                 }
                 else if (allowDefinition)
                 {
-                    std::cout << "Lookup Lvalue: not_found" << std::endl;
+                    debug.LookupPrint("Lookup Lvalue: not_found");
                     auto &scope = GetCurrentScope();
-                    scope.Debug_PrintChildren();
+                    debug.ObjectPrintChildren(scope);
                     scope.Set(id, *(new Value()));
                     return *(scope[id]);
                 }
@@ -901,7 +886,7 @@ private:
                 const Value *lookup = ScopeLookup(GetCurrentScope(), LOCAL_SCOPE_KEY, id);
                 if (lookup)
                 {
-                    std::cout << "Local lookup result: found" << std::endl;
+                    debug.LookupPrint("Local lookup result: found");
                     return *lookup;
                 }
                 else
@@ -922,7 +907,7 @@ private:
                 const Value *lookup = ScopeLookup(*curr_scope, id);
                 if (lookup)
                 {
-                    std::cout << "Lookup Rvalue: found " << lookup->Stringify() << std::endl;
+                    debug.LookupPrint("Lookup Rvalue: found " + lookup->Stringify());
                     return *lookup;
                 }
                 else
@@ -938,6 +923,7 @@ private:
         }
         else
             assert(false && "Not implemented yet");
+        assert(false);
     }
     const Value EvalIndexedToObject(Object &node)
     {
@@ -1022,7 +1008,7 @@ private:
         envStack->Top().ToObject_NoConst()->GetAndRemove(CLOSURE_SCOPE_KEY);
         envStack->Top().ToObject_NoConst()->Set(CLOSURE_SCOPE_KEY, new Value(closure));
     }
-    Value *PopScopeSpace()
+    void PopScopeSpace()
     {
         envStack->Pop();
     }
@@ -1133,16 +1119,16 @@ private:
     }
 
 public:
-    Interpreter()
+    Interpreter(bool isDebugMode)
     {
+        debug.SetEnabled(isDebugMode);
         dispatcher = new EvalDispatcher();
 
         envStack = new ValueStack();
         PushScopeSpace();
         PushNewScope();  
         GetCurrentScope().Set("print", *(new Value((LibraryFunc)&this->Print_LibFunc)));
-        envStack->Debug_Print();
-
+        debug.ValueStackDebugPrint(envStack);
         Install();
     }
     ~Interpreter()
