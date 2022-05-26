@@ -6,7 +6,47 @@
 #include "./ValueStack.h"
 #include "./EvalDispatcher.h"
 #include <iostream>
-#define PRINT_BLUE_LINE(to_print) std::cout << "\033[1;36m" << std::string(to_print) << "\033[0m\n";
+#define PRINT_BLUE_LINE(to_print)   std::cout << "\033[1;36m" << to_print << "\033[0m\n"
+#define PRINT_YELLOW_LINE(to_print) std::cout << "\033[1;33m" << to_print << "\033[0m\n"
+#define NORMAL_PRINT_LINE(to_print) std::cout <<  to_print << "\n"
+
+const Value* GetArgument(Object& env, unsigned argNo, const std::string& optArgName){
+        auto* arg = env[optArgName];
+        if(!arg)
+            arg = env[argNo];
+        return arg;
+}
+
+std::string ObjectToString(Object* obj, std::string toPrint, std::string startingTab){      
+    if(obj->children.begin() == obj->children.end())
+        return startingTab + "Object { }";   
+    
+    toPrint += startingTab + "Object {\n" ;
+    startingTab += "\t";
+
+    for(auto it = obj->children.begin(); it != obj->children.end(); ){  
+        if(it->second.GetType() != Value::ObjectType){
+            std::string id = it->first;            
+            if(id.substr(2,id.size()) == "000000")
+                id = id.substr(0,1);
+            toPrint += startingTab + id + ": " + it->second.Stringify() + "\n";
+        }
+            
+        else if(it->second.GetType() == Value::ObjectType){
+            std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
+            objString = objString.substr(startingTab.size(), objString.size());
+
+            std::string id = it->first;
+            if(id.substr(2,id.size()) == "000000")
+                id = id.substr(0,1);
+
+            toPrint += startingTab + id + ": " + objString + "\n";
+        }            
+        it++;                         
+    }
+    toPrint += startingTab.substr(0,startingTab.size()-1) + "}";
+    return toPrint;
+}
 
 class Interpreter
 {
@@ -14,12 +54,8 @@ private:
     EvalDispatcher *dispatcher;
     ValueStack *envStack;
 
-    struct BreakException
-    {
-    };
-    struct ContinueException
-    {
-    };
+    struct BreakException{};
+    struct ContinueException{};
 
     const Value Eval(Object &node)
     {
@@ -594,7 +630,8 @@ private:
         throw BreakException();
         return _NIL_;
     }
-    const Value EvalContinue(Object &node) { throw ContinueException(); }
+    const Value EvalContinue(Object &node) { throw ContinueException(); 
+    }
     const Value EvalWhile(Object &node)
     {
         PushNested();
@@ -649,12 +686,23 @@ private:
 
         for (; Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());)
         {
-            // forstmts->Debug_PrintChildren();
-            if (forstmts && node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
-            {
-                // EvalStmts(*forstmts);
-                Eval(*node[AST_TAG_FORSTMT]->ToObject_NoConst());
+            try{
+                // forstmts->Debug_PrintChildren();
+                if (node[AST_TAG_FORSTMT]->GetType() != Value::NilType)
+                {
+                    // EvalStmts(*forstmts);
+                    Eval(*node[AST_TAG_FORSTMT]->ToObject_NoConst());
+                }
             }
+            catch (const BreakException &)
+            {
+                break;
+            }
+            catch (const ContinueException &)
+            {
+                continue;
+            } // redundant
+            
 
             if (node[AST_TAG_FORCOND]->GetType() != Value::NilType)
                 EvalElist(*node[AST_TAG_FORCOND]->ToObject_NoConst());
@@ -1015,22 +1063,23 @@ private:
                             { return EvalMember(node); });
     }
 
-    const Value* GetArgument(Object& env, unsigned argNo, const std::string& optArgName){
-        auto* arg = env[optArgName];
-        if(!arg)
-            arg = env[argNo];
-        return arg;
-    }
 
     //Library Functions
     static void Print_LibFunc(Object& env){
         int i = 0;
         while(env[i]){
-            // PRINT_BLUE_LINE(env[i]->Stringify()); Blue line wasnt running on my terminal :(
-            std::cout << env[i]->Stringify();
+            if(env[i]->GetType() == Value::ObjectType){
+                PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
+                //NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); //If colors bug the terminal
+            }
+                
+            else{
+                PRINT_BLUE_LINE(env[i]->Stringify());
+                //NORMAL_PRINT_LINE(env[i]->Stringify()); //If colors bug the terminal
+            }
+                
             i++;
-        }
-        std::cout << std::endl;            
+        }       
     }
 
 public:
