@@ -639,13 +639,22 @@ public:
     }
 
     virtual void VisitNormCall(const Object &node) override{ 
-        if(node[AST_TAG_ELIST] != nullptr)
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseNormCall(
-                    GetUnparsed(node[AST_TAG_ELIST])
-                )
-            );    
+        if(node[AST_TAG_ELIST] != nullptr){
+            if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
+                const_cast<Object&>(node).Set(
+                    UNPARSE_VALUE,
+                    UnparseNormCall(
+                        GetUnparsed(node[AST_TAG_ELIST])
+                    )
+                );
+            else    
+                const_cast<Object&>(node).Set(
+                    UNPARSE_VALUE,
+                    UnparseNormCall(
+                        ""
+                    )
+                );
+        }
     }
 
     virtual void VisitMethodCall(const Object &node) override{
