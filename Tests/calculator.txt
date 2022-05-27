@@ -1,0 +1,35 @@
+function add(a,b){
+    return a + b;
+}
+
+function subtract(a,b){
+    return a-b;
+}
+
+function multiply(a,b){
+    return a*b;
+}
+
+function divide(a,b){
+    if(b != 0)
+        return a/b;
+    else
+        print("Cannot Divide by Zero!");
+}
+
+function pow(num, power){
+    if(power == 0)
+         return 1;
+    else 
+        return num * pow(num,--power);
+}
+
+calculator = [{"+":add}, {"-":subtract}, {"*":multiply}, {"/":divide}, {"^": pow}];
+
+while(true){
+    number1 = input();
+    operation = input();
+    number2 = input();
+    print("Operation is " + operation);
+    print(calculator[operation](number1, number2));
+}

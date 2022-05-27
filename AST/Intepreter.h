@@ -54,6 +54,30 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
     return toPrint;
 }
 
+bool StringIsNumber(const std::string& str)
+{
+    bool isNumber = true;
+    bool isDecimal = false;
+
+    for (std::string::size_type i = 0; i < str.size(); i++) {
+         if (!std::isdigit(str[i])) isNumber = false;
+         if(i==0 && str[i] == '-')
+            isNumber = true;
+            
+         if(str[i] == '.' && i>0)
+            if(isDecimal)
+                return false;
+            else{
+                isDecimal = true;
+                isNumber = true;
+            }
+                
+        if(isNumber == false)
+            return false;
+    }
+    return true;
+}
+
 class Interpreter
 {
 private:
@@ -393,13 +417,22 @@ private:
                     {
                         // std::cout << "RETVAL: " << GetCurrentScope()[RETVAL_RESERVED_FIELD]->Stringify() << std::endl;
                         // GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst()->Debug_PrintChildren();
-                        if (GetCurrentScope()[RETVAL_RESERVED_FIELD]->GetType() == Value::ObjectType)
-                        {
-                            RETVAL_SET(*GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst());
-                        }
-                        else
-                        {
-                            RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->Stringify());
+                        switch(GetCurrentScope()[RETVAL_RESERVED_FIELD]->GetType()){
+                            case Value::ObjectType:
+                                RETVAL_SET(*GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst());
+                                break;
+                            case Value::BooleanType:
+                                RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToBool());
+                                break;
+                            case Value::StringType:
+                                RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToString());
+                                break;
+                            case Value::NumberType:
+                                RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToNumber());
+                                break;
+                            case Value::NilType:
+                                RETVAL_SET(_NIL_);
+                                break;
                         }
                     }
                 }
@@ -1153,7 +1186,8 @@ private:
         GetCurrentScope().Set("print", *(new Value((LibraryFunc) & this->Print_LibFunc)));
         GetCurrentScope().Set("typeof", *(new Value((LibraryFunc) & this->Typeof_Libfunc)));
         GetCurrentScope().Set("object_keys", *(new Value((LibraryFunc) & this->ObjectKeys_Libfunc)));
-        GetCurrentScope().Set("object_size", *(new Value((LibraryFunc) & this->ObjectSize_Libfunc)));
+        GetCurrentScope().Set("object_size", *(new Value((LibraryFunc) & this->ObjectSize_Libfunc))); 
+        GetCurrentScope().Set("input", *(new Value((LibraryFunc) & this->GetInput_Libfunc))); 
     }
 
     // Library Functions
@@ -1214,6 +1248,16 @@ private:
     static void ObjectSize_Libfunc(Object &env)
     {
         env.Set(RETVAL_RESERVED_FIELD, Value((double)env[0]->ToObject_NoConst()->children.size()));
+    }
+    static void GetInput_Libfunc(Object &env){
+        std::string input;
+        std::cin >> input;
+        if(StringIsNumber(input)){
+            env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(input)));
+        }
+        else{
+            env.Set(RETVAL_RESERVED_FIELD, Value(input));
+        }   
     }
 
 public:
