@@ -1,0 +1,7 @@
+a= [];
+a["1.5"] = 1.5;
+a["test"] = 1.5;
+a["sheeeeeeeeeeesh"] = 1.5;
+a["last"] = 1.5;
+
+print(object_size(a));

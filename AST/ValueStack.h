@@ -41,15 +41,13 @@ public:
 	}
 
 	void Debug_Print(){
-		std::cout << "~~~~~~~~~~~~~~" << std::endl;
 		std::cout << "Value Stack Print" << std::endl;
 		for(auto it = valueStack.begin(); it != valueStack.end(); ++it){
 			if(it->GetType() == Value::ObjectType)
 				it->ToObject()->Debug_PrintChildren();
 			else
-				std::cout << it->Stringify() << std::endl;
+				std::cout << "\t" << it->Stringify() << std::endl;
 		}
-		std::cout << "~~~~~~~~~~~~~~" << std::endl;
 	}
 
 	ValueStack(void) = default;
