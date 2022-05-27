@@ -27,9 +27,16 @@ function pow(num, power){
 calculator = [{"+":add}, {"-":subtract}, {"*":multiply}, {"/":divide}, {"^": pow}];
 
 while(true){
+    print("~~~~~~~~~~~~~~~Give me number operation number~~~~~~~~~~~~~~~");
+    print("~~~~~~~~~~~~~~~To kill me press x sometimes :(~~~~~~~~~~~~~~~");
     number1 = input();
     operation = input();
     number2 = input();
-    print("Operation is " + operation);
-    print(calculator[operation](number1, number2));
+    if(number1 == "x" || number2 == "x" || operation == "x"){
+        print("~~~~~~~~~~~~~~~I lived a miserable life x.x ~~~~~~~~~~~~~~~");
+        break;
+    }
+    print("~~~~~~~~~~~~~~~Operation is " + operation + "~~~~~~~~~~~~~~~");
+    print(number1, operation, number2, "_____________", calculator[operation](number1, number2));
+    
 }
