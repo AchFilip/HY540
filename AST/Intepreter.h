@@ -37,7 +37,7 @@ std::string ObjectToString(Object* obj, std::string toPrint, std::string startin
             objString = objString.substr(startingTab.size(), objString.size());
 
             std::string id = it->first;
-            if(id.substr(2,id.size()) == "000000")
+            if(id.size() > 2 && id.substr(2, id.size()) == "000000")
                 id = id.substr(0,1);
 
             toPrint += startingTab + id + ": " + objString + "\n";
@@ -54,9 +54,15 @@ private:
     EvalDispatcher *dispatcher;
     ValueStack *envStack;
 
+    // Exceptions used for control flow
     struct BreakException{};
     struct ContinueException{};
     struct ReturnException{};
+
+    // Exceptions used for runtime error handling
+    struct InvalidScopeValueException { std::string key; };
+    struct TypeException { std::string message; };
+    struct ReferenceException { std::string message; };
 
     const Value Eval(Object &node)
     {
@@ -317,7 +323,9 @@ private:
     }
     const Value EvalMember(Object &node)
     {
+        node.Debug_PrintChildren();
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
+
         if (node[AST_TAG_LVALUE])
         {
             return EvalObjGet(node);
@@ -325,11 +333,22 @@ private:
         else if (node[AST_TAG_CALL])
         {
             const Value call = Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
+            // if call get type != obj -> type error
+            if(call.GetType() != Value::ObjectType)
+                throw ReferenceException{"You fucked up"};
+
             if (disambiguate == ".id")
             {
+                std::string id = node[AST_TAG_ID]->Stringify();
+                if((*call.ToObject_NoConst())[id] == nullptr)
+                    return Value();
+                else
+                    return *(*call.ToObject_NoConst())[id];
             }
             else if (disambiguate == "[expr]")
             {
+                Value expr = Eval(*node[AST_TAG_EXPR]->ToObject_NoConst());
+                return *(*call.ToObject_NoConst())[expr.Stringify()];
             }
             else
                 assert(false && "Impossible");
@@ -822,6 +841,7 @@ private:
     }
     const Value EvalObjGet(Object &node)
     {
+        std::cout << "START OF OBJ GET" << std::endl;
         // FIX when call is done
         node.Debug_PrintChildren(); 
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
@@ -843,19 +863,28 @@ private:
         if(lvalue.GetType() == Value::ProgramFunctionType){
             if(index != "$closure")
                 assert(false && "Only $closure is accepted on functions");
+
             (*lvalue.ToProgramFunctionClosure_NoConst()).Debug_PrintChildren();
             return Value(*lvalue.ToProgramFunctionClosure_NoConst());
         }
         else{
-            return *(*lvalue.ToObject_NoConst())[index];
+            if(lvalue.GetType() == Value::UndefType)
+                throw TypeException{"Cannot get property \'" + index + "\' of undefined."};
+
+            if((*lvalue.ToObject_NoConst())[index] == nullptr)
+                return Value(); // Return undef
+            else
+                return *(*lvalue.ToObject_NoConst())[index];
         }
     }
     const Value &EvalObjSet(Object &node)
     {
+        std::cout << "START OF OBJ SET" << std::endl;
         // Same as ObjGet but returns ref to be changed in assignexpr
         node.Debug_PrintChildren();
         std::string disambiguate = node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify();
         const Value &lvalue = EvalLvalue(*node[AST_TAG_LVALUE]->ToObject_NoConst());
+
         std::string index;
         if (disambiguate == ".id")
         {
@@ -877,12 +906,14 @@ private:
             return lvalue;
         }
         else{
+            if(lvalue.GetType() == Value::UndefType)
+                throw TypeException{"Cannot set property \'" + index + "\' of undefined."};
+            
             if ((*lvalue.ToObject_NoConst())[index] == nullptr)
                 lvalue.ToObject_NoConst()->Set(index, Value(_NIL_));
 
             return *(*lvalue.ToObject_NoConst())[index];
         }
-
     }
     const Value EvalObjSetWithValue(Object &node, const Value &value)
     {
@@ -914,7 +945,7 @@ private:
                     return *(scope[id]);
                 }
                 else
-                    assert(false && "Lvalue definition is not enabled and variable was not found");
+                    throw ReferenceException{id + " is not defined."};
             }
             else if (disambiguate == "local id")
             {
@@ -1019,10 +1050,7 @@ private:
         return *envStack->Top().ToObject_NoConst();
     }
 
-    struct InvalidScopeValueException
-    {
-        std::string key;
-    };
+
     const Value *ScopeLookup(const Object &scope, const std::string &id)
     {
         if (auto *val = scope[id])
@@ -1142,6 +1170,14 @@ public:
 
     void StartProgram(Object &node)
     {
-        Eval(node);
+        try{
+            Eval(node);
+        }
+        catch(const TypeException &typeError){
+            std::cout << "TypeError: " << typeError.message << std::endl;
+        }
+        catch(const ReferenceException &typeError){
+            std::cout << "ReferenceError: " << typeError.message << std::endl;
+        }
     }
 };
