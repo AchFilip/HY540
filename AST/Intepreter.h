@@ -39,6 +39,11 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
 
         else if (it->second.GetType() == Value::ObjectType)
         {
+            if((it->second).ToObject_NoConst() == obj){ // Avoid infinite recursion
+                it++;
+                continue;
+            }
+
             std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
             objString = objString.substr(startingTab.size(), objString.size());
 
@@ -271,7 +276,6 @@ private:
     }
     const Value EvalRvalue(Object &node)
     {
-
         if (node[AST_TAG_ID])
         {
             // Check type of ID access
@@ -605,7 +609,7 @@ private:
     }
     const Value EvalIndexed(Object &node)
     {
-        Object *indexed;
+        Object *indexed = new Object();
         if (node[AST_TAG_INDEXED])
         {
             indexed = new Object();
@@ -613,7 +617,10 @@ private:
         }
         else if (node[AST_TAG_INDEXEDELEM])
         {
-            indexed = EvalIndexedElem(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst()).ToObject_NoConst();
+            Value indexedVal = EvalIndexedElem(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
+            Object &indexedObj = *indexedVal.ToObject_NoConst();
+            if (indexedObj[AST_TAG_EXPR_LEFT])
+                indexed->Set(indexedObj[AST_TAG_EXPR_LEFT]->Stringify(), *indexedObj[AST_TAG_EXPR_RIGHT]);
         }
         else
             assert(false && "Impossible to have other types in EvalIndexed");
@@ -1023,6 +1030,7 @@ private:
     Object &PushNewScope()
     {
         Object *newScope = new Object();
+        newScope->Set("$env", *newScope);
         SetCurrentScope(new Value(*newScope));
         return *newScope;
     }
@@ -1158,7 +1166,7 @@ private:
 
     // Library Functions
     static void Print_LibFunc(Object &env)
-    {
+    {        
         int i = 0;
         while (env[i])
         {
