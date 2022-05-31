@@ -6,6 +6,7 @@
 #include "./ValueStack.h"
 #include "./EvalDispatcher.h"
 #include "./DebugAST.h"
+#include "./LibraryFunctions/FileSystem.h"
 #include <iostream>
 #define PRINT_BLUE_LINE(to_print) std::cout << "\033[1;36m" << to_print << "\033[0m\n"
 #define PRINT_YELLOW_LINE(to_print) std::cout << "\033[1;33m" << to_print << "\033[0m\n"
@@ -1189,6 +1190,7 @@ private:
         dispatcher->Install(AST_TAG_MEMBER, [this](Object &node)
                             { return EvalMember(node); });
     }
+
     void InstallLibraryFuncs(void)
     {
         GetCurrentScope().Set("print", *(new Value((LibraryFunc) & this->Print_LibFunc)));
@@ -1196,6 +1198,8 @@ private:
         GetCurrentScope().Set("object_keys", *(new Value((LibraryFunc) & this->ObjectKeys_Libfunc)));
         GetCurrentScope().Set("object_size", *(new Value((LibraryFunc) & this->ObjectSize_Libfunc))); 
         GetCurrentScope().Set("input", *(new Value((LibraryFunc) & this->GetInput_Libfunc))); 
+        GetCurrentScope().Set("WriteFile", *(new Value((LibraryFunc) & FileSystem::WriteFile))); 
+        GetCurrentScope().Set("ReadFile", *(new Value((LibraryFunc) & FileSystem::ReadFile))); 
     }
 
     // Library Functions
@@ -1219,6 +1223,7 @@ private:
             i++;
         }
     }
+    
     static void Typeof_Libfunc(Object &env)
     {
         // obj.Debug_PrintChildren();
@@ -1243,6 +1248,7 @@ private:
             assert(false);
         env.Set(RETVAL_RESERVED_FIELD, Value(retval));
     }
+
     static void ObjectKeys_Libfunc(Object &env)
     {
         Object *keys = new Object();
@@ -1253,10 +1259,12 @@ private:
         }
         env.Set(RETVAL_RESERVED_FIELD, Value(*keys));
     }
+
     static void ObjectSize_Libfunc(Object &env)
     {
         env.Set(RETVAL_RESERVED_FIELD, Value((double)env[0]->ToObject_NoConst()->children.size()));
     }
+
     static void GetInput_Libfunc(Object &env){
         std::string input;
         std::cin >> input;
