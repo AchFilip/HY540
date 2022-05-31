@@ -40,7 +40,8 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
 
         else if (it->second.GetType() == Value::ObjectType)
         {
-            if((it->second).ToObject_NoConst() == obj){ // Avoid infinite recursion
+            if ((it->second).ToObject_NoConst() == obj)
+            { // Avoid infinite recursion
                 it++;
                 continue;
             }
@@ -49,8 +50,8 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
             objString = objString.substr(startingTab.size(), objString.size());
 
             std::string id = it->first;
-            if(id.size() > 2 && id.substr(2, id.size()) == "000000")
-                id = id.substr(0,1);
+            if (id.size() > 2 && id.substr(2, id.size()) == "000000")
+                id = id.substr(0, 1);
 
             toPrint += startingTab + id + ": " + objString + "\n";
         }
@@ -60,25 +61,28 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
     return toPrint;
 }
 
-bool StringIsNumber(const std::string& str)
+bool StringIsNumber(const std::string &str)
 {
     bool isNumber = true;
     bool isDecimal = false;
 
-    for (std::string::size_type i = 0; i < str.size(); i++) {
-         if (!std::isdigit(str[i])) isNumber = false;
-         if(i==0 && str[i] == '-')
+    for (std::string::size_type i = 0; i < str.size(); i++)
+    {
+        if (!std::isdigit(str[i]))
+            isNumber = false;
+        if (i == 0 && str[i] == '-')
             isNumber = true;
-            
-         if(str[i] == '.' && i>0)
-            if(isDecimal)
+
+        if (str[i] == '.' && i > 0)
+            if (isDecimal)
                 return false;
-            else{
+            else
+            {
                 isDecimal = true;
                 isNumber = true;
             }
-                
-        if(isNumber == false)
+
+        if (isNumber == false)
             return false;
     }
     return true;
@@ -92,14 +96,31 @@ private:
     DebugAST debug;
 
     // Exceptions used for control flow
-    struct BreakException{};
-    struct ContinueException{};
-    struct ReturnException{};
+    struct BreakException
+    {
+    };
+    struct ContinueException
+    {
+    };
+    struct ReturnException
+    {
+    };
 
     // Exceptions used for runtime error handling
-    struct InvalidScopeValueException { std::string key; };
-    struct TypeException { std::string line; std::string message; };
-    struct ReferenceException { std::string line; std::string message; };
+    struct InvalidScopeValueException
+    {
+        std::string key;
+    };
+    struct TypeException
+    {
+        std::string line;
+        std::string message;
+    };
+    struct ReferenceException
+    {
+        std::string line;
+        std::string message;
+    };
 
     const Value Eval(Object &node)
     {
@@ -367,13 +388,13 @@ private:
         {
             const Value call = Eval(*node[AST_TAG_CALL]->ToObject_NoConst());
             // if call get type != obj -> type error
-            if(call.GetType() != Value::ObjectType)
+            if (call.GetType() != Value::ObjectType)
                 throw ReferenceException{node[AST_TAG_LINE_KEY]->Stringify(), "You fucked up"};
 
             if (disambiguate == ".id")
             {
                 std::string id = node[AST_TAG_ID]->Stringify();
-                if((*call.ToObject_NoConst())[id] == nullptr)
+                if ((*call.ToObject_NoConst())[id] == nullptr)
                     return Value();
                 else
                     return *(*call.ToObject_NoConst())[id];
@@ -422,22 +443,23 @@ private:
                     {
                         // std::cout << "RETVAL: " << GetCurrentScope()[RETVAL_RESERVED_FIELD]->Stringify() << std::endl;
                         // GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst()->Debug_PrintChildren();
-                        switch(GetCurrentScope()[RETVAL_RESERVED_FIELD]->GetType()){
-                            case Value::ObjectType:
-                                RETVAL_SET(*GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst());
-                                break;
-                            case Value::BooleanType:
-                                RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToBool());
-                                break;
-                            case Value::StringType:
-                                RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToString());
-                                break;
-                            case Value::NumberType:
-                                RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToNumber());
-                                break;
-                            case Value::NilType:
-                                RETVAL_SET(_NIL_);
-                                break;
+                        switch (GetCurrentScope()[RETVAL_RESERVED_FIELD]->GetType())
+                        {
+                        case Value::ObjectType:
+                            RETVAL_SET(*GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst());
+                            break;
+                        case Value::BooleanType:
+                            RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToBool());
+                            break;
+                        case Value::StringType:
+                            RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToString());
+                            break;
+                        case Value::NumberType:
+                            RETVAL_SET(GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToNumber());
+                            break;
+                        case Value::NilType:
+                            RETVAL_SET(_NIL_);
+                            break;
                         }
                     }
                 }
@@ -927,11 +949,12 @@ private:
 
             return Value(*lvalue.ToProgramFunctionClosure_NoConst());
         }
-        else{
-            if(lvalue.GetType() == Value::UndefType)
-                throw TypeException{ node[AST_TAG_LINE_KEY]->Stringify(), "Cannot get property \'" + index + "\' of undefined."};
+        else
+        {
+            if (lvalue.GetType() == Value::UndefType)
+                throw TypeException{node[AST_TAG_LINE_KEY]->Stringify(), "Cannot get property \'" + index + "\' of undefined."};
 
-            if((*lvalue.ToObject_NoConst())[index] == nullptr)
+            if ((*lvalue.ToObject_NoConst())[index] == nullptr)
                 return Value(); // Return undef
             else
                 return *(*lvalue.ToObject_NoConst())[index];
@@ -963,10 +986,11 @@ private:
 
             return lvalue;
         }
-        else{
-            if(lvalue.GetType() == Value::UndefType)
+        else
+        {
+            if (lvalue.GetType() == Value::UndefType)
                 throw TypeException{node[AST_TAG_LINE_KEY]->Stringify(), "Cannot set property \'" + index + "\' of undefined."};
-            
+
             if ((*lvalue.ToObject_NoConst())[index] == nullptr)
                 lvalue.ToObject_NoConst()->Set(index, Value(_NIL_));
 
@@ -1111,7 +1135,6 @@ private:
         return *envStack->Top().ToObject_NoConst();
     }
 
-
     const Value *ScopeLookup(const Object &scope, const std::string &id)
     {
         if (auto *val = scope[id])
@@ -1196,34 +1219,34 @@ private:
         GetCurrentScope().Set("print", *(new Value((LibraryFunc) & this->Print_LibFunc)));
         GetCurrentScope().Set("typeof", *(new Value((LibraryFunc) & this->Typeof_Libfunc)));
         GetCurrentScope().Set("object_keys", *(new Value((LibraryFunc) & this->ObjectKeys_Libfunc)));
-        GetCurrentScope().Set("object_size", *(new Value((LibraryFunc) & this->ObjectSize_Libfunc))); 
-        GetCurrentScope().Set("input", *(new Value((LibraryFunc) & this->GetInput_Libfunc))); 
-        GetCurrentScope().Set("WriteFile", *(new Value((LibraryFunc) & FileSystem::WriteFile))); 
-        GetCurrentScope().Set("ReadFile", *(new Value((LibraryFunc) & FileSystem::ReadFile))); 
+        GetCurrentScope().Set("object_size", *(new Value((LibraryFunc) & this->ObjectSize_Libfunc)));
+        GetCurrentScope().Set("input", *(new Value((LibraryFunc) & this->GetInput_Libfunc)));
+        GetCurrentScope().Set("WriteFile", *(new Value((LibraryFunc)&FileSystem::WriteFile)));
+        GetCurrentScope().Set("ReadFile", *(new Value((LibraryFunc)&FileSystem::ReadFile)));
     }
 
     // Library Functions
     static void Print_LibFunc(Object &env)
-    {        
+    {
         int i = 0;
         while (env[i])
         {
             if (env[i]->GetType() == Value::ObjectType)
             {
-                // PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
-                NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); // If colors bug the terminal
+                PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
+                // NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); // If colors bug the terminal
             }
 
             else
             {
-                // PRINT_BLUE_LINE(env[i]->Stringify());
-                NORMAL_PRINT_LINE(env[i]->Stringify()); // If colors bug the terminal
+                PRINT_BLUE_LINE(env[i]->Stringify());
+                // NORMAL_PRINT_LINE(env[i]->Stringify()); // If colors bug the terminal
             }
 
             i++;
         }
     }
-    
+
     static void Typeof_Libfunc(Object &env)
     {
         // obj.Debug_PrintChildren();
@@ -1265,15 +1288,18 @@ private:
         env.Set(RETVAL_RESERVED_FIELD, Value((double)env[0]->ToObject_NoConst()->children.size()));
     }
 
-    static void GetInput_Libfunc(Object &env){
+    static void GetInput_Libfunc(Object &env)
+    {
         std::string input;
         std::cin >> input;
-        if(StringIsNumber(input)){
+        if (StringIsNumber(input))
+        {
             env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(input)));
         }
-        else{
+        else
+        {
             env.Set(RETVAL_RESERVED_FIELD, Value(input));
-        }   
+        }
     }
 
 public:
@@ -1285,6 +1311,8 @@ public:
         envStack = new ValueStack();
         PushScopeSpace();
         PushNewScope();
+        Object *global = &GetCurrentScope();
+        global->Set(std::string(GLOBAL_SCOPE_KEY), *global);
         debug.ValueStackDebugPrint(envStack);
         Install();
         InstallLibraryFuncs();
@@ -1297,13 +1325,16 @@ public:
 
     void StartProgram(Object &node)
     {
-        try{
+        try
+        {
             Eval(node);
         }
-        catch(const TypeException &typeError){
+        catch (const TypeException &typeError)
+        {
             std::cout << "TypeError (Line " << typeError.line << "): " << typeError.message << std::endl;
         }
-        catch(const ReferenceException &typeError){
+        catch (const ReferenceException &typeError)
+        {
             std::cout << "ReferenceError (Line " << typeError.line << "): " << typeError.message << std::endl;
         }
     }
