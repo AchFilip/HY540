@@ -13,6 +13,7 @@
 int yyerror(char const *s);
 int yylex(void);
 
+extern int yy_scan_string(const char *);
 extern int yylineno;
 extern char* yytext;
 extern FILE* yyin;
@@ -53,7 +54,17 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
 }
 %}
 
+
 %start program
+
+%code top {
+    #include <iostream>
+}
+
+%code requires{
+    #include "./AST/Value.h"
+    #include "./AST/Object.h"
+}
 
 %union {
     std::string*    strVal;
@@ -519,37 +530,38 @@ int yyerror(char const *s){
     exit(0);
 }
 
-int main(int argc, char** argv){
-    if(argc>1){
-        if(!(yyin=fopen(argv[1],"r"))){
-            fprintf(stderr,"cannto access");
-            return 1;
-        }
-    }else{
-        yyin=stdin;
+class Parser{
+public:
+    Parser() = default;
+
+    int Parse(std::string text){
+        // Step 1: Create AST
+        /* yyin = fopen(fileName.c_str(),"r"); */
+        yy_scan_string(text.c_str());
+        yyparse();
+
+        //~~~~
+        //Unparsing the code
+        //TreeHost *treeHost = new TreeHost(); 
+        //treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
+        //std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
+        //std::ofstream MyFile("code.alpha");
+        //MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
+        //MyFile.close();
+        //End
+
+        //~~~~~~
+        // Test Interpreter functions
+
+        Interpreter* interpreter = new Interpreter(false);
+        interpreter->StartProgram(*ast->ToObject_NoConst());
+        delete interpreter;
+
+        //~~~~~~
+        std::cout << "Its Over =)" << std::endl;
+        return 0;
     }
 
-    // Step 1: Create AST
-    yyparse();  
+private:
 
-    //~~~~
-    //Unparsing the code
-    //TreeHost *treeHost = new TreeHost(); 
-    //treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
-    //std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
-    //std::ofstream MyFile("code.alpha");
-    //MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
-    //MyFile.close();
-    //End
-
-    //~~~~~~
-    // Test Interpreter functions
-
-    Interpreter* interpreter = new Interpreter(false);
-    interpreter->StartProgram(*ast->ToObject_NoConst());
-    delete interpreter;
-
-    //~~~~~~
-    std::cout << "Its Over =)" << std::endl;
-    return 0;
-}
+};
