@@ -44,12 +44,18 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
                 continue;
             }
 
-            std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
-            objString = objString.substr(startingTab.size(), objString.size());
-
             std::string id = it->first;
             if (id.size() > 2 && id.substr(2, id.size()) == "000000")
                 id = id.substr(0, 1);
+
+            if(id == "$parent"){
+                toPrint += startingTab + id + ": " + (*(it->second).ToObject_NoConst())[AST_TAG_TYPE_KEY]->ToString() + "\n";
+                it++;
+                continue;
+            }
+
+            std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
+            objString = objString.substr(startingTab.size(), objString.size());
 
             toPrint += startingTab + id + ": " + objString + "\n";
         }

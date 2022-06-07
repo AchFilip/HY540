@@ -534,32 +534,11 @@ class Parser{
 public:
     Parser() = default;
 
-    int Parse(std::string text){
-        // Step 1: Create AST
-        /* yyin = fopen(fileName.c_str(),"r"); */
+    Object* Parse(std::string text){
         yy_scan_string(text.c_str());
         yyparse();
 
-        //~~~~
-        //Unparsing the code
-        //TreeHost *treeHost = new TreeHost(); 
-        //treeHost->Accept(new UnparseTreeVisitor(), *ast->ToObject()); 
-        //std::cout << "AST: " << (*ast->ToObject())[UNPARSE_VALUE]->ToString() << std::endl;
-        //std::ofstream MyFile("code.alpha");
-        //MyFile << (*ast->ToObject())[UNPARSE_VALUE]->ToString();
-        //MyFile.close();
-        //End
-
-        //~~~~~~
-        // Test Interpreter functions
-
-        Interpreter* interpreter = new Interpreter(false);
-        interpreter->StartProgram(*ast->ToObject_NoConst());
-        delete interpreter;
-
-        //~~~~~~
-        std::cout << "Its Over =)" << std::endl;
-        return 0;
+        return ast->ToObject_NoConst();
     }
 
 private:

@@ -63,8 +63,16 @@ public:
     {
         Set(std::to_string(key), value);
     };
-    void Remove(const std::string &key);
-    void Remove(double key);
+    void Remove(const std::string &key){
+        if (children.find(key) != children.end())
+            children.erase(key);
+        return;
+    }
+    void Remove(double key){
+        if (children.find(std::to_string(key)) != children.end())
+            children.erase(std::to_string(key));
+        return;
+    };
 
     unsigned GetTotal(void) const;
     void Apply(const Applier &f);       // RW access
