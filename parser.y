@@ -59,6 +59,7 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
 
 %code top {
     #include <iostream>
+    #pragma once
 }
 
 %code requires{

@@ -10,14 +10,6 @@
 #include "./LibraryFunctions/FileSystem.h"
 #include "./LibraryFunctions/Utilities.h"
 
-const Value *GetArgument(Object &env, unsigned argNo, const std::string &optArgName)
-{
-    auto *arg = env[optArgName];
-    if (!arg)
-        arg = env[argNo];
-    return arg;
-}
-
 std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
 {
     if (obj->children.begin() == obj->children.end())
@@ -1227,96 +1219,11 @@ private:
         GetCurrentScope().Set("WriteFile", *(new Value((LibraryFunc)&FileSystem::WriteFile)));
         GetCurrentScope().Set("ReadFile", *(new Value((LibraryFunc)&FileSystem::ReadFile)));
         GetCurrentScope().Set("ToInt", *(new Value((LibraryFunc)&Utilities::ToInt_Libfunc)));
+        GetCurrentScope().Set("eval", *(new Value((LibraryFunc)&Utilities::Eval_Libfunc)));
     }
 
-    // Library Functions
-    // static void Print_LibFunc(Object &env)
-    // {
-    //     int i = 0;
-    //     while (env[i])
-    //     {
-    //         if (env[i]->GetType() == Value::ObjectType)
-    //         {
-    //             PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
-    //             // NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); // If colors bug the terminal
-    //         }
-
-    //         else
-    //         {
-    //             PRINT_BLUE_LINE(env[i]->Stringify());
-    //             // NORMAL_PRINT_LINE(env[i]->Stringify()); // If colors bug the terminal
-    //         }
-
-    //         i++;
-    //     }
-    // }
-
-    // static void Typeof_Libfunc(Object &env)
-    // {
-    //     // obj.Debug_PrintChildren();
-    //     std::string retval = "";
-    //     if (env[0]->GetType() == Value::UndefType)
-    //         retval = "Undefined";
-    //     else if (env[0]->GetType() == Value::NumberType)
-    //         retval = "Number";
-    //     else if (env[0]->GetType() == Value::BooleanType)
-    //         retval = "Boolean";
-    //     else if (env[0]->GetType() == Value::StringType)
-    //         retval = "String";
-    //     else if (env[0]->GetType() == Value::NilType)
-    //         retval = "Nill";
-    //     else if (env[0]->GetType() == Value::ObjectType)
-    //         retval = "Object";
-    //     else if (env[0]->GetType() == Value::ProgramFunctionType)
-    //         retval = "ProgramFunction";
-    //     else if (env[0]->GetType() == Value::LibraryFunctionType)
-    //         retval = "LibFunction";
-    //     else
-    //         assert(false);
-    //     env.Set(RETVAL_RESERVED_FIELD, Value(retval));
-    // }
-
-    // static void ObjectKeys_Libfunc(Object &env)
-    // {
-    //     Object *keys = new Object();
-    //     int i = 0;
-    //     for (auto iter = env[0]->ToObject_NoConst()->children.begin(); iter != env[0]->ToObject_NoConst()->children.end(); ++iter)
-    //     {
-    //         keys->Set(i++, Value(iter->first));
-    //     }
-    //     env.Set(RETVAL_RESERVED_FIELD, Value(*keys));
-    // }
-
-    // static void ObjectSize_Libfunc(Object &env)
-    // {
-    //     if (env[0]->GetType() != Value::ObjectType)
-    //     {
-    //         env.Set(RETVAL_RESERVED_FIELD, Value((double)1));
-    //         return;
-    //     }
-    //     env.Set(RETVAL_RESERVED_FIELD, Value((double)env[0]->ToObject_NoConst()->children.size()));
-    // }
-
-    // static void GetInput_Libfunc(Object &env)
-    // {
-    //     std::string input;
-    //     std::cin >> input;
-    //     if (StringIsNumber(input))
-    //     {
-    //         env.Set(RETVAL_RESERVED_FIELD, Value(std::stod(input)));
-    //     }
-    //     else
-    //     {
-    //         env.Set(RETVAL_RESERVED_FIELD, Value(input));
-    //     }
-    // }
-
-    // static void ToInt_Libfunc(Object &env)
-    // {
-    //     env.Set(RETVAL_RESERVED_FIELD, Value((double)(int)env[0]->ToNumber()));
-    // }
-
 public:
+    Interpreter(){}
     Interpreter(bool isDebugMode)
     {
         debug.SetEnabled(isDebugMode);

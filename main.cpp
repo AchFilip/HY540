@@ -2,6 +2,7 @@
 #include <fstream>
 #include "./AST/SetParentTreeVisitor.h"
 #include "./parser.cpp"
+#include "./AST/Sin_Eval.h"
 
 void Unparse(Object &ast)
 {
@@ -23,6 +24,8 @@ Object &SetParent(Object &ast)
 void Interpret(Object &ast)
 {
     Interpreter *interpreter = new Interpreter(false);
+    eval_LanguageIface::Set(new Sin_Eval());
+    ((Sin_Eval)LANG).SetInterpreter(interpreter);
     interpreter->StartProgram(ast);
     delete interpreter;
 }

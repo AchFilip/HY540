@@ -1,12 +1,21 @@
 #pragma once
 #include "../TreeTags.h"
 #include "../Object.h"
-#include "../Intepreter.h"
 #include "../EvalDispatcher.h"
 #include "../DebugAST.h"
+#include "../EvalLanguageIface.h"
+
 #define PRINT_BLUE_LINE(to_print) std::cout << "\033[1;36m" << to_print << "\033[0m\n"
 #define PRINT_YELLOW_LINE(to_print) std::cout << "\033[1;33m" << to_print << "\033[0m\n"
 #define NORMAL_PRINT_LINE(to_print) std::cout << to_print << "\n"
+
+const Value *GetArgument(Object &env, unsigned argNo, const std::string &optArgName)
+{
+    auto *arg = env[optArgName];
+    if (!arg)
+        arg = env[argNo];
+    return arg;
+}
 
 class Utilities
 {
@@ -95,6 +104,30 @@ public:
     static void ToInt_Libfunc(Object &env)
     {
         env.Set(RETVAL_RESERVED_FIELD, Value((double)(int)env[0]->ToNumber()));
+    }
+
+    static void Eval_Libfunc(Object &env)
+    {
+        auto &evalScope = LANG.PopScopeSpace();
+        auto &code = GetArgument(env, 0, "code")->ToString();
+        auto *ast = LANG.Parse(code);
+        if (!ast)
+        {
+            LANG.Error("eval('" + code + "'): parse error");
+            return;
+        }
+        ast->IncRefCounter();
+        // ast->Set(PARENT_FIELD, LANG.GetEvalParent());
+        // auto error = LANG.ValidateCode(*ast);
+        // if (!error.empty())
+        // {
+        //     LANG.Error("eval('" + code + "'): " + error);
+        //     return;
+        // }
+        auto val = LANG.Eval(*ast);
+        ast->DecRefCounter();
+        LANG.PushScopeSpace(evalScope);
+        env.Set(RETVAL_RESERVED_FIELD, val);
     }
 
 private:
