@@ -10,6 +10,9 @@
 
 class Object
 {
+private:
+    int refCounter = 0;
+
 public:
     Object(void) = default;
     Object(const Object &other);
@@ -19,8 +22,20 @@ public:
 
     using Applier = std::function<void(const Value &key, Value &val)>;
     using Visitor = std::function<void(const Value &key, const Value &val)>;
-    void IncRefCounter(void);
-    void DecRefCounter(void);
+    void IncRefCounter(void)
+    {
+        ++refCounter;
+    }
+    void DecRefCounter(void)
+    {
+        refCounter > 0 ? --refCounter : refCounter;
+        std::cout << refCounter << std::endl;
+        if (refCounter == 0)
+        {
+            std::cout << "Deleting " << std::endl;
+            this->~Object();
+        }
+    }
     const Value *operator[](const std::string &key) const
     {
         if (children.find(key) != children.end())
@@ -33,7 +48,7 @@ public:
         if (children.find(std::to_string(key)) != children.end())
             return &(children.at(std::to_string(key)));
         else
-            return nullptr;    
+            return nullptr;
     }
 
     // read and remove access: special purpose
@@ -90,5 +105,4 @@ public:
             std::cout << "\t[" << iter->first << "," << iter->second.Stringify() << "]" << std::endl;
         }
     }
-
 };

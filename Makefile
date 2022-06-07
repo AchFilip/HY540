@@ -9,4 +9,4 @@ phase2:
 	g++ -std=c++11 -o sin flex.cpp main.cpp
 	./sin.exe test.txt
 clean:
-	rm -f *.cpp *.exe *.hpp *.output
+	rm -f flex.cpp parser.cpp *.exe *.hpp *.output

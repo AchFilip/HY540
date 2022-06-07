@@ -48,7 +48,8 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
             if (id.size() > 2 && id.substr(2, id.size()) == "000000")
                 id = id.substr(0, 1);
 
-            if(id == "$parent"){
+            if (id == "$parent")
+            {
                 toPrint += startingTab + id + ": " + (*(it->second).ToObject_NoConst())[AST_TAG_TYPE_KEY]->ToString() + "\n";
                 it++;
                 continue;
@@ -99,11 +100,14 @@ private:
         std::string message;
     };
 
+public:
     const Value Eval(Object &node)
     {
         debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
+
+private:
     const Value EvalStmts(Object &node)
     {
         if (node[AST_TAG_STMTS]->GetType() != Value::NilType && node[AST_TAG_STMT]->GetType() != Value::NilType)
@@ -266,7 +270,23 @@ private:
                 assert(false && "function.$closure == expr. Expr can only be an object");
         }
         else
+        {
+            // std::cout << "Type: " << lvalue.GetType() << std::endl;
+            // if (lvalue.ToObject_NoConst())
+            // {
+            //     // std::cout << "xmm kai xm 1 " << std::endl;
+            //     lvalue.ToObject_NoConst()->DecRefCounter();
+            //     // std::cout << "xmm kai xm " << std::endl;
+            // }
+
+            // if (lvalue.GetType() == Value::ObjectType)
+            //     lvalue.ToObject_NoConst()->DecRefCounter();
+
+            // if (expr.GetType() == Value::ObjectType)
+            //     expr.ToObject_NoConst()->IncRefCounter();
+
             lvalue = expr;
+        }
 
         return lvalue;
     }
@@ -1051,6 +1071,7 @@ private:
         assert(false);
     }
 
+public:
     // Environment Handling Methods
     Object &GetCurrentScope()
     {
@@ -1107,11 +1128,16 @@ private:
     {
         envStack->Pop();
     }
+    Object &TopScopeSpace()
+    {
+        return *(envStack->Top().ToObject_NoConst());
+    }
     Object &GetCurrentScopeSpace()
     {
         return *envStack->Top().ToObject_NoConst();
     }
 
+private:
     const Value *ScopeLookup(const Object &scope, const std::string &id)
     {
         if (auto *val = scope[id])
