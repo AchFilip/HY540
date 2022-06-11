@@ -11,12 +11,14 @@ public:
     Interpreter* interpreter;
     Object &PopScopeSpace(void) const
     {
+        assert(interpreter);
         Object &top = interpreter->TopScopeSpace();
         interpreter->PopScopeSpace();
         return top;
     }
     void PushScopeSpace(Object &scope) const
     {
+        assert(interpreter);
         interpreter->PushScopeSpace(&scope);
     }
     Object *Parse(const std::string &text) const
@@ -26,6 +28,7 @@ public:
     }
     const Value Eval(const Object &ast) const
     {
+        assert(interpreter);
         interpreter->Eval(const_cast<Object &>(ast));
     }
     Object &GetEvalParent(void) const
@@ -41,7 +44,8 @@ public:
     }
     void SetInterpreter(Interpreter* _interpreter)
     {
-        interpreter = _interpreter;
+        this->interpreter = _interpreter;
+        assert(interpreter);
     }
 
     ~Sin_Eval() {}

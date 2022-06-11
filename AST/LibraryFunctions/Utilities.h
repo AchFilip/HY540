@@ -108,9 +108,9 @@ public:
 
     static void Eval_Libfunc(Object &env)
     {
-        auto &evalScope = LANG.PopScopeSpace();
-        auto &code = GetArgument(env, 0, "code")->ToString();
-        auto *ast = LANG.Parse(code);
+        auto& evalScope = LANG.PopScopeSpace();
+        auto& code = GetArgument(env, 0, "code")->ToString();
+        auto* ast = LANG.Parse(code);
         if (!ast)
         {
             LANG.Error("eval('" + code + "'): parse error");

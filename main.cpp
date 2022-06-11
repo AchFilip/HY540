@@ -24,8 +24,9 @@ Object &SetParent(Object &ast)
 void Interpret(Object &ast)
 {
     Interpreter *interpreter = new Interpreter(false);
-    eval_LanguageIface::Set(new Sin_Eval());
-    ((Sin_Eval)LANG).SetInterpreter(interpreter);
+    Sin_Eval* sineval = new Sin_Eval();
+    sineval->SetInterpreter(interpreter);
+    eval_LanguageIface::Set(sineval);
     interpreter->StartProgram(ast);
     delete interpreter;
 }
