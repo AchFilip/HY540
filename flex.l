@@ -94,6 +94,7 @@ INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
 NUMBER                  {INTEGER_CONST}|{REAL_CONST}
 
+PARSE_EXPR              "@;"
 ID                      [$]?[a-zA-Z][a-zA-Z_0-9]*
 
 STRING                  \"(([^\"]|(\\\"))*(\n)*([^\"]|(\\\")))*\"
@@ -196,6 +197,10 @@ WHITESPACE              [\t\r' '\n]
 
 {WHITESPACE}                {}
 .                           {std::string s = yytext; printError(s);}
+
+{PARSE_EXPR}                {
+                                return PARSE_EXPR;
+                            }
 
 %%
 

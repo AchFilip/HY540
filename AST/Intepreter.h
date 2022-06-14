@@ -1109,6 +1109,10 @@ public:
         Value *value = new Value(*newScopeSpace);
         envStack->Push(*value);
     }
+    // na pethanei o boolean constructor, euxaristw
+    void PushScopeSpaceTemp(Object *scope){
+        envStack->Push(*(new Value(*scope)));
+    }
     void PushScopeSpace(Object *closure)
     {
         PushScopeSpace();

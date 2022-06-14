@@ -84,9 +84,10 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
 }
 
 /*  tokens  */
-%token  IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND OR NOT LOCAL TRUE FALSE NIL 
+%token  IF ELSE WHILE FOR FUNCTION RETURN BREAK CONTINUE AND OR NOT LOCAL TRUE FALSE NIL
 %token  <numVal> NUMBER 
 %token  <strVal> ID STRING
+%token  PARSE_EXPR
 
 %type <valVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call callsuffix objectdef assignexpr term ifstmt forstmt elist normcall methodcall indexed indexedelem;
 
@@ -108,6 +109,9 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
 program:        stmts                                                   {
                                                                             //PrintParsing("program","stmts");
                                                                             ast = $1;
+                                                                        }
+                | PARSE_EXPR expr                                       {
+                                                                            ast = $2;
                                                                         }
                 ;
 

@@ -27,14 +27,14 @@ public:
         {
             if (env[i]->GetType() == Value::ObjectType)
             {
-                PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
-                // NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); // If colors bug the terminal
+                // PRINT_BLUE_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", ""));
+                NORMAL_PRINT_LINE(ObjectToString(env[i]->ToObject_NoConst(), "", "")); // If colors bug the terminal
             }
 
             else
             {
-                PRINT_BLUE_LINE(env[i]->Stringify());
-                // NORMAL_PRINT_LINE(env[i]->Stringify()); // If colors bug the terminal
+                // PRINT_BLUE_LINE(env[i]->Stringify());
+                NORMAL_PRINT_LINE(env[i]->Stringify()); // If colors bug the terminal
             }
 
             i++;
@@ -109,8 +109,14 @@ public:
     static void Eval_Libfunc(Object &env)
     {
         auto& evalScope = LANG.PopScopeSpace();
-        auto& code = GetArgument(env, 0, "code")->ToString();
+        auto code = GetArgument(env, 0, "code")->ToString();
+        
+        // Check if code is just an expr, or a stmt/stmtlist
+        if(code.find(";") == std::string::npos)
+            code = "@;" + code;
+
         auto* ast = LANG.Parse(code);
+        
         if (!ast)
         {
             LANG.Error("eval('" + code + "'): parse error");

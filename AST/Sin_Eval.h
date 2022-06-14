@@ -19,7 +19,8 @@ public:
     void PushScopeSpace(Object &scope) const
     {
         assert(interpreter);
-        interpreter->PushScopeSpace(&scope);
+        // interpreter->PushScopeSpace(&scope);
+        interpreter->PushScopeSpaceTemp(&scope);
     }
     Object *Parse(const std::string &text) const
     {
@@ -29,7 +30,7 @@ public:
     const Value Eval(const Object &ast) const
     {
         assert(interpreter);
-        interpreter->Eval(const_cast<Object &>(ast));
+        return interpreter->Eval(const_cast<Object &>(ast));
     }
     Object &GetEvalParent(void) const
     {
