@@ -278,7 +278,16 @@ assignexpr:     lvalue '=' expr                                 {
                                                                 }
                 ;
 
-primary:        lvalue                                          {
+primary:        QuasiQuotes                                     {
+                                                                    PrintParsing("primary","QuasiQuotes");
+                                                                }
+                | Escape                                        {
+                                                                    PrintParsing("primary","Escape");
+                                                                }
+                | Inline                                        {
+                                                                    PrintParsing("primary","Inline");
+                                                                }
+                | lvalue                                        {
                                                                     //PrintParsing("primary","lvalue");
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_LVALUE, "", *$1, yylineno);
                                                                 }
@@ -525,6 +534,37 @@ returnstmt:     RETURN ';'                                      {
                 | RETURN expr ';'                               {
                                                                     //PrintParsing("returnstmt", " RETURN expr ;");     
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_RETURNSTMT, AST_TAG_EXPR, "", *$2, yylineno); 
+                                                                }
+                ;
+
+QuasiQuotes:    '<''<' QuotedRules '>''>'                       {
+                                                                    PrintParsing("QuasiQuotes", "<< QuotedRules >>");
+                                                                }
+                ;
+
+QuotedRules:    stmts                                           {
+                                                                    PrintParsing("QuotedRules", "stmts");
+                                                                }
+                | elist                                         {
+                                                                    PrintParsing("QuotedRules", "elist");
+                                                                }
+                ;
+
+Escape:         '~' EscapeItems                                 {
+                                                                    PrintParsing("Escape", "~ EscapeItems");
+                                                                }
+                ;
+
+EscapeItems:    id                                              {
+                                                                    PrintParsing("EscapeItems", "id");
+                                                                }
+                | '(' expr ')'                                  {
+                                                                    PrintParsing("EscapeItems", "@(expr)");
+                                                                }
+                ;
+
+Inline:         '!' '(' expr ')'                                {
+                                                                    PrintParsing("Inline", "! (expr)");
                                                                 }
                 ;
                 
