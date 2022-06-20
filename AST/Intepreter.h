@@ -9,6 +9,8 @@
 #include "./DebugAST.h"
 #include "./LibraryFunctions/FileSystem.h"
 #include "./LibraryFunctions/Utilities.h"
+#include "./UnparseTreeVisitor.h"
+#include "../parser.cpp"
 
 std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
 {
@@ -305,6 +307,9 @@ private:
         else if (node[AST_TAG_FUNCDEF])
         {
             return Eval(*node[AST_TAG_FUNCDEF]->ToObject_NoConst());
+        }
+        else if(node[AST_TAG_QUASIQUOTES]){
+            return Eval(*node[AST_TAG_QUASIQUOTES]->ToObject_NoConst());
         }
         else
             assert(false && "Not implmeneted yet for other types");
@@ -1062,6 +1067,35 @@ private:
             assert(false && "Not implemented yet");
         assert(false);
     }
+    const Value EvalQuasiQuotes(Object &node)
+    {
+        TreeHost *treeHost = new TreeHost();
+        treeHost->Accept(new UnparseTreeVisitor(), node);
+        Parser parser;
+        Object *result = parser.Parse(node[UNPARSE_VALUE]->ToString());
+
+        // EvalEscapesTreeVisitor ev(treeHost);
+        // treeHost.Accept(&ev, *result);
+
+        // result->IncRefCounter();
+        // or done directly inside Value if using Collector return *result;
+        return Value(true);
+    }
+    const Value EvalEscape(Object &node)
+    {
+        EvalInline(node);
+    }
+    const Value EvalInline(Object& node)
+    {
+        auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
+        auto &ast = *result.ToObject_NoConst();
+        auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
+        std::cout << result.Stringify() << std::endl;;
+
+        // treeHost.Accept(&SetParentTreeVisitor(), ast);
+        // return dispatcher.Eval(ast); 
+        return Value(true);
+    }
 
 public:
     // Environment Handling Methods
@@ -1110,7 +1144,8 @@ public:
         envStack->Push(*value);
     }
     // na pethanei o boolean constructor, euxaristw
-    void PushScopeSpaceTemp(Object *scope){
+    void PushScopeSpaceTemp(Object *scope)
+    {
         envStack->Push(*(new Value(*scope)));
     }
     void PushScopeSpace(Object *closure)
@@ -1211,6 +1246,10 @@ private:
                             { return EvalIdlist(node); });
         dispatcher->Install(AST_TAG_MEMBER, [this](Object &node)
                             { return EvalMember(node); });
+        dispatcher->Install(AST_TAG_QUASIQUOTES, [this](Object &node)
+                            { return EvalQuasiQuotes(node); });
+        dispatcher->Install(AST_TAG_ESCAPE, [this](Object &node)
+                            { return EvalEscape(node); });
     }
 
     void InstallLibraryFuncs(void)
@@ -1227,7 +1266,7 @@ private:
     }
 
 public:
-    Interpreter(){}
+    Interpreter() {}
     Interpreter(bool isDebugMode)
     {
         debug.SetEnabled(isDebugMode);

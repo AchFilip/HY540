@@ -73,6 +73,8 @@ COLON                   ":"
 DOUBLE_COLON            "::"
 DOT                     "."
 DOUBLE_DOT              ".."
+QUASI_QUOTES_OPEN       "<<"
+QUASI_QUOTES_CLOSE      ">>"
 
 ASSIGN                  "="
 PLUS                    "+"
@@ -89,6 +91,7 @@ GREATER_EQUAL           ">="
 LESS                    "<"
 LESS_EQUAL              "<="
 
+ESCAPE                  "~"
 DIGIT                   [0-9]+
 INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
@@ -194,6 +197,16 @@ WHITESPACE              [\t\r' '\n]
                             
 {ID}                        {std::string *s = new std::string(strdup(yytext)); /*<-- can be skipped*/ yylval.strVal = s; return ID;} 
 {NUMBER}                    {yylval.numVal = std::stod(yytext); return NUMBER;}
+
+{ESCAPE}                    {
+                                return ESCAPE;
+                            }
+{QUASI_QUOTES_OPEN}         {
+                                return QUASI_QUOTES_OPEN;
+                            }                            
+{QUASI_QUOTES_CLOSE}         {
+                                return QUASI_QUOTES_CLOSE;
+                            }                            
 
 {WHITESPACE}                {}
 .                           {std::string s = yytext; printError(s);}

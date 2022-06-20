@@ -53,6 +53,9 @@
 #define AST_TAG_BREAK "$break"
 #define AST_TAG_CONTINUE "$continue"
 
+#define AST_TAG_QUASIQUOTES "$quasi_quotes"
+#define AST_TAG_ESCAPE "$escape"
+
 #define PARENT_FIELD "$parent"
 #define OUTER_SCOPE_KEY "$outer"
 #define PREVIOUS_SCOPE_KEY "$previous"

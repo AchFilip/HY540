@@ -265,6 +265,20 @@ private:
             Accept(*node[AST_TAG_EXPR]->ToObject());
         visitor->VisitReturn(node);
     }
+    void AcceptQuasiQuotes(const Object &node)
+    {
+        if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+            Accept(*node[AST_TAG_STMTS]->ToObject());
+        visitor->VisitQuasiQuotes(node);
+    }
+    void AcceptEscape(const Object &node)
+    {
+        if (node[AST_TAG_EXPR] != nullptr)
+            Accept(*node[AST_TAG_EXPR]->ToObject());
+        else if (node[AST_TAG_ID] != nullptr)
+            Accept(*node[AST_TAG_ID]->ToObject());
+        visitor->VisitEscape(node);
+    }
 
     // ... all the rest tag-specific (node-type specific) accept methods ...
     void InstallAcceptor(const std::string &tag, const Acceptor &f)
@@ -324,6 +338,10 @@ private:
                         { AcceptForstmt(node); });
         InstallAcceptor(AST_TAG_RETURNSTMT, [this](const Object &node)
                         { AcceptReturn(node); });
+        InstallAcceptor(AST_TAG_QUASIQUOTES,[this](const Object &node)
+                        { AcceptQuasiQuotes(node); });
+        InstallAcceptor(AST_TAG_ESCAPE,[this](const Object &node)
+                        { AcceptEscape(node); });
     }
 
 public:

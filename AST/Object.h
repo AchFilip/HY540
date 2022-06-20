@@ -29,10 +29,10 @@ public:
     void DecRefCounter(void)
     {
         refCounter > 0 ? --refCounter : refCounter;
-        std::cout << refCounter << std::endl;
+        // std::cout << refCounter << std::endl;
         if (refCounter == 0)
         {
-            std::cout << "Deleting " << std::endl;
+            // std::cout << "Deleting " << std::endl;
             this->~Object();
         }
     }
@@ -78,12 +78,14 @@ public:
     {
         Set(std::to_string(key), value);
     };
-    void Remove(const std::string &key){
+    void Remove(const std::string &key)
+    {
         if (children.find(key) != children.end())
             children.erase(key);
         return;
     }
-    void Remove(double key){
+    void Remove(double key)
+    {
         if (children.find(std::to_string(key)) != children.end())
             children.erase(std::to_string(key));
         return;

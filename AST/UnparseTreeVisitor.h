@@ -4,7 +4,6 @@
 #include "./ValueStack.h"
 #include <iostream>
 
-
 #define NEWLINE "\n"
 #define UNPARSE_VALUE "$$val"
 
@@ -18,7 +17,8 @@ private:
     //---------------------------------------------------
     // Util
     // Delete later
-    void PrintTheUnparsedString(std::string str){
+    void PrintTheUnparsedString(std::string str)
+    {
         std::cout << "\033[1;31mThe unparsed string is the: > " << str << " <\033[0m" << std::endl;
     }
 
@@ -78,7 +78,7 @@ private:
         {
             str = term + "--";
         }
-        else if(mode == "")
+        else if (mode == "")
             str = term;
         else
             assert(false);
@@ -261,7 +261,8 @@ private:
         return str;
     }
 
-    const std::string UnparseFuncDef(const std::string& idlist,const std::string& block,const std::string& id = ""){
+    const std::string UnparseFuncDef(const std::string &idlist, const std::string &block, const std::string &id = "")
+    {
         std::string str;
         id.empty() ? str = "function ( " + idlist + " ) " + block : str = "function " + id + " ( " + idlist + " ) " + block;
         PrintTheUnparsedString(str);
@@ -304,7 +305,8 @@ private:
         return str;
     }
 
-    const std::string UnparseReturn(const std::string& expr = ""){
+    const std::string UnparseReturn(const std::string &expr = "")
+    {
         std::string str("return " + expr + ";");
         PrintTheUnparsedString(str);
         return str;
@@ -334,33 +336,25 @@ public:
                 UNPARSE_VALUE,
                 UnparseStmts(
                     GetUnparsed(node[AST_TAG_STMTS]),
-                    GetUnparsed(node[AST_TAG_STMT])
-                )
-            );
-        else if(node[AST_TAG_STMT]->GetType() != Value::NilType)
+                    GetUnparsed(node[AST_TAG_STMT])));
+        else if (node[AST_TAG_STMT]->GetType() != Value::NilType)
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseStmts(
                     "",
-                    GetUnparsed(node[AST_TAG_STMT])
-                )
-            );
-        else if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
+                    GetUnparsed(node[AST_TAG_STMT])));
+        else if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseStmts(
                     GetUnparsed(node[AST_TAG_STMTS]),
-                    ";"
-                )
-            );
+                    ";"));
         else
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseStmts(
                     "",
-                    ";"
-                )
-            );
+                    ";"));
     }
 
     virtual void VisitStmt(const Object &node) override
@@ -374,10 +368,8 @@ public:
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseStmt(
-                    GetUnparsed(node[AST_TAG_IF]), 
-                    false
-                )
-            );
+                    GetUnparsed(node[AST_TAG_IF]),
+                    false));
         }
         else if (node[AST_TAG_WHILE] != nullptr)
         {
@@ -389,36 +381,30 @@ public:
                 UNPARSE_VALUE,
                 UnparseStmt(
                     GetUnparsed(node[AST_TAG_FOR]),
-                    false
-                )
-            );
+                    false));
         }
         else if (node[AST_TAG_RETURNSTMT] != nullptr)
         {
-            if(node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType && node[AST_TAG_RETURNSTMT]->GetType() != Value::UndefType)
+            if (node[AST_TAG_RETURNSTMT]->GetType() != Value::NilType && node[AST_TAG_RETURNSTMT]->GetType() != Value::UndefType)
                 const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseStmt(
                         GetUnparsed(node[AST_TAG_RETURNSTMT]),
-                        false
-                    )
-                );
+                        false));
             else
                 const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseStmt(
                         "return",
-                        true
-                    )
-                );
+                        true));
         }
         else if (node[AST_TAG_BREAK] != nullptr)
         {
-            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("break", true));        
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("break", true));
         }
         else if (node[AST_TAG_CONTINUE] != nullptr)
         {
-            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("continue", true));        
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparseStmt("continue", true));
         }
         else if (node[AST_TAG_BLOCK] != nullptr)
         {
@@ -443,9 +429,7 @@ public:
                 UnparseArithmeticExpr(
                     GetUnparsed(node[AST_TAG_EXPR_LEFT]),
                     node[AST_TAG_DISAMBIGUATE_OBJECT]->Stringify(),
-                    GetUnparsed(node[AST_TAG_EXPR_RIGHT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_EXPR_RIGHT])));
         }
         else if (node[AST_TAG_TERM])
         {
@@ -462,9 +446,7 @@ public:
             UNPARSE_VALUE,
             UnparseAssignExpr(
                 GetUnparsed(node[AST_TAG_LVALUE]),
-                GetUnparsed(node[AST_TAG_EXPR])
-            )
-        );
+                GetUnparsed(node[AST_TAG_EXPR])));
     }
 
     virtual void VisitTerm(const Object &node) override
@@ -475,9 +457,7 @@ public:
                 UNPARSE_VALUE,
                 UnparseTerm(
                     GetUnparsed(node[AST_TAG_PRIMARY]),
-                    ""
-                )
-            );
+                    ""));
         }
         else if (node[AST_TAG_EXPR] != nullptr)
         {
@@ -485,19 +465,15 @@ public:
                 UNPARSE_VALUE,
                 UnparseTerm(
                     GetUnparsed(node[AST_TAG_EXPR]),
-                    node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString()
-                )
-            );
+                    node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString()));
         }
         else if (node[AST_TAG_LVALUE] != nullptr)
         {
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseTerm(
-                    GetUnparsed(node[AST_TAG_LVALUE]), 
-                    node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString()
-                )
-            );
+                    GetUnparsed(node[AST_TAG_LVALUE]),
+                    node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString()));
         }
     }
 
@@ -522,7 +498,10 @@ public:
         }
         else if (node[AST_TAG_CONST] != nullptr)
         {
-            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(4, node[AST_TAG_CONST]->Stringify()));
+            if(node[AST_TAG_CONST]->GetType() == Value::StringType)
+                const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(4, "\"" + node[AST_TAG_CONST]->Stringify()) + "\"");
+            else
+                const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(4, node[AST_TAG_CONST]->Stringify()));
         }
     }
 
@@ -531,242 +510,208 @@ public:
         if (node[AST_TAG_ID] != nullptr)
         {
             const_cast<Object &>(node).Set(
-                UNPARSE_VALUE, 
+                UNPARSE_VALUE,
                 UnparseLvalue(
                     node[AST_TAG_ID]->Stringify(),
-                    node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString()
-                )
-            );
+                    node[AST_TAG_DISAMBIGUATE_OBJECT]->ToString()));
         }
         else if (node[AST_TAG_MEMBER])
         {
             const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseLvalue(
-                    GetUnparsed(node[AST_TAG_MEMBER])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_MEMBER])));
         }
         else
             assert(false);
     }
-    
-    virtual void VisitMember(const Object &node) {
+
+    virtual void VisitMember(const Object &node)
+    {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_LVALUE] != nullptr && node[AST_TAG_ID] != nullptr)
-            const_cast<Object&>(node).Set(
+        if (node[AST_TAG_LVALUE] != nullptr && node[AST_TAG_ID] != nullptr)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseMember(
                     0,
                     GetUnparsed(node[AST_TAG_LVALUE]),
-                    node[AST_TAG_ID]->Stringify()
-                )
-            );
-        else if(node[AST_TAG_LVALUE]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType){
-            const_cast<Object&>(node).Set(
+                    node[AST_TAG_ID]->Stringify()));
+        else if (node[AST_TAG_LVALUE]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType)
+        {
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseMember(
                     1,
                     GetUnparsed(node[AST_TAG_LVALUE]),
-                    GetUnparsed(node[AST_TAG_EXPR])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_EXPR])));
         }
-        else if(node[AST_TAG_CALL]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType)
-            const_cast<Object&>(node).Set(
+        else if (node[AST_TAG_CALL]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseMember(
                     2,
                     GetUnparsed(node[AST_TAG_CALL]),
-                    node[AST_TAG_ID]->Stringify()
-                )
-            );
-        else if(node[AST_TAG_CALL]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType)
-            const_cast<Object&>(node).Set(
+                    node[AST_TAG_ID]->Stringify()));
+        else if (node[AST_TAG_CALL]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseMember(
                     2,
                     GetUnparsed(node[AST_TAG_CALL]),
-                    GetUnparsed(node[AST_TAG_EXPR])
-                )
-            );    
+                    GetUnparsed(node[AST_TAG_EXPR])));
     }
 
-    virtual void VisitCall(const Object &node) override{
-        if(node.children.count(AST_TAG_CALL))
-            const_cast<Object&>(node).Set(
+    virtual void VisitCall(const Object &node) override
+    {
+        if (node.children.count(AST_TAG_CALL))
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseCall(
                     0,
                     GetUnparsed(node[AST_TAG_CALL]),
-                    GetUnparsed(node[AST_TAG_ELIST])
-                )
-            );
-        else if(node.children.count(AST_TAG_CALLSUFFIX))
-            const_cast<Object&>(node).Set(
+                    GetUnparsed(node[AST_TAG_ELIST])));
+        else if (node.children.count(AST_TAG_CALLSUFFIX))
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseCall(
                     1,
                     GetUnparsed(node[AST_TAG_LVALUE]),
-                    GetUnparsed(node[AST_TAG_CALLSUFFIX])
-                )
-            );
-        else if(node.children.count(AST_TAG_FUNCDEF))
-            const_cast<Object&>(node).Set(
+                    GetUnparsed(node[AST_TAG_CALLSUFFIX])));
+        else if (node.children.count(AST_TAG_FUNCDEF))
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseCall(
                     0,
                     GetUnparsed(node[AST_TAG_FUNCDEF]),
-                    GetUnparsed(node[AST_TAG_ELIST])
-                )
-            );
-    } 
-    
-    virtual void VisitCallSuffix(const Object &node) override{ 
-        if(node[AST_TAG_NORMCALL] != nullptr)
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseCallSuffix(
-                    GetUnparsed(node[AST_TAG_NORMCALL])
-                )
-            );    
-        else if(node[AST_TAG_METHODCALL] != nullptr)
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseCallSuffix(
-                    GetUnparsed(node[AST_TAG_METHODCALL])
-                )
-            ); 
+                    GetUnparsed(node[AST_TAG_ELIST])));
     }
 
-    virtual void VisitNormCall(const Object &node) override{ 
-        if(node[AST_TAG_ELIST] != nullptr){
-            if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
-                const_cast<Object&>(node).Set(
+    virtual void VisitCallSuffix(const Object &node) override
+    {
+        if (node[AST_TAG_NORMCALL] != nullptr)
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseCallSuffix(
+                    GetUnparsed(node[AST_TAG_NORMCALL])));
+        else if (node[AST_TAG_METHODCALL] != nullptr)
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseCallSuffix(
+                    GetUnparsed(node[AST_TAG_METHODCALL])));
+    }
+
+    virtual void VisitNormCall(const Object &node) override
+    {
+        if (node[AST_TAG_ELIST] != nullptr)
+        {
+            if (node[AST_TAG_ELIST]->GetType() != Value::NilType)
+                const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseNormCall(
-                        GetUnparsed(node[AST_TAG_ELIST])
-                    )
-                );
-            else    
-                const_cast<Object&>(node).Set(
+                        GetUnparsed(node[AST_TAG_ELIST])));
+            else
+                const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseNormCall(
-                        ""
-                    )
-                );
+                        ""));
         }
     }
 
-    virtual void VisitMethodCall(const Object &node) override{
-        const_cast<Object&>(node).Set(
+    virtual void VisitMethodCall(const Object &node) override
+    {
+        const_cast<Object &>(node).Set(
             UNPARSE_VALUE,
             UnparseMethodCall(
                 GetUnparsed(node[AST_TAG_ID]),
-                GetUnparsed(node[AST_TAG_ELIST])
-            )
-        );
-    } 
+                GetUnparsed(node[AST_TAG_ELIST])));
+    }
 
-    virtual void VisitElist(const Object &node) override{ 
-        if(node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
-            const_cast<Object&>(node).Set(
+    virtual void VisitElist(const Object &node) override
+    {
+        if (node[AST_TAG_ELIST] != nullptr && node[AST_TAG_ELIST]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseElist(
                     GetUnparsed(node[AST_TAG_EXPR]),
-                    GetUnparsed(node[AST_TAG_ELIST])
-                )
-            );
-        else if(node[AST_TAG_EXPR] != nullptr)
-            const_cast<Object&>(node).Set(
+                    GetUnparsed(node[AST_TAG_ELIST])));
+        else if (node[AST_TAG_EXPR] != nullptr)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseElist(
-                    GetUnparsed(node[AST_TAG_EXPR])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_EXPR])));
         else
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
-                ""
-            );
-            
-    } 
+                "");
+    }
 
-    virtual void VisitObjectDef(const Object &node) override{ 
-        if(node[AST_TAG_ELIST] != nullptr){
-            if(node[AST_TAG_ELIST]->GetType() != Value::NilType)
-                const_cast<Object&>(node).Set(
+    virtual void VisitObjectDef(const Object &node) override
+    {
+        if (node[AST_TAG_ELIST] != nullptr)
+        {
+            if (node[AST_TAG_ELIST]->GetType() != Value::NilType)
+                const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseObjectDef(
-                        GetUnparsed(node[AST_TAG_ELIST])
-                    )
-                );
-            else if(node[AST_TAG_ELIST]->GetType() == Value::NilType)
-                const_cast<Object&>(node).Set(
+                        GetUnparsed(node[AST_TAG_ELIST])));
+            else if (node[AST_TAG_ELIST]->GetType() == Value::NilType)
+                const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseObjectDef(
-                        ""
-                    )
-                );
+                        ""));
         }
-        else if(node[AST_TAG_INDEXED] != nullptr){
-            const_cast<Object&>(node).Set(
+        else if (node[AST_TAG_INDEXED] != nullptr)
+        {
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseObjectDef(
-                    GetUnparsed(node[AST_TAG_INDEXED])
-                )
-            );
-        }
-    } 
-    
-    virtual void VisitIndexed(const Object &node) override{
-        if(node[AST_TAG_INDEXED] != nullptr)
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseIndexed(
-                    GetUnparsed(node[AST_TAG_INDEXEDELEM]),
-                    GetUnparsed(node[AST_TAG_INDEXED])
-                )
-            );
-        else{
-            const_cast<Object&>(node).Set(
-                UNPARSE_VALUE,
-                UnparseIndexed(
-                    GetUnparsed(node[AST_TAG_INDEXEDELEM])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_INDEXED])));
         }
     }
 
-    virtual void VisitIndexedElem(const Object &node) override{ 
-        if(node[AST_TAG_EXPR_LEFT] != nullptr && node[AST_TAG_EXPR_RIGHT]!= nullptr){
-            //std:: cout << GetUnparsed(node[AST_TAG_EXPR_LEFT]) << "   " << GetUnparsed(node[AST_TAG_EXPR_RIGHT]);
-            const_cast<Object&>(node).Set(
+    virtual void VisitIndexed(const Object &node) override
+    {
+        if (node[AST_TAG_INDEXED] != nullptr)
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseIndexed(
+                    GetUnparsed(node[AST_TAG_INDEXEDELEM]),
+                    GetUnparsed(node[AST_TAG_INDEXED])));
+        else
+        {
+            const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseIndexed(
+                    GetUnparsed(node[AST_TAG_INDEXEDELEM])));
+        }
+    }
+
+    virtual void VisitIndexedElem(const Object &node) override
+    {
+        if (node[AST_TAG_EXPR_LEFT] != nullptr && node[AST_TAG_EXPR_RIGHT] != nullptr)
+        {
+            // std:: cout << GetUnparsed(node[AST_TAG_EXPR_LEFT]) << "   " << GetUnparsed(node[AST_TAG_EXPR_RIGHT]);
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIndexedElem(
                     GetUnparsed(node[AST_TAG_EXPR_LEFT]),
-                    GetUnparsed(node[AST_TAG_EXPR_RIGHT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_EXPR_RIGHT])));
         }
-    } 
+    }
 
-    virtual void VisitBlock(const Object &node) override{
+    virtual void VisitBlock(const Object &node) override
+    {
         node.Debug_PrintChildren();
-        if(node[AST_TAG_STMTS]->GetType() != Value::NilType)
-            const_cast<Object&>(node).Set(
+        if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseBlock(
-                    GetUnparsed(node[AST_TAG_STMTS])
-                )
-            ); 
+                    GetUnparsed(node[AST_TAG_STMTS])));
         else
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseBlock(
-                    ""
-                )
-            ); 
+                    ""));
     }
 
     // virtual void VisitId(const Object &node) override{
@@ -775,225 +720,213 @@ public:
     //         UnparseId(
     //             GetUnparsed(node[AST_TAG_ID])
     //         )
-    //     ); 
+    //     );
     // }
 
-    virtual void VisitFuncDef(const Object &node) override{ //not tested
+    virtual void VisitFuncDef(const Object &node) override
+    { // not tested
         node.Debug_PrintChildren();
-        if(node[AST_TAG_IDLIST]->GetType() == Value::NilType){
-            if(node[AST_TAG_ID] != nullptr)
-                const_cast<Object&>(node).Set(
+        if (node[AST_TAG_IDLIST]->GetType() == Value::NilType)
+        {
+            if (node[AST_TAG_ID] != nullptr)
+                const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseFuncDef(
                         "",
                         GetUnparsed(node[AST_TAG_BLOCK]),
-                        node[AST_TAG_ID]->Stringify()
-                    )
-                );
+                        node[AST_TAG_ID]->Stringify()));
             else
-                const_cast<Object&>(node).Set(
+                const_cast<Object &>(node).Set(
                     UNPARSE_VALUE,
                     UnparseFuncDef(
                         "",
                         GetUnparsed(node[AST_TAG_BLOCK]),
-                        ""
-                    )
-                );
+                        ""));
         }
-        else if(node[AST_TAG_ID] != nullptr){
-            const_cast<Object&>(node).Set(
+        else if (node[AST_TAG_ID] != nullptr)
+        {
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseFuncDef(
                     GetUnparsed(node[AST_TAG_IDLIST]),
                     GetUnparsed(node[AST_TAG_BLOCK]),
-                    node[AST_TAG_ID]->Stringify()
-                )
-            );
-        }else
-            const_cast<Object&>(node).Set(
+                    node[AST_TAG_ID]->Stringify()));
+        }
+        else
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseFuncDef(
                     GetUnparsed(node[AST_TAG_IDLIST]),
-                    GetUnparsed(node[AST_TAG_BLOCK])
-                )
-            );
-    } 
-
-    virtual void VisitConst(const Object &node) override{ 
-         //In parser we create value and not object.
+                    GetUnparsed(node[AST_TAG_BLOCK])));
     }
 
-    virtual void VisitNumber(const Object &node) override{} //?
-    
-    virtual void VisitIdlist(const Object &node) override{
-        if(node[AST_TAG_IDLIST] == nullptr && node[AST_TAG_ID]->GetType() != Value::NilType){
-            const_cast<Object&>(node).Set(
+    virtual void VisitConst(const Object &node) override
+    {
+        // In parser we create value and not object.
+    }
+
+    virtual void VisitNumber(const Object &node) override {} //?
+
+    virtual void VisitIdlist(const Object &node) override
+    {
+        if (node[AST_TAG_IDLIST] == nullptr && node[AST_TAG_ID]->GetType() != Value::NilType)
+        {
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIdlist(
-                    node[AST_TAG_ID]->Stringify()
-                )
-            );
+                    node[AST_TAG_ID]->Stringify()));
             return;
         }
-        if(node[AST_TAG_IDLIST]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType){
-            const_cast<Object&>(node).Set(
+        if (node[AST_TAG_IDLIST]->GetType() != Value::NilType && node[AST_TAG_ID]->GetType() != Value::NilType)
+        {
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIdlist(
                     node[AST_TAG_ID]->Stringify(),
-                    GetUnparsed(node[AST_TAG_IDLIST])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_IDLIST])));
         }
-
     }
 
-    virtual void VisitWhile(const Object &node) override{ //den bike kan
-        if(node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType){
-            const_cast<Object&>(node).Set(
+    virtual void VisitWhile(const Object &node) override
+    { // den bike kan
+        if (node[AST_TAG_WHILE_STMT]->GetType() != Value::NilType)
+        {
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseWhile(
                     GetUnparsed(node[AST_TAG_WHILE_COND]),
-                    GetUnparsed(node[AST_TAG_WHILE_STMT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_WHILE_STMT])));
         }
         else if (node[AST_TAG_WHILE_STMT]->GetType() == Value::NilType)
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseWhile(
                     GetUnparsed(node[AST_TAG_WHILE_COND]),
-                    ";"
-                )
-            );
+                    ";"));
     }
 
-    virtual void VisitFor(const Object &node) override{ //crashed
+    virtual void VisitFor(const Object &node) override
+    { // crashed
         node.Debug_PrintChildren();
-        if(node[AST_TAG_FORCOND]->GetType() == Value::NilType && node[AST_TAG_INIT]->GetType() != Value::NilType)
-            const_cast<Object&>(node).Set(
+        if (node[AST_TAG_FORCOND]->GetType() == Value::NilType && node[AST_TAG_INIT]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
                     GetUnparsed(node[AST_TAG_INIT]),
                     GetUnparsed(node[AST_TAG_EXPR]),
                     "",
-                    GetUnparsed(node[AST_TAG_FORSTMT])
-                )
-            );
-        else if(node[AST_TAG_INIT]->GetType() == Value::NilType && node[AST_TAG_FORCOND]->GetType() != Value::NilType) 
-            const_cast<Object&>(node).Set(
+                    GetUnparsed(node[AST_TAG_FORSTMT])));
+        else if (node[AST_TAG_INIT]->GetType() == Value::NilType && node[AST_TAG_FORCOND]->GetType() != Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
                     "",
                     GetUnparsed(node[AST_TAG_EXPR]),
                     GetUnparsed(node[AST_TAG_FORCOND]),
-                    GetUnparsed(node[AST_TAG_FORSTMT])
-                )
-            );
-        else if(node[AST_TAG_INIT]->GetType() == Value::NilType &&
-                node[AST_TAG_FORCOND]->GetType() == Value::NilType)
+                    GetUnparsed(node[AST_TAG_FORSTMT])));
+        else if (node[AST_TAG_INIT]->GetType() == Value::NilType &&
+                 node[AST_TAG_FORCOND]->GetType() == Value::NilType)
         {
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
                     "",
                     GetUnparsed(node[AST_TAG_EXPR]),
                     "",
-                    GetUnparsed(node[AST_TAG_FORSTMT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_FORSTMT])));
         }
-        else if(node[AST_TAG_INIT]->GetType() == Value::NilType &&
-                node[AST_TAG_FORCOND]->GetType() == Value::NilType &&
-                node[AST_TAG_FORSTMT]->GetType() == Value::NilType)
-            const_cast<Object&>(node).Set(
+        else if (node[AST_TAG_INIT]->GetType() == Value::NilType &&
+                 node[AST_TAG_FORCOND]->GetType() == Value::NilType &&
+                 node[AST_TAG_FORSTMT]->GetType() == Value::NilType)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
                     "",
                     GetUnparsed(node[AST_TAG_EXPR]),
                     "",
-                    ""
-                )
-            );
+                    ""));
         else
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseForStmt(
                     GetUnparsed(node[AST_TAG_INIT]),
                     GetUnparsed(node[AST_TAG_EXPR]),
                     GetUnparsed(node[AST_TAG_FORCOND]),
-                    GetUnparsed(node[AST_TAG_FORSTMT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_FORSTMT])));
     }
-    
+
     virtual void VisitReturn(const Object &node) override
     {
-        //node.Debug_PrintChildren();
-        if(node[AST_TAG_EXPR] == nullptr) 
-            const_cast<Object&>(node).Set(
+        // node.Debug_PrintChildren();
+        if (node[AST_TAG_EXPR] == nullptr)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseReturn(
-                    ""
-                )
-            );
+                    ""));
         else
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseReturn(
-                    GetUnparsed(node[AST_TAG_EXPR])
-                )
-            ); 
+                    GetUnparsed(node[AST_TAG_EXPR])));
     }
-    
-    virtual void VisitIf(const Object& node) override{ 
-        if (node[AST_TAG_IF_STMT]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType
-            && node[AST_TAG_ELSE_STMT] == nullptr)
-            const_cast<Object&>(node).Set(
+
+    virtual void VisitIf(const Object &node) override
+    {
+        if (node[AST_TAG_IF_STMT]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType && node[AST_TAG_ELSE_STMT] == nullptr)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIf(
                     GetUnparsed(node[AST_TAG_EXPR]),
-                    GetUnparsed(node[AST_TAG_IF_STMT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_IF_STMT])));
         else if (node[AST_TAG_IF_STMT]->GetType() == Value::NilType && node[AST_TAG_ELSE_STMT] == nullptr)
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIf(
                     GetUnparsed(node[AST_TAG_EXPR]),
-                    ";"
-                )
-            );
-        else if (node[AST_TAG_IF_STMT]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType
-            && node[AST_TAG_ELSE_STMT] != nullptr)
-            const_cast<Object&>(node).Set(
+                    ";"));
+        else if (node[AST_TAG_IF_STMT]->GetType() != Value::NilType && node[AST_TAG_EXPR]->GetType() != Value::NilType && node[AST_TAG_ELSE_STMT] != nullptr)
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIf(
                     GetUnparsed(node[AST_TAG_EXPR]),
                     GetUnparsed(node[AST_TAG_IF_STMT]),
-                    GetUnparsed(node[AST_TAG_ELSE_STMT])
-                )
-            );
+                    GetUnparsed(node[AST_TAG_ELSE_STMT])));
         else if (node[AST_TAG_IF_STMT]->GetType() == Value::NilType && node[AST_TAG_ELSE_STMT] == nullptr && node[AST_TAG_ELSE_STMT] != nullptr)
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIf(
                     GetUnparsed(node[AST_TAG_EXPR]),
                     ";",
-                    GetUnparsed(node[AST_TAG_ELSE_STMT])
-                )
-            );     
+                    GetUnparsed(node[AST_TAG_ELSE_STMT])));
         else if (node[AST_TAG_IF_STMT]->GetType() == Value::NilType && node[AST_TAG_ELSE_STMT] != nullptr && node[AST_TAG_ELSE_STMT] == nullptr)
-            const_cast<Object&>(node).Set(
+            const_cast<Object &>(node).Set(
                 UNPARSE_VALUE,
                 UnparseIf(
                     GetUnparsed(node[AST_TAG_EXPR]),
                     GetUnparsed(node[AST_TAG_IF_STMT]),
-                    ";"
-                )
-            );    
+                    ";"));
     }
 
-    virtual TreeVisitor *Clone(void) const {return nullptr;};
+    virtual void VisitQuasiQuotes(const Object &node) override {
+        const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseStmts(
+                    GetUnparsed(node[AST_TAG_STMTS]),
+                    ""));
+    }
+    
+    virtual void VisitEscape(const Object &node) override {
+        const_cast<Object &>(node).Set(
+                UNPARSE_VALUE,
+                UnparseStmts(
+                    GetUnparsed(node[AST_TAG_EXPR]),
+                    ""));
+    }
+
+    virtual TreeVisitor *Clone(void) const
+    {
+        return nullptr;
+    };
     UnparseTreeVisitor(void) = default;
     UnparseTreeVisitor(const UnparseTreeVisitor &) = default;
 };
