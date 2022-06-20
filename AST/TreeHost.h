@@ -90,6 +90,10 @@ private:
             Accept(*node[AST_TAG_FUNCDEF]->ToObject());
         else if (node[AST_TAG_CONST] != nullptr)
             ;
+        else if (node[AST_TAG_QUASIQUOTES] != nullptr)
+            Accept(*node[AST_TAG_QUASIQUOTES]->ToObject());
+        else if (node[AST_TAG_INLINE] != nullptr)
+            Accept(*node[AST_TAG_INLINE]->ToObject());
         visitor->VisitPrimary(node);
     }
     void AcceptLvalue(const Object &node)
@@ -279,6 +283,12 @@ private:
             Accept(*node[AST_TAG_ID]->ToObject());
         visitor->VisitEscape(node);
     }
+    void AcceptInline(const Object &node)
+    {
+        if (node[AST_TAG_EXPR] != nullptr)
+            Accept(*node[AST_TAG_EXPR]->ToObject());
+        visitor->VisitInline(node);
+    }
 
     // ... all the rest tag-specific (node-type specific) accept methods ...
     void InstallAcceptor(const std::string &tag, const Acceptor &f)
@@ -342,6 +352,8 @@ private:
                         { AcceptQuasiQuotes(node); });
         InstallAcceptor(AST_TAG_ESCAPE,[this](const Object &node)
                         { AcceptEscape(node); });
+        InstallAcceptor(AST_TAG_INLINE,[this](const Object &node)
+                        { AcceptInline(node); });
     }
 
 public:

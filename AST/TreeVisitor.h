@@ -39,6 +39,7 @@ public:
     virtual void VisitContinue(const Object &node) {}
     virtual void VisitQuasiQuotes(const Object &node) {}
     virtual void VisitEscape(const Object &node) {}
+    virtual void VisitInline(const Object &node) {}
 
     virtual TreeVisitor *Clone(void) const = 0;
     TreeVisitor(void) = default;

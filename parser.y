@@ -89,7 +89,7 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
 %token  <strVal> ID STRING
 %token  PARSE_EXPR
 
-%type <valVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call callsuffix objectdef assignexpr term ifstmt forstmt elist normcall methodcall indexed indexedelem QuasiQuotes EscapeItems; 
+%type <valVal> id const primary funcdef idlist block returnstmt expr whilestmt stmt stmts lvalue member call callsuffix objectdef assignexpr term ifstmt forstmt elist normcall methodcall indexed indexedelem QuasiQuotes EscapeItems Inline; 
 
 /*  token rules */
 %right '=' 
@@ -280,9 +280,15 @@ assignexpr:     lvalue '=' expr                                 {
 
 primary:        QuasiQuotes                                     {
                                                                     // PrintParsing("primary","QuasiQuotes");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_QUASIQUOTES, "", *$1, yylineno);
                                                                 }
                 | EscapeItems                                   {
                                                                     // PrintParsing("primary","Escape");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_ESCAPE, "", *$1, yylineno);
+                                                                }
+                | Inline                                        {
+                                                                    // PrintParsing("primary","Inline");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_PRIMARY, AST_TAG_INLINE, "", *$1, yylineno);
                                                                 }
                 | lvalue                                        {
                                                                     // PrintParsing("primary","lvalue");
@@ -547,7 +553,11 @@ EscapeItems:    ESCAPE id                                       {
                                                                     // PrintParsing("EscapeItems", "~(expr)");
                                                                 }
                 ;
-                
+Inline:         NOT '(' expr ')'                                {
+                                                                    // PrintParsing("Inline", "(expr)");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_INLINE, AST_TAG_EXPR, "", *$3, yylineno);
+                                                                }
+                ;
 %%
 
 int yyerror(char const *s){

@@ -59,6 +59,7 @@ virtual void Visit##type (const Object& node) override {SetParent(node);}
     IMPL_VISIT (Continue        )
     IMPL_VISIT (QuasiQuotes     )
     IMPL_VISIT (Escape          )
+    IMPL_VISIT (Inline          )
 #undef IMPL_VISIT
 
     void SetIsRemoval (bool v) { isRemoval = v; }

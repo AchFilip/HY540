@@ -503,6 +503,12 @@ public:
             else
                 const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(4, node[AST_TAG_CONST]->Stringify()));
         }
+        else if (node[AST_TAG_QUASIQUOTES] != nullptr){
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(0, GetUnparsed(node[AST_TAG_QUASIQUOTES])));
+        }
+        else if (node[AST_TAG_INLINE] != nullptr){
+            const_cast<Object &>(node).Set(UNPARSE_VALUE, UnparsePrimary(0, GetUnparsed(node[AST_TAG_INLINE])));
+        }
     }
 
     virtual void VisitLvalue(const Object &node) override
@@ -906,21 +912,24 @@ public:
                     GetUnparsed(node[AST_TAG_IF_STMT]),
                     ";"));
     }
-
-    virtual void VisitQuasiQuotes(const Object &node) override {
-        const_cast<Object &>(node).Set(
-                UNPARSE_VALUE,
-                UnparseStmts(
-                    GetUnparsed(node[AST_TAG_STMTS]),
-                    ""));
-    }
     
+    virtual void VisitQuasiQuotes(const Object &node) override {
+            const_cast<Object &>(node).Set(
+                    UNPARSE_VALUE, "<<" + GetUnparsed(node[AST_TAG_STMTS]) + ">>"
+            );
+            std::cout << "VALUE IS "<<node[UNPARSE_VALUE]->ToString() << std::endl;
+    }
+
     virtual void VisitEscape(const Object &node) override {
         const_cast<Object &>(node).Set(
-                UNPARSE_VALUE,
-                UnparseStmts(
-                    GetUnparsed(node[AST_TAG_EXPR]),
-                    ""));
+                UNPARSE_VALUE, "~" + GetUnparsed(node[AST_TAG_EXPR])
+        );
+    }
+
+    virtual void VisitInline(const Object &node) override {
+        const_cast<Object &>(node).Set(
+                UNPARSE_VALUE, "!" + GetUnparsed(node[AST_TAG_EXPR])
+        );
     }
 
     virtual TreeVisitor *Clone(void) const

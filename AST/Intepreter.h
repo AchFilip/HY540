@@ -10,6 +10,7 @@
 #include "./LibraryFunctions/FileSystem.h"
 #include "./LibraryFunctions/Utilities.h"
 #include "./UnparseTreeVisitor.h"
+#include "./SetParentTreeVisitor.h"
 #include "../parser.cpp"
 
 std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
@@ -308,8 +309,13 @@ private:
         {
             return Eval(*node[AST_TAG_FUNCDEF]->ToObject_NoConst());
         }
-        else if(node[AST_TAG_QUASIQUOTES]){
+        else if (node[AST_TAG_QUASIQUOTES])
+        {
             return Eval(*node[AST_TAG_QUASIQUOTES]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_INLINE])
+        {
+            return Eval(*node[AST_TAG_INLINE]->ToObject_NoConst());
         }
         else
             assert(false && "Not implmeneted yet for other types");
@@ -1070,31 +1076,32 @@ private:
     const Value EvalQuasiQuotes(Object &node)
     {
         TreeHost *treeHost = new TreeHost();
-        treeHost->Accept(new UnparseTreeVisitor(), node);
+        treeHost->Accept(new UnparseTreeVisitor(), *node[AST_TAG_STMTS]->ToObject_NoConst());
         Parser parser;
-        Object *result = parser.Parse(node[UNPARSE_VALUE]->ToString());
-
-        // EvalEscapesTreeVisitor ev(treeHost);
-        // treeHost.Accept(&ev, *result);
+        Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
+        treeHost->Accept(new SetParentTreeVisitor(), *result);
+        // Evaluate escapes before returning AST
+        //  EvalEscapesTreeVisitor ev(treeHost);
+        //  treeHost.Accept(&ev, *result);
 
         // result->IncRefCounter();
         // or done directly inside Value if using Collector return *result;
-        return Value(true);
+        return Value(*result);
     }
     const Value EvalEscape(Object &node)
     {
         EvalInline(node);
     }
-    const Value EvalInline(Object& node)
+    const Value EvalInline(Object &node)
     {
         auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
         auto &ast = *result.ToObject_NoConst();
         auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
-        std::cout << result.Stringify() << std::endl;;
+        TreeHost *treeHost = new TreeHost();
+        treeHost->Accept(new SetParentTreeVisitor(), ast);
 
-        // treeHost.Accept(&SetParentTreeVisitor(), ast);
-        // return dispatcher.Eval(ast); 
-        return Value(true);
+        parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
+        return Eval(ast);
     }
 
 public:
@@ -1250,6 +1257,8 @@ private:
                             { return EvalQuasiQuotes(node); });
         dispatcher->Install(AST_TAG_ESCAPE, [this](Object &node)
                             { return EvalEscape(node); });
+        dispatcher->Install(AST_TAG_INLINE, [this](Object &node)
+                            { return EvalInline(node); });
     }
 
     void InstallLibraryFuncs(void)
