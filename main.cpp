@@ -7,7 +7,6 @@
 #include "./AST/SetParentTreeVisitor.h"
 #include "./AST/Debug/SinDebugger.h"
 #include "./AST/Debug/DebugMessageInterface.h"
-#include "./parser.cpp"
 #include "./AST/Sin_Eval.h"
 
 void Unparse(Object &ast)
