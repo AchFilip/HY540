@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <vector>
 
 #include "./TreeTags.h"
 #include "Value.h"
@@ -19,7 +20,8 @@ public:
     ~Object() = default;
 
     std::map<std::string, const Value> children;
-
+    std::vector<std::string> childrenTags;
+    
     using Applier = std::function<void(const Value &key, Value &val)>;
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void)

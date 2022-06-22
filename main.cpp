@@ -52,4 +52,6 @@ int main(int argc, char *argv[])
         }
         Interpret(*parser.Parse(final));
     }
+
+    std::cout << "Its over =)" << std::endl;
 }

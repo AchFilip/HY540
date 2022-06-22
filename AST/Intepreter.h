@@ -117,7 +117,7 @@ private:
         }
         else if (node[AST_TAG_STMT]->GetType() != Value::NilType)
         {
-            Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
+            return Eval(*node[AST_TAG_STMT]->ToObject_NoConst());
         }
         else
         {
@@ -316,6 +316,10 @@ private:
         else if (node[AST_TAG_INLINE])
         {
             return Eval(*node[AST_TAG_INLINE]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_ESCAPE])
+        {
+            return Eval(*node[AST_TAG_ESCAPE]->ToObject_NoConst());
         }
         else
             assert(false && "Not implmeneted yet for other types");
@@ -526,6 +530,7 @@ private:
         else if (node[AST_TAG_METHODCALL])
             assert(false && "Methodcall not implemented yet");
         assert(false);
+        
     }
     const Value EvalNormCall(Object &node)
     {
@@ -1080,10 +1085,15 @@ private:
         Parser parser;
         Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
         treeHost->Accept(new SetParentTreeVisitor(), *result);
+        //std::cout << ObjectToString(result, "", "");
         // Evaluate escapes before returning AST
         //  EvalEscapesTreeVisitor ev(treeHost);
         //  treeHost.Accept(&ev, *result);
-
+        
+        //todo, you know what ;)
+        for(int i=0; i < result->childrenTags.size() ;i++){
+            std::cout << result->childrenTags[i];
+        }
         // result->IncRefCounter();
         // or done directly inside Value if using Collector return *result;
         return Value(*result);
@@ -1094,14 +1104,30 @@ private:
     }
     const Value EvalInline(Object &node)
     {
-        auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
-        auto &ast = *result.ToObject_NoConst();
-        auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
-        TreeHost *treeHost = new TreeHost();
-        treeHost->Accept(new SetParentTreeVisitor(), ast);
+        if(node[AST_TAG_EXPR] != nullptr){
+            auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
+            auto &ast = *result.ToObject_NoConst();
+            auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
+            TreeHost *treeHost = new TreeHost();
+            treeHost->Accept(new SetParentTreeVisitor(), ast);
+            //std::cout << ObjectToString(&ast,"","");
+            parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
+            return Eval(ast);
+        }else{
+            std::cout << "ASDASDSA";
+            std::string id = node[AST_TAG_ID]->Stringify();
+            auto result = ScopeLookup(GetCurrentScope(), id);
+            auto &ast = *result->ToObject_NoConst();
+            auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
+            TreeHost *treeHost = new TreeHost();
+            treeHost->Accept(new SetParentTreeVisitor(), ast);
 
-        parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
-        return Eval(ast);
+            parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
+            std::cout << Eval(ast).GetType();
+            return Eval(ast);
+        }
+
+        return nullptr;
     }
 
 public:

@@ -94,6 +94,8 @@ private:
             Accept(*node[AST_TAG_QUASIQUOTES]->ToObject());
         else if (node[AST_TAG_INLINE] != nullptr)
             Accept(*node[AST_TAG_INLINE]->ToObject());
+        else if (node[AST_TAG_ESCAPE] != nullptr)
+            Accept(*node[AST_TAG_ESCAPE]->ToObject());
         visitor->VisitPrimary(node);
     }
     void AcceptLvalue(const Object &node)
@@ -280,7 +282,7 @@ private:
         if (node[AST_TAG_EXPR] != nullptr)
             Accept(*node[AST_TAG_EXPR]->ToObject());
         else if (node[AST_TAG_ID] != nullptr)
-            Accept(*node[AST_TAG_ID]->ToObject());
+            ;
         visitor->VisitEscape(node);
     }
     void AcceptInline(const Object &node)

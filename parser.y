@@ -35,7 +35,8 @@ Value* CreateAstNodeOneChild(std::string nodeType, std::string childType, std::s
        if(!disambiguate.empty()){
         const Value* disambiguateVal = new Value(disambiguate);
         obj->Set(AST_TAG_DISAMBIGUATE_OBJECT, *disambiguateVal);
-    }        
+    }    
+    obj->childrenTags.push_back(childType);    
     return new Value(*obj);
 }
 Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, std::string child2Type, std::string disambiguate, const Value& child1, const Value& child2, double yylineno){
@@ -50,6 +51,10 @@ Value* CreateAstNodeTwoChildren(std::string nodeType, std::string child1Type, st
     } 
     obj->Set(child1Type, child1);
     obj->Set(child2Type, child2);
+    
+    obj->childrenTags.push_back(child1Type);    
+    obj->childrenTags.push_back(child2Type);    
+
     return new Value(*obj);
 }
 %}
@@ -545,12 +550,12 @@ QuasiQuotes:    QUASI_QUOTES_OPEN stmts QUASI_QUOTES_CLOSE      {
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_QUASIQUOTES, AST_TAG_STMTS, "", *$2, yylineno);
                                                                 }
 EscapeItems:    ESCAPE id                                       {
-                                                                    // PrintParsing("EscapeItems", "id");
+                                                                    //PrintParsing("EscapeItems", "~id");
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_ESCAPE, AST_TAG_ID, "", *$2, yylineno);
                                                                 }
                 | ESCAPE '(' expr ')'                           {
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_ESCAPE, AST_TAG_EXPR, "", *$3, yylineno);
-                                                                    // PrintParsing("EscapeItems", "~(expr)");
+                                                                    //PrintParsing("EscapeItems", "~(expr)");
                                                                 }
                 ;
 Inline:         NOT '(' expr ')'                                {
