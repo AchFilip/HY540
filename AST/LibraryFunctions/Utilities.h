@@ -136,6 +136,22 @@ public:
         env.Set(RETVAL_RESERVED_FIELD, val);
     }
 
+    static bool IsAstLeaf(Object &obj){
+        std::cout << "IS LEAF: " << obj["$type"]->ToString() << std::endl;
+        for(auto& it : obj.children){
+            if(
+                it.second.GetType() == Value::ObjectType &&
+                (*it.second.ToObject_NoConst())[PARENT_FIELD] != nullptr
+            )
+            {
+                std::cout << "~~~~~~~" << std::endl;
+                it.second.ToObject_NoConst()->Debug_PrintChildren();
+                return false;
+            }
+        }
+        return true;
+    }
+
 private:
     static bool StringIsNumber(const std::string &str)
     {

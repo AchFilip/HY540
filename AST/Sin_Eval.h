@@ -34,11 +34,11 @@ public:
     }
     Object &GetEvalParent(void) const
     {
-        
+        return *(new Object());
     }
     const std::string ValidateCode(const Object &ast) const
     {
-
+        return "error";
     }
     void Error(const std::string &text) const
     {

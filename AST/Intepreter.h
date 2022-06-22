@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
 #include <iostream>
+#include <vector>
+#include <string>
 #include "./TreeTags.h"
 #include "./Object.h"
 #include "./Value.h"
@@ -9,6 +11,8 @@
 #include "./DebugAST.h"
 #include "./LibraryFunctions/FileSystem.h"
 #include "./LibraryFunctions/Utilities.h"
+#include "./Debug/SinDebugger.h"
+#include "./Debug/DebugMessageInterface.h"
 
 std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
 {
@@ -65,6 +69,18 @@ private:
     ValueStack *envStack;
     DebugAST debug;
 
+    // For Debugger
+    std::vector<int> breakpoints;
+    DebugMessageInterface dmi;
+    int lastLineDebuged = -1;
+    bool IsBreakpoint(int line)
+    {
+        if (std::find(breakpoints.begin(), breakpoints.end(), line) != breakpoints.end())
+            return true;
+        else
+            return false;
+    }
+
     // Exceptions used for control flow
     struct BreakException
     {
@@ -95,6 +111,20 @@ private:
 public:
     const Value Eval(Object &node)
     {
+        if(
+            SinDebugger::isDebug                                    &&
+            IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber())        &&
+            lastLineDebuged != node[AST_TAG_LINE_KEY]->ToNumber()   && // Maybe use a stack to represent recursive lines?
+            node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR       
+        )
+        {
+            // Mark debuged line
+            lastLineDebuged = node[AST_TAG_LINE_KEY]->ToNumber();
+            // Inform debugger that breakpoint was found
+            dmi.Write("Breakpoint found: " + std::to_string((int)node[AST_TAG_LINE_KEY]->ToNumber()));
+            // Ask for instructions on how to proceed;
+            std::string message = dmi.Read();
+        }
         debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
@@ -639,6 +669,7 @@ private:
         {
             return Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
         }
+        return _NIL_;
     }
     const Value EvalIndexedElem(Object &node)
     {
@@ -1252,6 +1283,18 @@ public:
     {
         try
         {
+            // If debug is enabled, read and store breakpoints
+            if(SinDebugger::isDebug){
+                dmi.SetReadChannel(INTERPRETER_CHANNEL);
+                // Wait for input of breakpoints
+                std::string message = dmi.Read();
+                std::vector<std::string> breakpointsSplitted = dmi.SplitMessage(message, " ");
+                for(auto& it : breakpointsSplitted){
+                    // std::cout << "[Interpreter] it: " << it << std::endl;
+                    breakpoints.push_back(stoi(it));
+                }
+            }
+            // Start eval
             Eval(node);
         }
         catch (const TypeException &typeError)
