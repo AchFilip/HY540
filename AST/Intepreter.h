@@ -12,6 +12,7 @@
 #include "./UnparseTreeVisitor.h"
 #include "./SetParentTreeVisitor.h"
 #include "../parser.cpp"
+#include "./EvalEscapesTreeVisitor.h"
 
 std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
 {
@@ -320,6 +321,10 @@ private:
         else if (node[AST_TAG_ESCAPE])
         {
             return Eval(*node[AST_TAG_ESCAPE]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_STMTS])
+        {
+            return Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
         }
         else
             assert(false && "Not implmeneted yet for other types");
@@ -1085,15 +1090,11 @@ private:
         Parser parser;
         Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
         treeHost->Accept(new SetParentTreeVisitor(), *result);
-        //std::cout << ObjectToString(result, "", "");
         // Evaluate escapes before returning AST
-        //  EvalEscapesTreeVisitor ev(treeHost);
-        //  treeHost.Accept(&ev, *result);
-        
-        //todo, you know what ;)
-        for(int i=0; i < result->childrenTags.size() ;i++){
-            std::cout << result->childrenTags[i];
-        }
+        EvalEscapesTreeVisitor* ev = new EvalEscapesTreeVisitor();
+        ev->SetDispatcher(this->dispatcher);
+        treeHost->Accept(ev, *result);
+
         // result->IncRefCounter();
         // or done directly inside Value if using Collector return *result;
         return Value(*result);
@@ -1108,22 +1109,26 @@ private:
             auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
             auto &ast = *result.ToObject_NoConst();
             auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
+            
             TreeHost *treeHost = new TreeHost();
             treeHost->Accept(new SetParentTreeVisitor(), ast);
-            //std::cout << ObjectToString(&ast,"","");
+            
+            parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
+            
             return Eval(ast);
         }else{
-            std::cout << "ASDASDSA";
             std::string id = node[AST_TAG_ID]->Stringify();
             auto result = ScopeLookup(GetCurrentScope(), id);
             auto &ast = *result->ToObject_NoConst();
             auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
+
             TreeHost *treeHost = new TreeHost();
             treeHost->Accept(new SetParentTreeVisitor(), ast);
-
+            
+            parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
-            std::cout << Eval(ast).GetType();
+            
             return Eval(ast);
         }
 
