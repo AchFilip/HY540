@@ -108,15 +108,15 @@ public:
 
     static void Eval_Libfunc(Object &env)
     {
-        auto& evalScope = LANG.PopScopeSpace();
+        auto &evalScope = LANG.PopScopeSpace();
         auto code = GetArgument(env, 0, "code")->ToString();
-        
+
         // Check if code is just an expr, or a stmt/stmtlist
-        if(code.find(";") == std::string::npos)
+        if (code.find(";") == std::string::npos)
             code = "@;" + code;
 
-        auto* ast = LANG.Parse(code);
-        
+        auto *ast = LANG.Parse(code);
+
         if (!ast)
         {
             LANG.Error("eval('" + code + "'): parse error");
@@ -134,22 +134,6 @@ public:
         ast->DecRefCounter();
         LANG.PushScopeSpace(evalScope);
         env.Set(RETVAL_RESERVED_FIELD, val);
-    }
-
-    static bool IsAstLeaf(Object &obj){
-        std::cout << "IS LEAF: " << obj["$type"]->ToString() << std::endl;
-        for(auto& it : obj.children){
-            if(
-                it.second.GetType() == Value::ObjectType &&
-                (*it.second.ToObject_NoConst())[PARENT_FIELD] != nullptr
-            )
-            {
-                std::cout << "~~~~~~~" << std::endl;
-                it.second.ToObject_NoConst()->Debug_PrintChildren();
-                return false;
-            }
-        }
-        return true;
     }
 
 private:

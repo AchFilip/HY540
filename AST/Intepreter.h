@@ -70,16 +70,7 @@ private:
     DebugAST debug;
 
     // For Debugger
-    std::vector<int> breakpoints;
-    DebugMessageInterface dmi;
-    int lastLineDebuged = -1;
-    bool IsBreakpoint(int line)
-    {
-        if (std::find(breakpoints.begin(), breakpoints.end(), line) != breakpoints.end())
-            return true;
-        else
-            return false;
-    }
+    SinDebugger debugger;
 
     // Exceptions used for control flow
     struct BreakException
@@ -111,20 +102,17 @@ private:
 public:
     const Value Eval(Object &node)
     {
-        if(
-            SinDebugger::isDebug                                    &&
-            IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber())        &&
-            lastLineDebuged != node[AST_TAG_LINE_KEY]->ToNumber()   && // Maybe use a stack to represent recursive lines?
-            node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR       
-        )
+        if (debugger.ShouldReadCommand(node))
         {
-            // Mark debuged line
-            lastLineDebuged = node[AST_TAG_LINE_KEY]->ToNumber();
-            // Inform debugger that breakpoint was found
-            dmi.Write("Breakpoint found: " + std::to_string((int)node[AST_TAG_LINE_KEY]->ToNumber()));
-            // Ask for instructions on how to proceed;
-            std::string message = dmi.Read();
+            debugger.ReadCommand(node);
         }
+        // if (
+        //     SinDebugger::isDebug &&
+        //     IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber()) &&
+        //     lastLineDebuged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
+        //     node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR)
+        // {
+        // }
         debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
@@ -1141,7 +1129,8 @@ public:
         envStack->Push(*value);
     }
     // na pethanei o boolean constructor, euxaristw
-    void PushScopeSpaceTemp(Object *scope){
+    void PushScopeSpaceTemp(Object *scope)
+    {
         envStack->Push(*(new Value(*scope)));
     }
     void PushScopeSpace(Object *closure)
@@ -1258,7 +1247,7 @@ private:
     }
 
 public:
-    Interpreter(){}
+    Interpreter() {}
     Interpreter(bool isDebugMode)
     {
         debug.SetEnabled(isDebugMode);
@@ -1284,15 +1273,10 @@ public:
         try
         {
             // If debug is enabled, read and store breakpoints
-            if(SinDebugger::isDebug){
-                dmi.SetReadChannel(INTERPRETER_CHANNEL);
-                // Wait for input of breakpoints
-                std::string message = dmi.Read();
-                std::vector<std::string> breakpointsSplitted = dmi.SplitMessage(message, " ");
-                for(auto& it : breakpointsSplitted){
-                    // std::cout << "[Interpreter] it: " << it << std::endl;
-                    breakpoints.push_back(stoi(it));
-                }
+            if (SinDebugger::isDebug)
+            {
+                debugger.InitInterpreterEnd();
+                debugger.ReadBreakpoints();
             }
             // Start eval
             Eval(node);

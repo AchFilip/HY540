@@ -44,7 +44,6 @@ std::string FileToString(std::string fileName)
     return fileContent;
 }
 
-
 int main(int argc, char *argv[])
 {
     // Run from file
@@ -70,6 +69,7 @@ int main(int argc, char *argv[])
         else if (child_pid > 0)
         {
             SinDebugger debugger;
+            debugger.InitDebuggerEnd();
         }
         else
         {
