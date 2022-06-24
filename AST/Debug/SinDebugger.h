@@ -39,9 +39,9 @@ public:
             std::cout << "===========================================================" << std::endl;
             std::cout << "Execution stopped at line: " << message << std::endl;
             std::cout << "Choose action:\n\
-                            a: Continue: \'c\'\n\
-                            b: Step over: \'so\'\n\
-                            c: Step into: \'si\'\n\
+                            a: Continue: \'continue\'\n\
+                            b: Step over: \'step_over\'\n\
+                            c: Step into: \'step_into\'\n\
                             d: Write your own code to execute!" << std::endl;
             
             
