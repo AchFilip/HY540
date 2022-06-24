@@ -20,6 +20,54 @@ const Value *GetArgument(Object &env, unsigned argNo, const std::string &optArgN
 class Utilities
 {
 public:
+    static std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
+    {
+        if (obj->children.begin() == obj->children.end())
+            return startingTab + "Object { }";
+
+        toPrint += startingTab + "Object {\n";
+        startingTab += "\t";
+
+        for (auto it = obj->children.begin(); it != obj->children.end();)
+        {
+            if (it->second.GetType() != Value::ObjectType)
+            {
+                std::string id = it->first;
+                if (id.size() > 2 && id.substr(2, id.size()) == "000000")
+                    id = id.substr(0, 1);
+                toPrint += startingTab + id + ": " + it->second.Stringify() + "\n";
+            }
+
+            else if (it->second.GetType() == Value::ObjectType)
+            {
+                if ((it->second).ToObject_NoConst() == obj)
+                { // Avoid infinite recursion
+                    it++;
+                    continue;
+                }
+
+                std::string id = it->first;
+                if (id.size() > 2 && id.substr(2, id.size()) == "000000")
+                    id = id.substr(0, 1);
+
+                if (id == "$parent")
+                {
+                    toPrint += startingTab + id + ": " + (*(it->second).ToObject_NoConst())[AST_TAG_TYPE_KEY]->ToString() + "\n";
+                    it++;
+                    continue;
+                }
+
+                std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
+                objString = objString.substr(startingTab.size(), objString.size());
+
+                toPrint += startingTab + id + ": " + objString + "\n";
+            }
+            it++;
+        }
+        toPrint += startingTab.substr(0, startingTab.size() - 1) + "}";
+        return toPrint;
+    }
+
     static void Print_LibFunc(Object &env)
     {
         int i = 0;
@@ -108,13 +156,16 @@ public:
 
     static void Eval_Libfunc(Object &env)
     {
-        auto &evalScope = LANG.PopScopeSpace();
         auto code = GetArgument(env, 0, "code")->ToString();
-
+        eval(env, code);
+    }
+    static void eval(Object &env, std::string code)
+    {
+        auto &evalScope = LANG.PopScopeSpace();
+        
         // Check if code is just an expr, or a stmt/stmtlist
         if (code.find(";") == std::string::npos)
             code = "@;" + code;
-
         auto *ast = LANG.Parse(code);
 
         if (!ast)

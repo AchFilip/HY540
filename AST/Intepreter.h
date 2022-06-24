@@ -14,54 +14,6 @@
 #include "./Debug/SinDebugger.h"
 #include "./Debug/DebugMessageInterface.h"
 
-std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
-{
-    if (obj->children.begin() == obj->children.end())
-        return startingTab + "Object { }";
-
-    toPrint += startingTab + "Object {\n";
-    startingTab += "\t";
-
-    for (auto it = obj->children.begin(); it != obj->children.end();)
-    {
-        if (it->second.GetType() != Value::ObjectType)
-        {
-            std::string id = it->first;
-            if (id.size() > 2 && id.substr(2, id.size()) == "000000")
-                id = id.substr(0, 1);
-            toPrint += startingTab + id + ": " + it->second.Stringify() + "\n";
-        }
-
-        else if (it->second.GetType() == Value::ObjectType)
-        {
-            if ((it->second).ToObject_NoConst() == obj)
-            { // Avoid infinite recursion
-                it++;
-                continue;
-            }
-
-            std::string id = it->first;
-            if (id.size() > 2 && id.substr(2, id.size()) == "000000")
-                id = id.substr(0, 1);
-
-            if (id == "$parent")
-            {
-                toPrint += startingTab + id + ": " + (*(it->second).ToObject_NoConst())[AST_TAG_TYPE_KEY]->ToString() + "\n";
-                it++;
-                continue;
-            }
-
-            std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
-            objString = objString.substr(startingTab.size(), objString.size());
-
-            toPrint += startingTab + id + ": " + objString + "\n";
-        }
-        it++;
-    }
-    toPrint += startingTab.substr(0, startingTab.size() - 1) + "}";
-    return toPrint;
-}
-
 class Interpreter
 {
 private:
@@ -106,13 +58,6 @@ public:
         {
             debugger.ReadCommand(node);
         }
-        // if (
-        //     SinDebugger::isDebug &&
-        //     IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber()) &&
-        //     lastLineDebuged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
-        //     node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR)
-        // {
-        // }
         debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
@@ -1275,7 +1220,7 @@ public:
             // If debug is enabled, read and store breakpoints
             if (SinDebugger::isDebug)
             {
-                debugger.InitInterpreterEnd();
+                debugger.InitInterpreterEnd(envStack);
                 debugger.ReadBreakpoints();
             }
             // Start eval

@@ -27,6 +27,9 @@ public:
 		assert(!IsEmpty());
 		valueStack.pop_front();
 	}
+	int Size(){
+		return valueStack.size();
+	}
 	auto Top(void) const -> const Value &
 	{
 		assert(!IsEmpty());

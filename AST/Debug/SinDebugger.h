@@ -2,6 +2,8 @@
 
 #include "./DebugMessageInterface.h"
 #include "../TreeTags.h"
+#include "../ValueStack.h"
+#include "../LibraryFunctions/Utilities.h"
 #include <vector>
 #include <unistd.h>
 #include <algorithm>
@@ -28,16 +30,33 @@ public:
         // Set my read channel on DMI
         dmi.SetReadChannel(DEBUGGER_CHANNEL);
         // Receive breakpoints and send signal to interpreter
-        FakeInputAndSignalBreakpoints();
+        InputAndSignalBreakpoints();
         // Wait for breakpoint
         while (true)
         {
-            std::cout << "[Debugger] Waiting for breakpoint..." << std::endl;
+            // std::cout << "[Debugger] Waiting for breakpoint..." << std::endl;
             std::string message = dmi.Read();
-            std::cout << "[Debugger] From interpreter: " << message << std::endl;
-            std::cout << "Breakpoint found! Choose action:\na: Continue\nb: Step over\nc: Step into" << std::endl;
+            std::cout << "===========================================================" << std::endl;
+            std::cout << "Execution stopped at line: " << message << std::endl;
+            std::cout << "Choose action:\n\
+                            a: Continue: \'c\'\n\
+                            b: Step over: \'so\'\n\
+                            c: Step into: \'si\'\n\
+                            d: Write your own code to execute!" << std::endl;
+            
+            
+            // Due to fork and shit, getline does block the process.
+            // For some other reason, cin does block the process.
+            // For some other reason, cin does not detect \n or \0
+            // So... combine the two!
+            std::string first_word;
             std::string user_input;
-            std::cin >> user_input;
+            
+            std::cin >> first_word;
+            std::getline(std::cin, user_input);
+
+            user_input = first_word + user_input;
+
             // filter input
             dmi.Write(user_input);
         }
@@ -82,24 +101,55 @@ public:
 
     //---------------------- FOR INTERPRETER PROCESS ---------------------
 private:
-    int lastLineDebuged = -1;
+    int lastLineDebugged = -1;
+    int lastEnvStackSize = 1;
+    ValueStack *envStack;
 
     std::function<bool(Object &node)> shouldReadCommand;
     std::map<std::string, std::function<bool(Object &node)>> shouldReadCommandDispatcher;
 
 public:
-    void InitInterpreterEnd()
+    void InitInterpreterEnd(ValueStack *envStack)
     {
+        // Set reference to envstack
+        this->envStack = envStack;
+        // Initialize dispatcher
         shouldReadCommandDispatcher.insert({"continue",
                                             [=](Object &node)
                                             {
-                                                return SinDebugger::isDebug &&
-                                                       IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber()) &&
-                                                       lastLineDebuged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
-                                                       node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR;
+                                                return (
+                                                    SinDebugger::isDebug &&
+                                                    IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber()) &&
+                                                    lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
+                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR
+                                                );
                                             }
 
         });
+        shouldReadCommandDispatcher.insert({"step_over",
+                                            [=](Object &node)
+                                            {
+                                                return (
+                                                    SinDebugger::isDebug &&
+                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
+                                                    (
+                                                        (node[AST_TAG_LINE_KEY]->ToNumber() > lastLineDebugged && envStack->Size() == lastEnvStackSize) ||
+                                                        envStack->Size() == lastEnvStackSize - 1
+                                                    ) ||
+                                                    shouldReadCommandDispatcher["continue"](node)
+                                                );
+                                            }});
+        shouldReadCommandDispatcher.insert({"step_into",
+                                            [=](Object &node)
+                                            {
+                                                return (
+                                                    SinDebugger::isDebug &&
+                                                    lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
+                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
+                                                    envStack->Size() == lastEnvStackSize + 1
+                                                ) || shouldReadCommandDispatcher["step_over"](node);
+                                            }});
+
         shouldReadCommand = shouldReadCommandDispatcher["continue"];
     }
 
@@ -125,11 +175,25 @@ public:
     void ReadCommand(Object &node)
     {
         // Mark debuged line
-        lastLineDebuged = node[AST_TAG_LINE_KEY]->ToNumber();
+        lastLineDebugged = node[AST_TAG_LINE_KEY]->ToNumber();
+        lastEnvStackSize = envStack->Size();
         // Inform debugger that breakpoint was found
-        dmi.Write("Breakpoint found: " + std::to_string((int)node[AST_TAG_LINE_KEY]->ToNumber()));
+        dmi.Write(std::to_string(node[AST_TAG_LINE_KEY]->ToNumber()));
         // Ask for instructions on how to proceed;
         std::string message = dmi.Read();
+
+        if(shouldReadCommandDispatcher.count(message))
+            shouldReadCommand = shouldReadCommandDispatcher[message];
+        else{
+            // std::cout << "code: " << message << std::endl;
+
+            auto& evalScope = *(*envStack->Top().ToObject_NoConst())[TAIL_SCOPE_KEY]->ToObject_NoConst();
+            envStack->Push(*new Value());
+            Utilities::eval(evalScope, message);
+            envStack->Pop();
+
+            ReadCommand(node);
+        }
     }
     //--------------------------------------------------------------------
 };
