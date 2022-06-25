@@ -42,16 +42,17 @@ public:
                             a: Continue: \'continue\'\n\
                             b: Step over: \'step_over\'\n\
                             c: Step into: \'step_into\'\n\
-                            d: Write your own code to execute!" << std::endl;
-            
-            
+                            d: Add breakpoints: \'add_breakpoints\'\n\
+                            d: Write your own code to execute!"
+                      << std::endl;
+
             // Due to fork and shit, getline does block the process.
             // For some other reason, cin does block the process.
             // For some other reason, cin does not detect \n or \0
             // So... combine the two!
             std::string first_word;
             std::string user_input;
-            
+
             std::cin >> first_word;
             std::getline(std::cin, user_input);
 
@@ -121,8 +122,7 @@ public:
                                                     SinDebugger::isDebug &&
                                                     IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber()) &&
                                                     lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
-                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR
-                                                );
+                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR);
                                             }
 
         });
@@ -131,33 +131,45 @@ public:
                                             {
                                                 return (
                                                     SinDebugger::isDebug &&
-                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
-                                                    (
-                                                        (node[AST_TAG_LINE_KEY]->ToNumber() > lastLineDebugged && envStack->Size() == lastEnvStackSize) ||
-                                                        envStack->Size() == lastEnvStackSize - 1
-                                                    ) ||
-                                                    shouldReadCommandDispatcher["continue"](node)
-                                                );
+                                                        node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
+                                                        ((node[AST_TAG_LINE_KEY]->ToNumber() > lastLineDebugged && envStack->Size() == lastEnvStackSize) ||
+                                                         envStack->Size() == lastEnvStackSize - 1) ||
+                                                    shouldReadCommandDispatcher["continue"](node));
                                             }});
         shouldReadCommandDispatcher.insert({"step_into",
                                             [=](Object &node)
                                             {
                                                 return (
-                                                    SinDebugger::isDebug &&
-                                                    lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
-                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
-                                                    envStack->Size() == lastEnvStackSize + 1
-                                                ) || shouldReadCommandDispatcher["step_over"](node);
+                                                           SinDebugger::isDebug &&
+                                                           lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
+                                                           node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
+                                                           envStack->Size() == lastEnvStackSize + 1) ||
+                                                       shouldReadCommandDispatcher["step_over"](node);
+                                            }});
+        shouldReadCommandDispatcher.insert({"add_breakpoints",
+                                            [=](Object &node)
+                                            {
+                                                return true;
+                                                ;
                                             }});
 
         shouldReadCommand = shouldReadCommandDispatcher["continue"];
     }
 
-    void ReadBreakpoints()
+    void ReadBreakpoints(std::string _message)
     {
+        std::string message;
         dmi.SetReadChannel(INTERPRETER_CHANNEL);
         // Wait for input of breakpoints
-        std::string message = dmi.Read();
+        if (_message != "")
+        {
+            message = _message;
+        }
+        else
+        {
+            message = dmi.Read();
+        }
+        // std::cout << message << std::endl;
         std::vector<std::string> breakpointsSplitted = dmi.SplitMessage(message, " ");
         for (auto &it : breakpointsSplitted)
         {
@@ -182,12 +194,31 @@ public:
         // Ask for instructions on how to proceed;
         std::string message = dmi.Read();
 
-        if(shouldReadCommandDispatcher.count(message))
+        if (shouldReadCommandDispatcher.count(message))
+        {
+
             shouldReadCommand = shouldReadCommandDispatcher[message];
-        else{
+        }
+        else
+        {
+            std::vector<std::string> messageSplitted = dmi.SplitMessage(message, " ");
+            if (!strcmp(messageSplitted[0].c_str(), "add_breakpoints"))
+            {
+                // InputAndSignalBreakpoints();
+                // std::cout << message << std::endl;
+                std::string breakpointsMessage = "";
+                for (int i = 1; i < messageSplitted.size(); i++)
+                    breakpointsMessage += messageSplitted[i] + " ";
+                breakpointsMessage = breakpointsMessage.substr(0, breakpointsMessage.size() - 1);
+
+                // dmi.Write(breakpointsMessage);
+                ReadBreakpoints(breakpointsMessage);
+                return;
+            }
+
             // std::cout << "code: " << message << std::endl;
 
-            auto& evalScope = *(*envStack->Top().ToObject_NoConst())[TAIL_SCOPE_KEY]->ToObject_NoConst();
+            auto &evalScope = *(*envStack->Top().ToObject_NoConst())[TAIL_SCOPE_KEY]->ToObject_NoConst();
             envStack->Push(*new Value());
             Utilities::eval(evalScope, message);
             envStack->Pop();

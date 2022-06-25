@@ -1221,7 +1221,7 @@ public:
             if (SinDebugger::isDebug)
             {
                 debugger.InitInterpreterEnd(envStack);
-                debugger.ReadBreakpoints();
+                debugger.ReadBreakpoints("");
             }
             // Start eval
             Eval(node);

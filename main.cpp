@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 #include "./AST/SetParentTreeVisitor.h"
 #include "./AST/Debug/SinDebugger.h"
 #include "./AST/Debug/DebugMessageInterface.h"
@@ -44,6 +45,13 @@ std::string FileToString(std::string fileName)
     return fileContent;
 }
 
+// void signalHandler(int signum)
+// {
+//     // std::cout << "Interrupt signal (" << signum << ") received.\n";
+//     if (signum == SIGTERM)
+//         exit(EXIT_SUCCESS);
+// }
+
 int main(int argc, char *argv[])
 {
     // Run from file
@@ -59,17 +67,22 @@ int main(int argc, char *argv[])
     {
         SinDebugger::isDebug = true;
         DebugMessageInterface::Init();
+        int s;
 
         pid_t child_pid = fork();
+        // signal(SIGTERM, signalHandler);
         if (child_pid == 0)
-        {
-            Parser parser;
-            Interpret(SetParent(*parser.Parse(FileToString(argv[2]))));
-        }
-        else if (child_pid > 0)
         {
             SinDebugger debugger;
             debugger.InitDebuggerEnd();
+        }
+        else if (child_pid > 0)
+        {
+            Parser parser;
+            Interpret(SetParent(*parser.Parse(FileToString(argv[2]))));
+
+            // kill(0, SIGTERM);
+            exit(EXIT_SUCCESS);
         }
         else
         {
