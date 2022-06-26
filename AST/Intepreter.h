@@ -1113,6 +1113,7 @@ private:
             TreeHost *treeHost = new TreeHost();
             treeHost->Accept(new SetParentTreeVisitor(), ast);
             
+            ast.Set(PARENT_FIELD, *node[PARENT_FIELD]);
             parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
             
@@ -1126,6 +1127,7 @@ private:
             TreeHost *treeHost = new TreeHost();
             treeHost->Accept(new SetParentTreeVisitor(), ast);
             
+            ast.Set(PARENT_FIELD, *node[PARENT_FIELD]);
             parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
             
