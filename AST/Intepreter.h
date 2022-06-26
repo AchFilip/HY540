@@ -62,6 +62,43 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
     return toPrint;
 }
 
+Value* CopyAST(Object& original){
+    Object* obj = new Object();
+    const Value* keyVal = new Value(original[AST_TAG_TYPE_KEY]->ToString());
+    const Value* lineVal = new Value(original[AST_TAG_LINE_KEY]->ToNumber());
+    obj->Set(AST_TAG_TYPE_KEY, *keyVal);
+    obj->Set(AST_TAG_LINE_KEY, *lineVal);
+
+    if(original[AST_TAG_DISAMBIGUATE_OBJECT] != nullptr){
+        const Value* disambiguateVal = new Value(original[AST_TAG_DISAMBIGUATE_OBJECT]->ToString());
+        obj->Set(AST_TAG_DISAMBIGUATE_OBJECT, *disambiguateVal);
+    }  
+
+    for(int i=0; i < original.childrenTags.size(); i++){
+        if(original[original.childrenTags[i]]->GetType() == Value::ObjectType)
+        { 
+            obj->Set(original.childrenTags[i], *CopyAST(*original[original.childrenTags[i]]->ToObject_NoConst()));
+            obj->childrenTags.push_back(original.childrenTags[i]);
+        } 
+        else if(original.childrenTags[i] == AST_TAG_ID){
+            obj->Set(original.childrenTags[i], original[AST_TAG_ID]->ToString());
+            obj->childrenTags.push_back(original.childrenTags[i]);
+        }
+        else if(original.childrenTags[i] == AST_TAG_CONST){
+            return new Value(original[AST_TAG_CONST]);
+        }
+        else if(original[original.childrenTags[i]]->GetType() == Value::NilType)
+        { 
+            obj->Set(original.childrenTags[i], _NIL_);
+            obj->childrenTags.push_back(original.childrenTags[i]);
+        } 
+        else
+            assert(false && "CopyAST for fail");
+    }
+
+    return new Value(*obj);
+}
+
 class Interpreter
 {
 private:
@@ -1087,8 +1124,14 @@ private:
     {
         TreeHost *treeHost = new TreeHost();
         treeHost->Accept(new UnparseTreeVisitor(), *node[AST_TAG_STMTS]->ToObject_NoConst());
+
         Parser parser;
         Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
+
+        Value* ast2 = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        treeHost->Accept(new SetParentTreeVisitor(), *ast2->ToObject_NoConst());
+        PRINT_BLUE_LINE(ObjectToString(ast2->ToObject_NoConst(), "", ""));
+
         treeHost->Accept(new SetParentTreeVisitor(), *result);
         // Evaluate escapes before returning AST
         EvalEscapesTreeVisitor* ev = new EvalEscapesTreeVisitor();
