@@ -62,36 +62,59 @@ std::string ObjectToString(Object *obj, std::string toPrint, std::string startin
     return toPrint;
 }
 
-Value* CopyAST(Object& original){
-    Object* obj = new Object();
-    const Value* keyVal = new Value(original[AST_TAG_TYPE_KEY]->ToString());
-    const Value* lineVal = new Value(original[AST_TAG_LINE_KEY]->ToNumber());
+Value *CopyAST(Object &original)
+{
+    Object *obj = new Object();
+    const Value *keyVal = new Value(original[AST_TAG_TYPE_KEY]->ToString());
+    const Value *lineVal = new Value(original[AST_TAG_LINE_KEY]->ToNumber());
     obj->Set(AST_TAG_TYPE_KEY, *keyVal);
     obj->Set(AST_TAG_LINE_KEY, *lineVal);
 
-    if(original[AST_TAG_DISAMBIGUATE_OBJECT] != nullptr){
-        const Value* disambiguateVal = new Value(original[AST_TAG_DISAMBIGUATE_OBJECT]->ToString());
+    if (original[AST_TAG_DISAMBIGUATE_OBJECT] != nullptr)
+    {
+        const Value *disambiguateVal = new Value(original[AST_TAG_DISAMBIGUATE_OBJECT]->ToString());
         obj->Set(AST_TAG_DISAMBIGUATE_OBJECT, *disambiguateVal);
-    }  
+    }
 
-    for(int i=0; i < original.childrenTags.size(); i++){
-        if(original[original.childrenTags[i]]->GetType() == Value::ObjectType)
-        { 
+    for (int i = 0; i < original.childrenTags.size(); i++)
+    {
+        if (original[original.childrenTags[i]]->GetType() == Value::ObjectType)
+        {
             obj->Set(original.childrenTags[i], *CopyAST(*original[original.childrenTags[i]]->ToObject_NoConst()));
             obj->childrenTags.push_back(original.childrenTags[i]);
-        } 
-        else if(original.childrenTags[i] == AST_TAG_ID){
-            obj->Set(original.childrenTags[i], original[AST_TAG_ID]->ToString());
+        }
+        else if (original.childrenTags[i] == AST_TAG_ID)
+        {
+            obj->Set(original.childrenTags[i], *(new Value(original[AST_TAG_ID]->ToString())));
             obj->childrenTags.push_back(original.childrenTags[i]);
         }
-        else if(original.childrenTags[i] == AST_TAG_CONST){
-            return new Value(original[AST_TAG_CONST]);
+        else if (original.childrenTags[i] == AST_TAG_CONST)
+        {
+            switch (original[AST_TAG_CONST]->GetType())
+            {
+            case Value::StringType:
+                obj->Set(AST_TAG_CONST, *(new Value(original[AST_TAG_CONST]->ToString())));
+                break;
+            case Value::BooleanType:
+                obj->Set(AST_TAG_CONST, *(new Value(original[AST_TAG_CONST]->ToBool())));
+                break;
+            case Value::NumberType:
+                obj->Set(AST_TAG_CONST, *(new Value(original[AST_TAG_CONST]->ToNumber())));
+                break;
+            case Value::NilType:
+                obj->Set(AST_TAG_CONST, *(new Value(_NIL_)));
+                break;
+            default:
+                assert(false && "Copy AST const");
+            }
+            obj->Set(AST_TAG_CONST, *(new Value(original[AST_TAG_CONST])));
+            obj->childrenTags.push_back(original.childrenTags[i]);
         }
-        else if(original[original.childrenTags[i]]->GetType() == Value::NilType)
-        { 
+        else if (original[original.childrenTags[i]]->GetType() == Value::NilType)
+        {
             obj->Set(original.childrenTags[i], _NIL_);
             obj->childrenTags.push_back(original.childrenTags[i]);
-        } 
+        }
         else
             assert(false && "CopyAST for fail");
     }
@@ -572,7 +595,6 @@ private:
         else if (node[AST_TAG_METHODCALL])
             assert(false && "Methodcall not implemented yet");
         assert(false);
-        
     }
     const Value EvalNormCall(Object &node)
     {
@@ -1127,20 +1149,21 @@ private:
 
         Parser parser;
         Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
-
-        Value* ast2 = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
-        treeHost->Accept(new SetParentTreeVisitor(), *ast2->ToObject_NoConst());
-        PRINT_BLUE_LINE(ObjectToString(ast2->ToObject_NoConst(), "", ""));
-
         treeHost->Accept(new SetParentTreeVisitor(), *result);
+
+        Value *ast2 = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        Object *result2 = ast2->ToObject_NoConst();
+        treeHost->Accept(new SetParentTreeVisitor(), *result2);
+        PRINT_BLUE_LINE(ObjectToString(result2, "", ""));
+
         // Evaluate escapes before returning AST
-        EvalEscapesTreeVisitor* ev = new EvalEscapesTreeVisitor();
+        EvalEscapesTreeVisitor *ev = new EvalEscapesTreeVisitor();
         ev->SetDispatcher(this->dispatcher);
-        treeHost->Accept(ev, *result);
+        treeHost->Accept(ev, *result2);
 
         // result->IncRefCounter();
         // or done directly inside Value if using Collector return *result;
-        return Value(*result);
+        return Value(*result2);
     }
     const Value EvalEscape(Object &node)
     {
@@ -1148,20 +1171,23 @@ private:
     }
     const Value EvalInline(Object &node)
     {
-        if(node[AST_TAG_EXPR] != nullptr){
+        if (node[AST_TAG_EXPR] != nullptr)
+        {
             auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
             auto &ast = *result.ToObject_NoConst();
             auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
-            
+
             TreeHost *treeHost = new TreeHost();
             treeHost->Accept(new SetParentTreeVisitor(), ast);
-            
+
             ast.Set(PARENT_FIELD, *node[PARENT_FIELD]);
             parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
-            
+
             return Eval(ast);
-        }else{
+        }
+        else
+        {
             std::string id = node[AST_TAG_ID]->Stringify();
             auto result = ScopeLookup(GetCurrentScope(), id);
             auto &ast = *result->ToObject_NoConst();
@@ -1169,11 +1195,11 @@ private:
 
             TreeHost *treeHost = new TreeHost();
             treeHost->Accept(new SetParentTreeVisitor(), ast);
-            
+
             ast.Set(PARENT_FIELD, *node[PARENT_FIELD]);
             parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
-            
+
             return Eval(ast);
         }
 
