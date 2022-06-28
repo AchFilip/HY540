@@ -13,6 +13,7 @@
 #include "./SetParentTreeVisitor.h"
 #include "../parser.cpp"
 #include "./EvalEscapesTreeVisitor.h"
+#include <queue>
 
 std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
 {
@@ -384,7 +385,26 @@ private:
         }
         else if (node[AST_TAG_STMTS])
         {
+            // Only for inline
             return Eval(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        }
+        else if (node[AST_TAG_ELIST])
+        {
+            // Only for inline
+            if (node[AST_TAG_ELIST]->GetType() != Value::NilType)
+            {
+                auto evaled = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
+                if ((evaled.ToObject_NoConst())->children.size() == 1)
+                    return (*(*evaled.ToObject_NoConst())[0]);
+                else
+                {
+                    evaled.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));
+                    return evaled;
+                }
+            }
+
+            else
+                return _NIL_;
         }
         else
             assert(false && "Not implmeneted yet for other types");
@@ -480,14 +500,24 @@ private:
     }
     const Value EvalCall(Object &node)
     {
-
         try
         {
             if (node[AST_TAG_LVALUE])
             {
-
                 Value functionValue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
                 Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
+                if (args.GetType() == Value::ObjectType)
+                {
+                    std::queue<const Value *> *queue = new std::queue<const Value *>();
+                    FixArgsForInline(*queue, *args.ToObject_NoConst());
+                    args = *FillQueue(*queue);
+                }
+
+                // if (args.GetType() != Value::NilType && (*args.ToObject_NoConst())[0]->GetType() == Value::ObjectType && (*((*args.ToObject_NoConst())[0])->ToObject_NoConst())[AST_TAG_DISAMBIGUATE_OBJECT])
+                // {
+                //     args = *(*args.ToObject_NoConst())[0];
+                //     args.ToObject_NoConst()->Remove(AST_TAG_DISAMBIGUATE_OBJECT);
+                // }
 
                 if (functionValue.GetType() == Value::ProgramFunctionType)
                 {
@@ -562,6 +592,37 @@ private:
         PopScopeSpace();
 
         return retval;
+    }
+    void FixArgsForInline(std::queue<const Value *> &queue, Object &args)
+    {
+        int size = args.children.size();
+        if (args[AST_TAG_DISAMBIGUATE_OBJECT])
+            size -= 1;
+
+        for (int i = 0; i < size; i++)
+        {
+
+            if (args[i]->GetType() == Value::ObjectType && (*args[i]->ToObject_NoConst())[AST_TAG_DISAMBIGUATE_OBJECT])
+            {
+                (*args[i]->ToObject_NoConst()).Remove(AST_TAG_DISAMBIGUATE_OBJECT);
+                FixArgsForInline(queue, *args[i]->ToObject_NoConst());
+            }
+            else
+            {
+                queue.emplace(args[i]);
+            }
+        }
+    }
+    Value *FillQueue(std::queue<const Value *> &queue)
+    {
+        Value *v = new Value(*(new Object()));
+        int size = queue.size();
+        for (int i = 0; i < size; i++)
+        {
+            (v->ToObject_NoConst())->Set(i, *(queue.front()));
+            queue.pop();
+        }
+        return v;
     }
     void PushProgramFunctionArgumentsToScope(Object &elist, Object &idlist)
     {
@@ -1145,24 +1206,29 @@ private:
     const Value EvalQuasiQuotes(Object &node)
     {
         TreeHost *treeHost = new TreeHost();
-        treeHost->Accept(new UnparseTreeVisitor(), *node[AST_TAG_STMTS]->ToObject_NoConst());
+        // treeHost->Accept(new UnparseTreeVisitor(), *node[AST_TAG_STMTS]->ToObject_NoConst());
 
-        Parser parser;
-        Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
-        treeHost->Accept(new SetParentTreeVisitor(), *result);
+        // Parser parser;
+        // Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
+        // treeHost->Accept(new SetParentTreeVisitor(), *result);
 
-        Value *ast2 = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        Value *ast2;
+        if (node[AST_TAG_STMTS])
+            ast2 = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        else if (node[AST_TAG_ELIST])
+        {
+            ast2 = CopyAST(*node[AST_TAG_ELIST]->ToObject_NoConst());
+        }
+        else
+            assert(false && "EvalQuasiQuotes error");
         Object *result2 = ast2->ToObject_NoConst();
         treeHost->Accept(new SetParentTreeVisitor(), *result2);
-        PRINT_BLUE_LINE(ObjectToString(result2, "", ""));
 
         // Evaluate escapes before returning AST
         EvalEscapesTreeVisitor *ev = new EvalEscapesTreeVisitor();
         ev->SetDispatcher(this->dispatcher);
         treeHost->Accept(ev, *result2);
 
-        // result->IncRefCounter();
-        // or done directly inside Value if using Collector return *result;
         return Value(*result2);
     }
     const Value EvalEscape(Object &node)
@@ -1184,9 +1250,21 @@ private:
             parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
 
-            return Eval(ast);
+            auto evaledAST = Eval(ast);
+            if ((evaledAST.ToObject_NoConst())->children.size() == 1)
+                return *((*evaledAST.ToObject_NoConst())[0]);
+            else if ((evaledAST.ToObject_NoConst())->children.size() > 1)
+            {
+                std::cout << "Expr\n";
+                evaledAST.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));
+                return evaledAST;
+            }
+            else
+            {
+                assert(false && "EvalInline Expr, 0 args");
+            }
         }
-        else
+        else if (node[AST_TAG_ID] != nullptr)
         {
             std::string id = node[AST_TAG_ID]->Stringify();
             auto result = ScopeLookup(GetCurrentScope(), id);
@@ -1200,8 +1278,22 @@ private:
             parent.children.erase(AST_TAG_ESCAPE);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
 
-            return Eval(ast);
+            auto evaledAST = Eval(ast);
+            if ((evaledAST.ToObject_NoConst())->children.size() == 1)
+                return *((*evaledAST.ToObject_NoConst())[0]);
+            else if ((evaledAST.ToObject_NoConst())->children.size() > 1)
+            {
+                std::cout << "ID\n";
+                evaledAST.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));
+                return evaledAST;
+            }
+            else
+            {
+                assert(false && "EvalInline Id, 0 args");
+            }
         }
+        else
+            assert(false && "s.k.a.t.a");
 
         return nullptr;
     }

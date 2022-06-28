@@ -273,8 +273,10 @@ private:
     }
     void AcceptQuasiQuotes(const Object &node)
     {
-        if (node[AST_TAG_STMTS]->GetType() != Value::NilType)
+        if (node[AST_TAG_STMTS] && node[AST_TAG_STMTS]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_STMTS]->ToObject());
+        else if (node[AST_TAG_ELIST] && node[AST_TAG_ELIST]->GetType() != Value::NilType)
+            Accept(*node[AST_TAG_ELIST]->ToObject());
         visitor->VisitQuasiQuotes(node);
     }
     void AcceptEscape(const Object &node)
@@ -350,11 +352,11 @@ private:
                         { AcceptForstmt(node); });
         InstallAcceptor(AST_TAG_RETURNSTMT, [this](const Object &node)
                         { AcceptReturn(node); });
-        InstallAcceptor(AST_TAG_QUASIQUOTES,[this](const Object &node)
+        InstallAcceptor(AST_TAG_QUASIQUOTES, [this](const Object &node)
                         { AcceptQuasiQuotes(node); });
-        InstallAcceptor(AST_TAG_ESCAPE,[this](const Object &node)
+        InstallAcceptor(AST_TAG_ESCAPE, [this](const Object &node)
                         { AcceptEscape(node); });
-        InstallAcceptor(AST_TAG_INLINE,[this](const Object &node)
+        InstallAcceptor(AST_TAG_INLINE, [this](const Object &node)
                         { AcceptInline(node); });
     }
 

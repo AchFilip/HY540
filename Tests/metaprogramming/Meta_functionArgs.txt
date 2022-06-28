@@ -1,0 +1,7 @@
+function f(a,b,c,d,e){
+    return a + b + c + d + e;
+}
+x = <<300, 40>>;
+args = << 2000, ~x, 5>>;
+call2 = <<f(10000, ~args)>>;
+print(!(call2)); //12345

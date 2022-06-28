@@ -1,0 +1,5 @@
+function f() { 
+    print(1);
+    return <<!(f())>>; 
+}
+!(f());  //segfaults after endless loop

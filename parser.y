@@ -555,17 +555,21 @@ returnstmt:     RETURN ';'                                      {
                                                                 }
                 ;
 
-QuasiQuotes:    QUASI_QUOTES_OPEN stmts QUASI_QUOTES_CLOSE      {
-                                                                     PrintParsing("QuasiQuotes", "<< QuasiQuotes >>");
-                                                                    $$ = CreateAstNodeOneChild(AST_TAG_QUASIQUOTES, AST_TAG_STMTS, "", *$2, yylineno);
+QuasiQuotes:    QUASI_QUOTES_OPEN '@' stmts QUASI_QUOTES_CLOSE      {
+                                                                     PrintParsing("QuasiQuotes", "<< stmts >>");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_QUASIQUOTES, AST_TAG_STMTS, "", *$3, yylineno);
+                                                                }
+                | QUASI_QUOTES_OPEN elist QUASI_QUOTES_CLOSE    {
+                                                                    PrintParsing("QuasiQuotes", "<< elist >>");
+                                                                    $$ = CreateAstNodeOneChild(AST_TAG_QUASIQUOTES, AST_TAG_ELIST, "", *$2, yylineno);
                                                                 }
 EscapeItems:    ESCAPE id                                       {
-                                                                    //PrintParsing("EscapeItems", "~id");
+                                                                    PrintParsing("EscapeItems", "~id");
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_ESCAPE, AST_TAG_ID, "", *$2, yylineno);
                                                                 }
                 | ESCAPE '(' expr ')'                           {
                                                                     $$ = CreateAstNodeOneChild(AST_TAG_ESCAPE, AST_TAG_EXPR, "", *$3, yylineno);
-                                                                    //PrintParsing("EscapeItems", "~(expr)");
+                                                                    PrintParsing("EscapeItems", "~(expr)");
                                                                 }
                 ;
 Inline:         NOT '(' expr ')'                                {
@@ -587,7 +591,6 @@ public:
     Object* Parse(std::string text){
         yy_scan_string(text.c_str());
         yyparse();
-
         return ast->ToObject_NoConst();
     }
 
