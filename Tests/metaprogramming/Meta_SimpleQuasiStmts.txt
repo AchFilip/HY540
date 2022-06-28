@@ -1,0 +1,12 @@
+z = << | for(i = 0; i < 5; ++i) 
+        print(i);
+>>;
+!(z);
+
+u = << |
+    function add(x,y)
+        { return x + y; }
+>>;
+
+!(u);
+print(add(1,2));

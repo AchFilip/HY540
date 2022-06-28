@@ -328,20 +328,6 @@ private:
         }
         else
         {
-            // std::cout << "Type: " << lvalue.GetType() << std::endl;
-            // if (lvalue.ToObject_NoConst())
-            // {
-            //     // std::cout << "xmm kai xm 1 " << std::endl;
-            //     lvalue.ToObject_NoConst()->DecRefCounter();
-            //     // std::cout << "xmm kai xm " << std::endl;
-            // }
-
-            // if (lvalue.GetType() == Value::ObjectType)
-            //     lvalue.ToObject_NoConst()->DecRefCounter();
-
-            // if (expr.GetType() == Value::ObjectType)
-            //     expr.ToObject_NoConst()->IncRefCounter();
-
             lvalue = expr;
         }
 
@@ -504,6 +490,7 @@ private:
         {
             if (node[AST_TAG_LVALUE])
             {
+                // PRINT_BLUE_LINE(ObjectToString((node[AST_TAG_EXPR]->ToObject_NoConst()), "", ""));
                 Value functionValue = Eval(*node[AST_TAG_LVALUE]->ToObject_NoConst());
                 Value args = Eval(*node[AST_TAG_CALLSUFFIX]->ToObject_NoConst());
                 if (args.GetType() == Value::ObjectType)
@@ -540,8 +527,6 @@ private:
                     functionValue.ToLibraryFunction()(GetCurrentScope());
                     if (GetCurrentScope()[RETVAL_RESERVED_FIELD])
                     {
-                        // std::cout << "RETVAL: " << GetCurrentScope()[RETVAL_RESERVED_FIELD]->Stringify() << std::endl;
-                        // GetCurrentScope()[RETVAL_RESERVED_FIELD]->ToObject_NoConst()->Debug_PrintChildren();
                         switch (GetCurrentScope()[RETVAL_RESERVED_FIELD]->GetType())
                         {
                         case Value::ObjectType:
@@ -567,7 +552,12 @@ private:
             { // Anonymous function
                 Value functionValue = Eval(node[AST_TAG_CALL] ? *node[AST_TAG_CALL]->ToObject_NoConst() : *node[AST_TAG_FUNCDEF]->ToObject_NoConst());
                 Value args = Eval(*node[AST_TAG_ELIST]->ToObject_NoConst());
-
+                if (args.GetType() == Value::ObjectType)
+                {
+                    std::queue<const Value *> *queue = new std::queue<const Value *>();
+                    FixArgsForInline(*queue, *args.ToObject_NoConst());
+                    args = *FillQueue(*queue);
+                }
                 // Adjust Scopes
                 PushScopeSpace(functionValue.ToProgramFunctionClosure_NoConst());
                 PushNested();
@@ -576,7 +566,6 @@ private:
                 if (ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
                     PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());
                 // Make call
-                std::cout << "kanoniko call --------------" << std::endl;
                 Eval(ast);
             }
         }
@@ -1206,30 +1195,24 @@ private:
     const Value EvalQuasiQuotes(Object &node)
     {
         TreeHost *treeHost = new TreeHost();
-        // treeHost->Accept(new UnparseTreeVisitor(), *node[AST_TAG_STMTS]->ToObject_NoConst());
-
-        // Parser parser;
-        // Object *result = parser.Parse((*node[AST_TAG_STMTS]->ToObject_NoConst())[UNPARSE_VALUE]->ToString());
-        // treeHost->Accept(new SetParentTreeVisitor(), *result);
-
         Value *ast2;
         if (node[AST_TAG_STMTS])
-            ast2 = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
+            ast = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
         else if (node[AST_TAG_ELIST])
         {
-            ast2 = CopyAST(*node[AST_TAG_ELIST]->ToObject_NoConst());
+            ast = CopyAST(*node[AST_TAG_ELIST]->ToObject_NoConst());
         }
         else
             assert(false && "EvalQuasiQuotes error");
-        Object *result2 = ast2->ToObject_NoConst();
-        treeHost->Accept(new SetParentTreeVisitor(), *result2);
+        Object *result = ast->ToObject_NoConst();
+        treeHost->Accept(new SetParentTreeVisitor(), *result);
 
         // Evaluate escapes before returning AST
         EvalEscapesTreeVisitor *ev = new EvalEscapesTreeVisitor();
         ev->SetDispatcher(this->dispatcher);
-        treeHost->Accept(ev, *result2);
+        treeHost->Accept(ev, *result);
 
-        return Value(*result2);
+        return Value(*result);
     }
     const Value EvalEscape(Object &node)
     {
@@ -1251,11 +1234,14 @@ private:
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
 
             auto evaledAST = Eval(ast);
-            if ((evaledAST.ToObject_NoConst())->children.size() == 1)
+            if (evaledAST.GetType() != Value::ObjectType)
+            {
+                return evaledAST;
+            }
+            else if ((evaledAST.ToObject_NoConst())->children.size() == 1)
                 return *((*evaledAST.ToObject_NoConst())[0]);
             else if ((evaledAST.ToObject_NoConst())->children.size() > 1)
             {
-                std::cout << "Expr\n";
                 evaledAST.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));
                 return evaledAST;
             }
@@ -1279,11 +1265,14 @@ private:
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
 
             auto evaledAST = Eval(ast);
-            if ((evaledAST.ToObject_NoConst())->children.size() == 1)
+            if (evaledAST.GetType() != Value::ObjectType)
+            {
+                return evaledAST;
+            }
+            else if ((evaledAST.ToObject_NoConst())->children.size() == 1)
                 return *((*evaledAST.ToObject_NoConst())[0]);
             else if ((evaledAST.ToObject_NoConst())->children.size() > 1)
             {
-                std::cout << "ID\n";
                 evaledAST.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));
                 return evaledAST;
             }

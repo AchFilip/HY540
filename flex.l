@@ -92,6 +92,7 @@ LESS                    "<"
 LESS_EQUAL              "<="
 
 ESCAPE                  "~"
+QUASI_STMTS             "|"
 DIGIT                   [0-9]+
 INTEGER_CONST           {DIGIT}
 REAL_CONST              {INTEGER_CONST}{DOT}{INTEGER_CONST}
@@ -200,6 +201,9 @@ WHITESPACE              [\t\r' '\n]
 
 {ESCAPE}                    {
                                 return ESCAPE;
+                            }
+{QUASI_STMTS}                    {
+                                return QUASI_STMTS;
                             }
 {QUASI_QUOTES_OPEN}         {
                                 return QUASI_QUOTES_OPEN;
