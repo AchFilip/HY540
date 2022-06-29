@@ -1,6 +1,12 @@
 #include <iostream>
 #include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "./AST/SetParentTreeVisitor.h"
+#include "./AST/Debug/SinDebugger.h"
+#include "./AST/Debug/DebugMessageInterface.h"
 #include "./AST/Sin_Eval.h"
 
 void Unparse(Object &ast)
@@ -30,28 +36,52 @@ void Interpret(Object &ast)
     delete interpreter;
 }
 
+std::string FileToString(std::string fileName)
+{
+    std::string fileContent;
+    std::getline(std::ifstream(fileName), fileContent, '\0');
+    return fileContent;
+}
+
 int main(int argc, char *argv[])
 {
-    Parser parser;
+    // Run from file
+    if (argc == 2)
+    {
+        SinDebugger::isDebug = false;
 
-    if (argc > 1)
-    {
-        std::string file_content;
-        std::getline(std::ifstream(argv[1]), file_content, '\0');
-        Interpret(SetParent(*parser.Parse(file_content)));
+        Parser parser;
+        Interpret(SetParent(*parser.Parse(FileToString(argv[1]))));
     }
-    else
+    // Run from file with debugger
+    else if (argc == 3)
     {
-        std::string final;
-        std::string input;
-        std::cin >> input;
-        while (input != "END")
+        SinDebugger::isDebug = true;
+        DebugMessageInterface::InitPipe();
+
+        pid_t child_pid = fork();
+        if (child_pid == 0)
         {
-            final += input;
-            std::cin >> input;
+            Parser parser;
+            Interpret(SetParent(*parser.Parse(FileToString(argv[1]))));
         }
-        Interpret(*parser.Parse(final));
+        else if (child_pid > 0)
+        {
+            SinDebugger debugger;
+        }
+        else
+        {
+            perror("fork");
+            return -1;
+        }
     }
 
     std::cout << "Its over =)" << std::endl;
 }
+
+// ./sin.exe fileName
+// ./sin.exe -d fileName
+
+// MESSAGE START
+// MESSAGE
+// MESSAGE END

@@ -160,6 +160,13 @@ private:
 public:
     const Value Eval(Object &node)
     {
+        // If line has breakpoint:
+        // wait for protocol request from debugger
+        // 1. continue (keep going until next breakpoint)
+        // 2. step over (keep going until next line)
+        // 3. step into (keep going until node.type == ast_tag_call)
+        // 4. eval -> ex. x = 3;
+
         debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
@@ -1504,6 +1511,9 @@ public:
     {
         try
         {
+            // if debug mode
+            // read breakpoints
+
             Eval(node);
         }
         catch (const TypeException &typeError)
