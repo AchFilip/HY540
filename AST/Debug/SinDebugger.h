@@ -86,8 +86,8 @@ public:
             }
         }
         // Substring the last " " character;
-        breakpointsMessage = breakpointsMessage.substr(0, breakpointsMessage.size() - 1);
-
+        if(breakpointsMessage != "")    
+            breakpointsMessage = breakpointsMessage.substr(0, breakpointsMessage.size() - 1);
         // Send signal that breakpoint thingy is done.
         dmi.Write(breakpointsMessage);
     }
@@ -104,6 +104,7 @@ public:
 private:
     int lastLineDebugged = -1;
     int lastEnvStackSize = 1;
+    Object* lastEnvStackDebugged = nullptr;
     ValueStack *envStack;
 
     std::function<bool(Object &node)> shouldReadCommand;
@@ -121,7 +122,10 @@ public:
                                                 return (
                                                     SinDebugger::isDebug &&
                                                     IsBreakpoint(node[AST_TAG_LINE_KEY]->ToNumber()) &&
-                                                    lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
+                                                    (
+                                                        lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() || // Maybe use a stack to represent recursive lines?
+                                                        lastEnvStackDebugged != envStack->Top().ToObject_NoConst()
+                                                    ) &&
                                                     node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR);
                                             }
 
@@ -131,20 +135,26 @@ public:
                                             {
                                                 return (
                                                     SinDebugger::isDebug &&
-                                                        node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
-                                                        ((node[AST_TAG_LINE_KEY]->ToNumber() > lastLineDebugged && envStack->Size() == lastEnvStackSize) ||
-                                                         envStack->Size() == lastEnvStackSize - 1) ||
-                                                    shouldReadCommandDispatcher["continue"](node));
+                                                    node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
+                                                    (
+                                                        (
+                                                            node[AST_TAG_LINE_KEY]->ToNumber() > lastLineDebugged && 
+                                                            envStack->Size() == lastEnvStackSize
+                                                        ) ||
+                                                        envStack->Size() == lastEnvStackSize - 1
+                                                    ) ||
+                                                    shouldReadCommandDispatcher["continue"](node)
+                                                );
                                             }});
         shouldReadCommandDispatcher.insert({"step_into",
                                             [=](Object &node)
                                             {
                                                 return (
-                                                           SinDebugger::isDebug &&
-                                                           lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
-                                                           node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
-                                                           envStack->Size() == lastEnvStackSize + 1) ||
-                                                       shouldReadCommandDispatcher["step_over"](node);
+                                                        SinDebugger::isDebug &&
+                                                        lastLineDebugged != node[AST_TAG_LINE_KEY]->ToNumber() && // Maybe use a stack to represent recursive lines?
+                                                        node[AST_TAG_TYPE_KEY]->ToString() == AST_TAG_EXPR &&
+                                                        envStack->Size() == lastEnvStackSize + 1) ||
+                                                        shouldReadCommandDispatcher["step_over"](node);
                                             }});
         shouldReadCommandDispatcher.insert({"add_breakpoints",
                                             [=](Object &node)
@@ -169,12 +179,15 @@ public:
         {
             message = dmi.Read();
         }
-        // std::cout << message << std::endl;
-        std::vector<std::string> breakpointsSplitted = dmi.SplitMessage(message, " ");
-        for (auto &it : breakpointsSplitted)
+        
+        if(message != "")
         {
-            // std::cout << "[Interpreter] it: " << it << std::endl;
-            breakpoints.push_back(stoi(it));
+            std::vector<std::string> breakpointsSplitted = dmi.SplitMessage(message, " ");
+            for (auto &it : breakpointsSplitted)
+            {
+                // std::cout << "[Interpreter] it: " << it << std::endl;
+                breakpoints.push_back(stoi(it));    
+            }
         }
     }
 
@@ -188,6 +201,7 @@ public:
     {
         // Mark debuged line
         lastLineDebugged = node[AST_TAG_LINE_KEY]->ToNumber();
+        lastEnvStackDebugged = envStack->Top().ToObject_NoConst();
         lastEnvStackSize = envStack->Size();
         // Inform debugger that breakpoint was found
         dmi.Write(std::to_string(node[AST_TAG_LINE_KEY]->ToNumber()));
@@ -215,13 +229,18 @@ public:
                 ReadBreakpoints(breakpointsMessage);
                 return;
             }
-
-            // std::cout << "code: " << message << std::endl;
-
-            auto &evalScope = *(*envStack->Top().ToObject_NoConst())[TAIL_SCOPE_KEY]->ToObject_NoConst();
-            envStack->Push(*new Value());
-            Utilities::eval(evalScope, message);
-            envStack->Pop();
+            else
+            {
+                // Change shouldAsk debugger to continue, because step into will stop at next eval
+                std::function<bool(Object&)> prevShouldReadCommand = shouldReadCommand;
+                shouldReadCommand = shouldReadCommandDispatcher["continue"];
+                // Utilities::eval pops initial library function scope, so push a fake one, and then pop it
+                auto &evalScope = *(*envStack->Top().ToObject_NoConst())[TAIL_SCOPE_KEY]->ToObject_NoConst();
+                envStack->Push(*new Value());
+                Utilities::eval(evalScope, message);
+                envStack->Pop();
+                shouldReadCommand = prevShouldReadCommand;
+            }
 
             ReadCommand(node);
         }

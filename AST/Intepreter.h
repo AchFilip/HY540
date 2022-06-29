@@ -429,7 +429,6 @@ private:
                 if (ast[AST_TAG_ARGUMENT_LIST]->GetType() != Value::NilType && args.GetType() != Value::NilType)
                     PushProgramFunctionArgumentsToScope(*args.ToObject_NoConst(), *ast[AST_TAG_ARGUMENT_LIST]->ToObject_NoConst());
                 // Make call
-                std::cout << "kanoniko call --------------" << std::endl;
                 Eval(ast);
             }
         }
@@ -853,11 +852,11 @@ private:
     const Value EvalIf(Object &node)
     {
         PushNested();
-        if (dispatcher->Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()) && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
-            dispatcher->Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
+        if (Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()) && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
+            Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
         else if (auto *elseStmt = node[AST_TAG_ELSE_STMT])
         {
-            dispatcher->Eval(*elseStmt->ToObject_NoConst());
+            Eval(*elseStmt->ToObject_NoConst());
         }
         PopScope();
         return _NIL_;

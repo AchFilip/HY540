@@ -1,7 +1,8 @@
-a= [];
-a["1.5"] = 1.5;
-a["test"] = 1.5;
-a["sheeeeeeeeeeesh"] = 1.5;
-a["last"] = 1.5;
+function pow(base, a){
+    if(a > 0)
+        return base * pow(base, --a);
+    else
+        return 1;
+}
 
-print(object_size(a));
+print(pow(2, 30));
