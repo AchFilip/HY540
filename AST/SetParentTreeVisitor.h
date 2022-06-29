@@ -66,6 +66,8 @@ public:
     IMPL_VISIT(QuasiQuotes)
     IMPL_VISIT(Escape)
     IMPL_VISIT(Inline)
+    IMPL_VISIT(EscapeFunctionArgs)
+    IMPL_VISIT(EscapeFunctionId)
 #undef IMPL_VISIT
 
     void SetIsRemoval(bool v)

@@ -55,6 +55,8 @@
 
 #define AST_TAG_QUASIQUOTES "$quasi_quotes"
 #define AST_TAG_ESCAPE "$escape"
+#define AST_TAG_ESCAPE_FUNCTION_ID "$escape_function_id"
+#define AST_TAG_ESCAPE_FUNCTION_ARGS "$escape_function_args"
 #define AST_TAG_INLINE "$inline"
 
 #define PARENT_FIELD "$parent"

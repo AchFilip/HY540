@@ -221,10 +221,23 @@ private:
     }
     void AcceptFuncDef(const Object &node)
     {
-        if (node[AST_TAG_IDLIST]->GetType() != Value::NilType)
+
+        if (node[AST_TAG_IDLIST] && node[AST_TAG_IDLIST]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_IDLIST]->ToObject());
+
+        if (node[AST_TAG_ESCAPE_FUNCTION_ARGS] && node[AST_TAG_ESCAPE_FUNCTION_ARGS]->GetType() != Value::NilType)
+            Accept(*node[AST_TAG_ESCAPE_FUNCTION_ARGS]->ToObject());
+
+        if (node[AST_TAG_ESCAPE_FUNCTION_ID] && node[AST_TAG_ESCAPE_FUNCTION_ID]->GetType() != Value::NilType)
+        {
+            //*node[AST_TAG_ESCAPE_FUNCTION_ID]->ToObject();
+
+            AcceptEscapeFunctionId(*node[AST_TAG_ESCAPE_FUNCTION_ID]->ToObject());
+        }
+
         if (node[AST_TAG_BLOCK]->GetType() != Value::NilType)
             Accept(*node[AST_TAG_BLOCK]->ToObject());
+
         visitor->VisitFuncDef(node);
     }
     void AcceptConst(const Object &node)
@@ -286,6 +299,18 @@ private:
         else if (node[AST_TAG_ID] != nullptr)
             ;
         visitor->VisitEscape(node);
+    }
+    void AcceptEscapeFunctionArgs(const Object &node)
+    {
+        if (node[AST_TAG_EXPR] != nullptr)
+            Accept(*node[AST_TAG_EXPR]->ToObject());
+        else if (node[AST_TAG_ID] != nullptr)
+            ;
+        visitor->VisitEscape(node);
+    }
+    void AcceptEscapeFunctionId(const Object &node)
+    {
+        visitor->VisitEscapeFunctionId(node);
     }
     void AcceptInline(const Object &node)
     {
@@ -358,6 +383,10 @@ private:
                         { AcceptEscape(node); });
         InstallAcceptor(AST_TAG_INLINE, [this](const Object &node)
                         { AcceptInline(node); });
+        InstallAcceptor(AST_TAG_ESCAPE_FUNCTION_ARGS, [this](const Object &node)
+                        { AcceptEscapeFunctionArgs(node); });
+        InstallAcceptor(AST_TAG_ESCAPE_FUNCTION_ID, [this](const Object &node)
+                        { AcceptEscapeFunctionId(node); });
     }
 
 public:

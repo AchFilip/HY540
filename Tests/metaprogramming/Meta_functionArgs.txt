@@ -5,3 +5,9 @@ x = <<300, 40>>;
 args = << 2000, ~x, 5>>;
 call2 = <<f(10000, ~args)>>;
 print(!(call2)); //12345
+
+function g(a,b,c){
+    print(a,b,c);
+}
+
+!(<<g(~x, 4)>>);

@@ -500,12 +500,6 @@ private:
                     args = *FillQueue(*queue);
                 }
 
-                // if (args.GetType() != Value::NilType && (*args.ToObject_NoConst())[0]->GetType() == Value::ObjectType && (*((*args.ToObject_NoConst())[0])->ToObject_NoConst())[AST_TAG_DISAMBIGUATE_OBJECT])
-                // {
-                //     args = *(*args.ToObject_NoConst())[0];
-                //     args.ToObject_NoConst()->Remove(AST_TAG_DISAMBIGUATE_OBJECT);
-                // }
-
                 if (functionValue.GetType() == Value::ProgramFunctionType)
                 {
                     // Adjust Scopes
@@ -879,10 +873,26 @@ private:
         if (node[AST_TAG_IDLIST] != nullptr && node[AST_TAG_IDLIST]->GetType() == Value::ObjectType)
             idlist = Eval(*node[AST_TAG_IDLIST]->ToObject_NoConst());
 
+        if (node[AST_TAG_ESCAPE_FUNCTION_ARGS] != nullptr && node[AST_TAG_ESCAPE_FUNCTION_ARGS]->GetType() == Value::ObjectType)
+        {
+            idlist = EvalInline(*node[AST_TAG_ESCAPE_FUNCTION_ARGS]->ToObject_NoConst());
+            if (idlist.GetType() != Value::ObjectType)
+            {
+                Object *obj = new Object();
+                obj->Set(0, idlist);
+                idlist = Value(*obj);
+            }
+            idlist.ToObject_NoConst()->Remove(AST_TAG_DISAMBIGUATE_OBJECT);
+        }
+
         // Get Function Name
         std::string id = "$anonymous";
         if (node[AST_TAG_ID] != nullptr)
             id = node[AST_TAG_ID]->ToString();
+        if (node[AST_TAG_ESCAPE_FUNCTION_ID] != nullptr)
+        {
+            id = EvalInline(*node[AST_TAG_ESCAPE_FUNCTION_ID]->ToObject_NoConst()).ToString();
+        }
 
         // Set argument list as child of ast
         Object &ast = *node[AST_TAG_BLOCK]->ToObject_NoConst();
@@ -1195,9 +1205,13 @@ private:
     const Value EvalQuasiQuotes(Object &node)
     {
         TreeHost *treeHost = new TreeHost();
-        Value *ast2;
+        Value *ast;
+
         if (node[AST_TAG_STMTS])
+        {
             ast = CopyAST(*node[AST_TAG_STMTS]->ToObject_NoConst());
+        }
+
         else if (node[AST_TAG_ELIST])
         {
             ast = CopyAST(*node[AST_TAG_ELIST]->ToObject_NoConst());
@@ -1206,12 +1220,10 @@ private:
             assert(false && "EvalQuasiQuotes error");
         Object *result = ast->ToObject_NoConst();
         treeHost->Accept(new SetParentTreeVisitor(), *result);
-
         // Evaluate escapes before returning AST
         EvalEscapesTreeVisitor *ev = new EvalEscapesTreeVisitor();
         ev->SetDispatcher(this->dispatcher);
         treeHost->Accept(ev, *result);
-
         return Value(*result);
     }
     const Value EvalEscape(Object &node)
@@ -1224,6 +1236,7 @@ private:
         {
             auto result = dispatcher->Eval(*(node[AST_TAG_EXPR]->ToObject_NoConst()));
             auto &ast = *result.ToObject_NoConst();
+
             auto &parent = *node[PARENT_FIELD]->ToObject_NoConst();
 
             TreeHost *treeHost = new TreeHost();
@@ -1239,7 +1252,10 @@ private:
                 return evaledAST;
             }
             else if ((evaledAST.ToObject_NoConst())->children.size() == 1)
+            {
                 return *((*evaledAST.ToObject_NoConst())[0]);
+            }
+
             else if ((evaledAST.ToObject_NoConst())->children.size() > 1)
             {
                 evaledAST.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));
@@ -1262,15 +1278,20 @@ private:
 
             ast.Set(PARENT_FIELD, *node[PARENT_FIELD]);
             parent.children.erase(AST_TAG_ESCAPE);
+            parent.children.erase(AST_TAG_INLINE);
+            parent.children.erase(AST_TAG_ESCAPE_FUNCTION_ARGS);
             parent.Set(ast[AST_TAG_TYPE_KEY]->ToString(), ast);
 
             auto evaledAST = Eval(ast);
+
             if (evaledAST.GetType() != Value::ObjectType)
             {
                 return evaledAST;
             }
             else if ((evaledAST.ToObject_NoConst())->children.size() == 1)
+            {
                 return *((*evaledAST.ToObject_NoConst())[0]);
+            }
             else if ((evaledAST.ToObject_NoConst())->children.size() > 1)
             {
                 evaledAST.ToObject_NoConst()->Set(AST_TAG_DISAMBIGUATE_OBJECT, *(new Value("123")));

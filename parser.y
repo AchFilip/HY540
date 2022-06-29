@@ -465,6 +465,18 @@ funcdef:        FUNCTION '('  idlist ')' block                  {
                                                                     obj->childrenTags.push_back(AST_TAG_BLOCK);
                                                                     $$ = new Value(*obj);
                                                                 }
+                | FUNCTION EscapeItems '(' EscapeItems ')' block  {
+                                                                    Object* obj = new Object();
+                                                                    obj->Set(AST_TAG_TYPE_KEY, Value(std::string(AST_TAG_FUNCDEF)));
+                                                                    obj->Set(AST_TAG_LINE_KEY, Value((double)yylineno));
+                                                                    obj->Set(AST_TAG_ESCAPE_FUNCTION_ID, *$2);
+                                                                    obj->Set(AST_TAG_ESCAPE_FUNCTION_ARGS, *$4);
+                                                                    obj->Set(AST_TAG_BLOCK, *$6);
+                                                                    obj->childrenTags.push_back(AST_TAG_ESCAPE_FUNCTION_ID);
+                                                                    obj->childrenTags.push_back(AST_TAG_ESCAPE_FUNCTION_ARGS);
+                                                                    obj->childrenTags.push_back(AST_TAG_BLOCK);
+                                                                    $$ = new Value(*obj);
+                                                                }
                 ;
 
 const:          NUMBER                                          {
