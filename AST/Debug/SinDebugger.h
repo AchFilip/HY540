@@ -187,7 +187,6 @@ public:
 
     bool ShouldReadCommand(Object &node)
     {
-
         return shouldReadCommand(node);
     }
 

@@ -119,7 +119,7 @@ private:
 public:
     const Value Eval(Object &node)
     {
-        if (debugger.ShouldReadCommand(node))
+        if (SinDebugger::isDebug && debugger.ShouldReadCommand(node))
         {
             debugger.ReadCommand(node);
         }

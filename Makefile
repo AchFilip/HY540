@@ -1,4 +1,4 @@
-all: debugger
+all: phase2
 phase1:
 	flex --outfile=flex.cpp flex.l
 	g++ -std=c++0x flex.cpp

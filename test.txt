@@ -1,8 +1,8 @@
-function pow(base, a){
-    if(a > 0)
-        return base * pow(base, --a);
+function pow(x, n) {
+    if (n == 0)
+        return <<1>>;
     else
-        return 1;
+        return <<~x * ~(pow(x, n - 1))>>;
 }
-
-print(pow(2, 30));
+print(!(pow(<<2>>, 3)));            //8
+!(<< print(!(pow(<<2>>, 3))) >>);   //8
