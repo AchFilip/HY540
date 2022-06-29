@@ -1,0 +1,52 @@
+function merge(left, right) {
+    merged = [];
+    n1 = object_size(left);
+    n2 = object_size(right);
+    i = 0;
+    j = 0;
+    k = 0;
+    while (i < n1 && j<n2)
+    {
+        if( left[i] <= right[j]){
+            merged[k] = left[i];
+            i++;
+        }
+        else {
+            merged[k] = right[j];
+            j++;
+        }
+        k++;
+    }
+    while( i < n1 ){
+        merged[k] = left[i];
+        k++;
+        i++;
+    }
+    while( j < n2 ){
+        merged[k] = right[j];
+        k++;
+        j++;
+    }
+    return merged;
+}
+
+function mergeSort(array, l, r){
+    if( l >= r){
+        if( object_size(array[l]) == 1)
+            return [array[l]];
+        else
+            return array[l];
+    }
+    m = l + ToInt((r-l)/2);
+    left = mergeSort(array,l,m);
+    right = mergeSort(array, m+1, r);
+    return merge(left, right);
+}
+
+
+
+//test = [92,83,74,65,56,46,36,24,14,03];
+test = [36,24,14,03];
+print(test);
+sorted = mergeSort(test,0,3);
+print("Sorted: ",sorted);

@@ -1,0 +1,10 @@
+f = [];
+{
+    f = (function(){return x;});
+}
+x=10;
+{}
+y=20;
+{
+    print(f());
+}

@@ -4,12 +4,9 @@
 #include <functional>
 #include "../TreeTags.h"
 #include "../Object.h"
-#include "../Intepreter.h"
+#include "./Utilities.h"
 #include "../EvalDispatcher.h"
 #include "../DebugAST.h"
-
-// Interpreter.h
-std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab);
 
 class FileSystem
 {
@@ -35,7 +32,7 @@ public:
         std::string path = env[0]->Stringify();
         std::string text;
         
-        env[1]->GetType() == Value::ObjectType ? text = ObjectToString(env[1]->ToObject_NoConst(), "", "") : text = env[1]->Stringify();
+        env[1]->GetType() == Value::ObjectType ? text = Utilities::ObjectToString(env[1]->ToObject_NoConst(), "", "") : text = env[1]->Stringify();
 
         std::ofstream MyFile(path, mode);
         MyFile << "\n" << text;

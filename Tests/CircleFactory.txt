@@ -8,6 +8,7 @@ function SetMethod (obj, func_index, func) {
 		{ "$local" : obj },
 		{ "$outer" : func.$closure }
 	];
+    //print(obj);
 }
 
 function Circle (x, y, r) {
@@ -16,13 +17,29 @@ function Circle (x, y, r) {
         {"y" : y},
         {"radius" : r}
     ];
+    
+    print("ENV: ", $env);
     SetMethod(c, "Circumference" , Circumference);
     SetMethod(c, "Area" , Area);
 
     return c;
 }
 
+//print($env);
 c1 = Circle(0, 1, 10);
 print(c1);
 print("Circumference: ", c1.Circumference());
 print("Area: ", c1.Area());
+
+
+//print(Circle.$closure);
+//print($env);
+
+/*
+temp = [];
+temp.$outer = $env; 
+Circle.$closure = [];
+c2 = Circle(0, 1, 10);
+c2.$local = $env;
+print(c2);
+*/

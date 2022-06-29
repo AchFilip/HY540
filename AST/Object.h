@@ -21,7 +21,7 @@ public:
 
     std::map<std::string, const Value> children;
     std::vector<std::string> childrenTags;
-    
+
     using Applier = std::function<void(const Value &key, Value &val)>;
     using Visitor = std::function<void(const Value &key, const Value &val)>;
     void IncRefCounter(void)
@@ -31,10 +31,8 @@ public:
     void DecRefCounter(void)
     {
         refCounter > 0 ? --refCounter : refCounter;
-        // std::cout << refCounter << std::endl;
         if (refCounter == 0)
         {
-            // std::cout << "Deleting " << std::endl;
             this->~Object();
         }
     }

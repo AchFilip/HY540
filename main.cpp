@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 #include "./AST/SetParentTreeVisitor.h"
 #include "./AST/Debug/SinDebugger.h"
 #include "./AST/Debug/DebugMessageInterface.h"
+#include "./parser.cpp"
 #include "./AST/Sin_Eval.h"
 
 void Unparse(Object &ast)
@@ -57,17 +59,23 @@ int main(int argc, char *argv[])
     else if (argc == 3)
     {
         SinDebugger::isDebug = true;
-        DebugMessageInterface::InitPipe();
+        DebugMessageInterface::Init();
+        int s;
 
         pid_t child_pid = fork();
+        // signal(SIGTERM, signalHandler);
         if (child_pid == 0)
         {
-            Parser parser;
-            Interpret(SetParent(*parser.Parse(FileToString(argv[1]))));
+            SinDebugger debugger;
+            debugger.InitDebuggerEnd();
         }
         else if (child_pid > 0)
         {
-            SinDebugger debugger;
+            Parser parser;
+            Interpret(SetParent(*parser.Parse(FileToString(argv[2]))));
+
+            // kill(0, SIGTERM);
+            exit(EXIT_SUCCESS);
         }
         else
         {

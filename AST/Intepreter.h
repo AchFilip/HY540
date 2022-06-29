@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
 #include <iostream>
+#include <vector>
+#include <string>
 #include "./TreeTags.h"
 #include "./Object.h"
 #include "./Value.h"
@@ -14,54 +16,8 @@
 #include "../parser.cpp"
 #include "./EvalEscapesTreeVisitor.h"
 #include <queue>
-
-std::string ObjectToString(Object *obj, std::string toPrint, std::string startingTab)
-{
-    if (obj->children.begin() == obj->children.end())
-        return startingTab + "Object { }";
-
-    toPrint += startingTab + "Object {\n";
-    startingTab += "\t";
-
-    for (auto it = obj->children.begin(); it != obj->children.end();)
-    {
-        if (it->second.GetType() != Value::ObjectType)
-        {
-            std::string id = it->first;
-            if (id.size() > 2 && id.substr(2, id.size()) == "000000")
-                id = id.substr(0, 1);
-            toPrint += startingTab + id + ": " + it->second.Stringify() + "\n";
-        }
-
-        else if (it->second.GetType() == Value::ObjectType)
-        {
-            if ((it->second).ToObject_NoConst() == obj)
-            { // Avoid infinite recursion
-                it++;
-                continue;
-            }
-
-            std::string id = it->first;
-            if (id.size() > 2 && id.substr(2, id.size()) == "000000")
-                id = id.substr(0, 1);
-
-            if (id == "$parent")
-            {
-                toPrint += startingTab + id + ": " + (*(it->second).ToObject_NoConst())[AST_TAG_TYPE_KEY]->ToString() + "\n";
-                it++;
-                continue;
-            }
-
-            std::string objString = ObjectToString((it->second).ToObject_NoConst(), "", startingTab);
-            objString = objString.substr(startingTab.size(), objString.size());
-
-            toPrint += startingTab + id + ": " + objString + "\n";
-        }
-        it++;
-    }
-    toPrint += startingTab.substr(0, startingTab.size() - 1) + "}";
-    return toPrint;
-}
+#include "./Debug/SinDebugger.h"
+#include "./Debug/DebugMessageInterface.h"
 
 Value *CopyAST(Object &original)
 {
@@ -130,6 +86,9 @@ private:
     ValueStack *envStack;
     DebugAST debug;
 
+    // For Debugger
+    SinDebugger debugger;
+
     // Exceptions used for control flow
     struct BreakException
     {
@@ -160,13 +119,10 @@ private:
 public:
     const Value Eval(Object &node)
     {
-        // If line has breakpoint:
-        // wait for protocol request from debugger
-        // 1. continue (keep going until next breakpoint)
-        // 2. step over (keep going until next line)
-        // 3. step into (keep going until node.type == ast_tag_call)
-        // 4. eval -> ex. x = 3;
-
+        if (debugger.ShouldReadCommand(node))
+        {
+            debugger.ReadCommand(node);
+        }
         debug.ObjectPrintChildren(node, node[AST_TAG_LINE_KEY]->Stringify(), node[AST_TAG_TYPE_KEY]->Stringify());
         return dispatcher->Eval(node);
     }
@@ -770,6 +726,7 @@ private:
         {
             return Eval(*node[AST_TAG_INDEXEDELEM]->ToObject_NoConst());
         }
+        return _NIL_;
     }
     const Value EvalIndexedElem(Object &node)
     {
@@ -1036,11 +993,11 @@ private:
     const Value EvalIf(Object &node)
     {
         PushNested();
-        if (dispatcher->Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()) && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
-            dispatcher->Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
+        if (Eval(*node[AST_TAG_EXPR]->ToObject_NoConst()) && node[AST_TAG_IF_STMT]->GetType() != Value::NilType)
+            Eval(*node[AST_TAG_IF_STMT]->ToObject_NoConst());
         else if (auto *elseStmt = node[AST_TAG_ELSE_STMT])
         {
-            dispatcher->Eval(*elseStmt->ToObject_NoConst());
+            Eval(*elseStmt->ToObject_NoConst());
         }
         PopScope();
         return _NIL_;
@@ -1511,9 +1468,11 @@ public:
     {
         try
         {
-            // if debug mode
-            // read breakpoints
-
+            if (SinDebugger::isDebug)
+            {
+                debugger.InitInterpreterEnd(envStack);
+                debugger.ReadBreakpoints("");
+            }
             Eval(node);
         }
         catch (const TypeException &typeError)
